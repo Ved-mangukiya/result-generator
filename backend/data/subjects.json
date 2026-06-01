@@ -1,0 +1,125 @@
+{
+  "subjects": {
+    "1_5": {
+      "streams": ["General"],
+      "subjects": [
+        { "name": "English", "max_marks": 100, "marks_type": "total", "is_compulsory": true, "is_language": true },
+        { "name": "Hindi", "max_marks": 100, "marks_type": "total", "is_compulsory": true, "is_language": true },
+        { "name": "Mathematics", "max_marks": 100, "marks_type": "total", "is_compulsory": true, "is_language": false },
+        { "name": "Environmental Studies (EVS)", "max_marks": 100, "marks_type": "total", "is_compulsory": true, "is_language": false },
+        { "name": "General Knowledge", "max_marks": 50, "marks_type": "total", "is_compulsory": false, "is_language": false }
+      ]
+    },
+    "6_8": {
+      "streams": ["General"],
+      "subjects": [
+        { "name": "English", "max_marks": 100, "marks_type": "total", "is_compulsory": true, "is_language": true },
+        { "name": "Hindi", "max_marks": 100, "marks_type": "total", "is_compulsory": true, "is_language": true },
+        { "name": "Mathematics", "max_marks": 100, "marks_type": "total", "is_compulsory": true, "is_language": false },
+        { "name": "Science", "max_marks": 100, "marks_type": "total", "is_compulsory": true, "is_language": false },
+        { "name": "Social Science", "max_marks": 100, "marks_type": "total", "is_compulsory": true, "is_language": false },
+        { "name": "Sanskrit", "max_marks": 100, "marks_type": "total", "is_compulsory": false, "is_language": true }
+      ]
+    },
+    "9_10_CBSE": {
+      "streams": ["General"],
+      "subjects": [
+        { "name": "English (Language & Literature)", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": true, "is_language": true },
+        { "name": "Hindi (Course A)", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": true, "is_language": true },
+        { "name": "Mathematics", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": true, "is_language": false },
+        { "name": "Science", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": true, "is_language": false },
+        { "name": "Social Science", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": true, "is_language": false },
+        { "name": "Information Technology", "max_marks": 100, "marks_type": "split", "internal_max": 50, "external_max": 50, "is_compulsory": false, "is_language": false },
+        { "name": "Sanskrit", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": false, "is_language": true }
+      ]
+    },
+    "9_10_STATE": {
+      "streams": ["General"],
+      "subjects": [
+        { "name": "English", "max_marks": 100, "marks_type": "total", "is_compulsory": true, "is_language": true },
+        { "name": "Hindi / Regional Language", "max_marks": 100, "marks_type": "total", "is_compulsory": true, "is_language": true },
+        { "name": "Mathematics", "max_marks": 100, "marks_type": "total", "is_compulsory": true, "is_language": false },
+        { "name": "Science", "max_marks": 100, "marks_type": "total", "is_compulsory": true, "is_language": false },
+        { "name": "Social Science", "max_marks": 100, "marks_type": "total", "is_compulsory": true, "is_language": false },
+        { "name": "Sanskrit", "max_marks": 100, "marks_type": "total", "is_compulsory": false, "is_language": true }
+      ]
+    },
+    "11_12_Science_PCM": {
+      "streams": ["Science (PCM)"],
+      "subjects": [
+        { "name": "English", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": true, "is_language": true },
+        { "name": "Physics", "max_marks": 100, "marks_type": "split", "internal_max": 30, "external_max": 70, "is_compulsory": true, "is_language": false },
+        { "name": "Chemistry", "max_marks": 100, "marks_type": "split", "internal_max": 30, "external_max": 70, "is_compulsory": true, "is_language": false },
+        { "name": "Mathematics", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": true, "is_language": false },
+        { "name": "Computer Science", "max_marks": 100, "marks_type": "split", "internal_max": 30, "external_max": 70, "is_compulsory": false, "is_language": false },
+        { "name": "Physical Education", "max_marks": 100, "marks_type": "split", "internal_max": 40, "external_max": 60, "is_compulsory": false, "is_language": false },
+        { "name": "Economics", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": false, "is_language": false }
+      ]
+    },
+    "11_12_Science_PCB": {
+      "streams": ["Science (PCB)"],
+      "subjects": [
+        { "name": "English", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": true, "is_language": true },
+        { "name": "Physics", "max_marks": 100, "marks_type": "split", "internal_max": 30, "external_max": 70, "is_compulsory": true, "is_language": false },
+        { "name": "Chemistry", "max_marks": 100, "marks_type": "split", "internal_max": 30, "external_max": 70, "is_compulsory": true, "is_language": false },
+        { "name": "Biology", "max_marks": 100, "marks_type": "split", "internal_max": 30, "external_max": 70, "is_compulsory": true, "is_language": false },
+        { "name": "Physical Education", "max_marks": 100, "marks_type": "split", "internal_max": 40, "external_max": 60, "is_compulsory": false, "is_language": false },
+        { "name": "Psychology", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": false, "is_language": false }
+      ]
+    },
+    "11_12_Science_PCMB": {
+      "streams": ["Science (PCMB)"],
+      "subjects": [
+        { "name": "English", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": true, "is_language": true },
+        { "name": "Physics", "max_marks": 100, "marks_type": "split", "internal_max": 30, "external_max": 70, "is_compulsory": true, "is_language": false },
+        { "name": "Chemistry", "max_marks": 100, "marks_type": "split", "internal_max": 30, "external_max": 70, "is_compulsory": true, "is_language": false },
+        { "name": "Mathematics", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": true, "is_language": false },
+        { "name": "Biology", "max_marks": 100, "marks_type": "split", "internal_max": 30, "external_max": 70, "is_compulsory": true, "is_language": false }
+      ]
+    },
+    "11_12_Commerce_Maths": {
+      "streams": ["Commerce with Maths"],
+      "subjects": [
+        { "name": "English", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": true, "is_language": true },
+        { "name": "Accountancy", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": true, "is_language": false },
+        { "name": "Business Studies", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": true, "is_language": false },
+        { "name": "Economics", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": true, "is_language": false },
+        { "name": "Mathematics", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": true, "is_language": false },
+        { "name": "Informatics Practices", "max_marks": 100, "marks_type": "split", "internal_max": 30, "external_max": 70, "is_compulsory": false, "is_language": false }
+      ]
+    },
+    "11_12_Commerce_NoMaths": {
+      "streams": ["Commerce without Maths"],
+      "subjects": [
+        { "name": "English", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": true, "is_language": true },
+        { "name": "Accountancy", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": true, "is_language": false },
+        { "name": "Business Studies", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": true, "is_language": false },
+        { "name": "Economics", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": true, "is_language": false },
+        { "name": "Entrepreneurship", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": false, "is_language": false },
+        { "name": "Physical Education", "max_marks": 100, "marks_type": "split", "internal_max": 40, "external_max": 60, "is_compulsory": false, "is_language": false }
+      ]
+    },
+    "11_12_Arts": {
+      "streams": ["Arts / Humanities"],
+      "subjects": [
+        { "name": "English", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": true, "is_language": true },
+        { "name": "Hindi / Regional Language", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": true, "is_language": true },
+        { "name": "History", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": true, "is_language": false },
+        { "name": "Geography", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": true, "is_language": false },
+        { "name": "Political Science", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": true, "is_language": false },
+        { "name": "Economics", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": false, "is_language": false },
+        { "name": "Psychology", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": false, "is_language": false },
+        { "name": "Sociology", "max_marks": 100, "marks_type": "split", "internal_max": 20, "external_max": 80, "is_compulsory": false, "is_language": false }
+      ]
+    },
+    "11_12_Vocational": {
+      "streams": ["Vocational"],
+      "subjects": [
+        { "name": "English", "max_marks": 100, "marks_type": "total", "is_compulsory": true, "is_language": true },
+        { "name": "Hindi / Regional Language", "max_marks": 100, "marks_type": "total", "is_compulsory": true, "is_language": true },
+        { "name": "Vocational Theory", "max_marks": 100, "marks_type": "split", "internal_max": 30, "external_max": 70, "is_compulsory": true, "is_language": false },
+        { "name": "Vocational Practical", "max_marks": 100, "marks_type": "total", "is_compulsory": true, "is_language": false }
+      ]
+    }
+  }
+}

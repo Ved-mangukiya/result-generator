@@ -1,0 +1,19 @@
+{
+  "boards": [
+    { "id": 1, "name": "Central Board of Secondary Education", "short_name": "CBSE", "is_custom": false },
+    { "id": 2, "name": "Indian Certificate of Secondary Education", "short_name": "ICSE", "is_custom": false },
+    { "id": 3, "name": "Gujarat Secondary and Higher Secondary Education Board", "short_name": "GSEB", "is_custom": false },
+    { "id": 4, "name": "Maharashtra State Board of Secondary and Higher Secondary Education", "short_name": "MSBSHSE", "is_custom": false },
+    { "id": 5, "name": "Rajasthan Board of Secondary Education", "short_name": "RBSE", "is_custom": false },
+    { "id": 6, "name": "Madhya Pradesh Board of Secondary Education", "short_name": "MPBSE", "is_custom": false },
+    { "id": 7, "name": "Bihar School Examination Board", "short_name": "BSEB", "is_custom": false },
+    { "id": 8, "name": "Uttarakhand Board of School Education", "short_name": "UBSE", "is_custom": false },
+    { "id": 9, "name": "Punjab School Education Board", "short_name": "PSEB", "is_custom": false },
+    { "id": 10, "name": "Board of School Education Haryana", "short_name": "HBSE", "is_custom": false },
+    { "id": 11, "name": "West Bengal Board of Secondary Education", "short_name": "WBBSE", "is_custom": false },
+    { "id": 12, "name": "Tripura Board of Secondary Education", "short_name": "TBSE", "is_custom": false },
+    { "id": 13, "name": "Nagaland Board of School Education", "short_name": "NBSE", "is_custom": false },
+    { "id": 14, "name": "CBSE Affiliated Private School", "short_name": "CBSE (Pvt)", "is_custom": false },
+    { "id": 15, "name": "National Institute of Open Schooling", "short_name": "NIOS", "is_custom": false }
+  ]
+}

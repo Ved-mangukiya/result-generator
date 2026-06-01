@@ -1,0 +1,45 @@
+{
+  "grades": {
+    "CBSE": [
+      { "label": "A1", "min_pct": 91, "max_pct": 100, "color": "#1a7a2e", "result_status": "Distinction" },
+      { "label": "A2", "min_pct": 81, "max_pct": 90, "color": "#2d9e47", "result_status": "Distinction" },
+      { "label": "B1", "min_pct": 71, "max_pct": 80, "color": "#4caf69", "result_status": "First Class" },
+      { "label": "B2", "min_pct": 61, "max_pct": 70, "color": "#7cc48b", "result_status": "First Class" },
+      { "label": "C1", "min_pct": 51, "max_pct": 60, "color": "#f0a500", "result_status": "Second Class" },
+      { "label": "C2", "min_pct": 41, "max_pct": 50, "color": "#f5bc42", "result_status": "Pass" },
+      { "label": "D",  "min_pct": 33, "max_pct": 40, "color": "#e07b39", "result_status": "Pass" },
+      { "label": "E",  "min_pct": 0,  "max_pct": 32, "color": "#d32f2f", "result_status": "Fail" }
+    ],
+    "ICSE": [
+      { "label": "A", "min_pct": 75, "max_pct": 100, "color": "#1a7a2e", "result_status": "Distinction" },
+      { "label": "B", "min_pct": 60, "max_pct": 74,  "color": "#2d9e47", "result_status": "First Class" },
+      { "label": "C", "min_pct": 45, "max_pct": 59,  "color": "#f0a500", "result_status": "Second Class" },
+      { "label": "D", "min_pct": 35, "max_pct": 44,  "color": "#e07b39", "result_status": "Pass" },
+      { "label": "E", "min_pct": 0,  "max_pct": 34,  "color": "#d32f2f", "result_status": "Fail" }
+    ],
+    "STATE": [
+      { "label": "Distinction", "min_pct": 75, "max_pct": 100, "color": "#1a7a2e", "result_status": "Distinction" },
+      { "label": "First Class", "min_pct": 60, "max_pct": 74,  "color": "#2d9e47", "result_status": "First Class" },
+      { "label": "Second Class","min_pct": 50, "max_pct": 59,  "color": "#f0a500", "result_status": "Second Class" },
+      { "label": "Pass Class",  "min_pct": 35, "max_pct": 49,  "color": "#e07b39", "result_status": "Pass" },
+      { "label": "Fail",        "min_pct": 0,  "max_pct": 34,  "color": "#d32f2f", "result_status": "Fail" }
+    ]
+  },
+  "boardGradeMap": {
+    "CBSE": "CBSE",
+    "ICSE": "ICSE",
+    "CBSE (Pvt)": "CBSE",
+    "NIOS": "CBSE",
+    "GSEB": "STATE",
+    "MSBSHSE": "STATE",
+    "RBSE": "STATE",
+    "MPBSE": "STATE",
+    "BSEB": "STATE",
+    "UBSE": "STATE",
+    "PSEB": "STATE",
+    "HBSE": "STATE",
+    "WBBSE": "STATE",
+    "TBSE": "STATE",
+    "NBSE": "STATE"
+  }
+}

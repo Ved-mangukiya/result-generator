@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Merriweather:wght@300;400;700&display=swap');
+  
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Merriweather', Georgia, serif; background: #f5f0e8; }
+
+  .page { width: 210mm; min-height: 297mm; background: #fdf8f0; display: flex; flex-direction: column; padding: 8mm; position: relative; }
+
+  /* Ornate border */
+  .outer-border { border: 4px double {{PRIMARY_COLOR}}; padding: 4mm; flex: 1; display: flex; flex-direction: column; position: relative; background: #fdf8f0; }
+  .inner-border { border: 1px solid #c4956a; flex: 1; display: flex; flex-direction: column; }
+
+  /* Corner ornaments */
+  .ornament { position: absolute; font-size: 22pt; color: {{PRIMARY_COLOR}}; opacity: 0.6; line-height: 1; }
+  .orn-tl { top: 2px; left: 2px; }
+  .orn-tr { top: 2px; right: 2px; }
+  .orn-bl { bottom: 2px; left: 2px; }
+  .orn-br { bottom: 2px; right: 2px; }
+
+  /* Header */
+  .card-header {
+    background: {{PRIMARY_COLOR}};
+    padding: 5mm 6mm;
+    display: flex;
+    align-items: center;
+    gap: 5mm;
+    border-bottom: 3px solid #c4956a;
+  }
+
+  .logo-box { width: 65px; height: 65px; background: #fdf8f0; border: 2px solid #c4956a; border-radius: 4px; padding: 4px; overflow: hidden; flex-shrink: 0; }
+  .logo-box img { width: 100%; height: 100%; object-fit: contain; }
+  .logo-placeholder { width: 65px; height: 65px; background: rgba(196,149,106,0.2); border: 2px solid #c4956a; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; flex-shrink: 0; }
+
+  .header-center { flex: 1; text-align: center; }
+  .header-center .inst-name { font-family: 'Lora', serif; font-size: 18pt; font-weight: 700; color: #fdf8f0; letter-spacing: 0.04em; }
+  .header-center .ornament-divider { color: #c4956a; font-size: 12pt; margin: 1.5mm 0; }
+  .header-center .inst-tagline { font-size: 8pt; color: rgba(255,255,255,0.8); font-style: italic; }
+  .header-center .inst-contact { font-size: 7pt; color: rgba(255,255,255,0.65); margin-top: 2mm; }
+
+  .header-photo { width: 65px; height: 80px; border: 2px solid #c4956a; overflow: hidden; flex-shrink: 0; }
+  .header-photo img { width: 100%; height: 100%; object-fit: cover; }
+  .photo-placeholder { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(196,149,106,0.15); color: rgba(255,255,255,0.5); font-size: 6pt; text-align: center; border: 2px dashed rgba(196,149,106,0.5); }
+
+  /* Report label */
+  .report-label {
+    background: #c4956a;
+    text-align: center;
+    padding: 2.5mm;
+    color: #1a1a1a;
+    font-family: 'Lora', serif;
+    font-size: 10pt;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+  }
+
+  /* Student details */
+  .student-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 4mm 5mm;
+    gap: 0;
+    border-bottom: 1.5px solid #c4956a;
+    background: rgba(196,149,106,0.05);
+  }
+
+  .detail-row { padding: 1.3mm 0; font-size: 8.5pt; display: flex; gap: 2mm; }
+  .dl { font-weight: 700; color: {{PRIMARY_COLOR}}; min-width: 90px; font-family: 'Lora', serif; }
+  .dv { color: #2a1a0a; }
+
+  /* Ornate section header */
+  .section-header { text-align: center; padding: 2mm 0; color: {{PRIMARY_COLOR}}; font-family: 'Lora', serif; font-size: 8.5pt; letter-spacing: 0.1em; }
+
+  /* Marks table */
+  .marks-area { flex: 1; padding: 2mm 5mm; }
+  .marks-table { width: 100%; border-collapse: collapse; font-size: 8pt; }
+  .marks-table th { background: {{PRIMARY_COLOR}}; color: #fdf8f0; padding: 2.5mm 1.5mm; text-align: center; font-family: 'Lora', serif; font-size: 7.5pt; border: 1px solid rgba(196,149,106,0.5); }
+  .marks-table th:first-child { text-align: left; padding-left: 3mm; }
+  .marks-table td { padding: 2mm 1.5mm; border: 1px solid #e0cdb0; text-align: center; }
+  .marks-table td:first-child { text-align: left; padding-left: 3mm; font-style: italic; }
+  .marks-table tr:nth-child(even) td { background: rgba(196,149,106,0.06); }
+
+  .optional-tag { font-size: 6pt; color: #999; }
+  .pf-cell.pass { color: #1a6b2e; font-weight: 700; }
+  .pf-cell.fail { color: #8b1a1a; font-weight: 700; }
+  .pf-cell.absent { color: #a0522d; }
+
+  /* Summary */
+  .summary-area {
+    border-top: 2px solid {{PRIMARY_COLOR}};
+    padding: 3mm 5mm;
+    display: flex;
+    gap: 3mm;
+    background: rgba(196,149,106,0.08);
+  }
+
+  .sa-box { flex: 1; border: 1px solid #c4956a; border-radius: 3px; padding: 2.5mm; text-align: center; background: #fdf8f0; }
+  .sa-box .sb-label { font-size: 6.5pt; color: {{PRIMARY_COLOR}}; text-transform: uppercase; letter-spacing: 0.08em; font-family: 'Lora', serif; }
+  .sa-box .sb-value { font-size: 13pt; font-weight: 700; color: {{PRIMARY_COLOR}}; margin: 1mm 0; }
+
+  .sa-result { flex: 1.5; background: {{PRIMARY_COLOR}}; border-radius: 3px; padding: 2.5mm; text-align: center; color: #fdf8f0; }
+  .sa-result .sr-l { font-size: 6.5pt; opacity: 0.75; font-family: 'Lora', serif; letter-spacing: 0.08em; text-transform: uppercase; }
+  .sa-result .sr-v { font-size: 15pt; font-weight: 700; font-family: 'Lora', serif; margin: 1mm 0; }
+
+  /* Remarks */
+  .remarks-area { padding: 2.5mm 5mm; border-top: 1px solid #c4956a; display: flex; gap: 2mm; font-size: 8pt; background: #fdf8f0; }
+  .ra-label { font-weight: 700; color: {{PRIMARY_COLOR}}; font-family: 'Lora', serif; white-space: nowrap; }
+
+  /* Footer */
+  .card-footer { border-top: 3px double {{PRIMARY_COLOR}}; padding: 3mm 5mm; display: flex; justify-content: space-between; align-items: flex-end; background: rgba(196,149,106,0.05); }
+  .sign-block { text-align: center; }
+  .sign-line { width: 90px; border-top: 1px solid {{PRIMARY_COLOR}}; margin: 10mm auto 1mm; }
+  .sign-label { font-size: 7pt; color: {{PRIMARY_COLOR}}; font-family: 'Lora', serif; font-style: italic; }
+  .footer-center { text-align: center; font-size: 7pt; color: #c4956a; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="outer-border">
+    <div class="ornament orn-tl">❦</div>
+    <div class="ornament orn-tr">❦</div>
+    <div class="ornament orn-bl">❦</div>
+    <div class="ornament orn-br">❦</div>
+    
+    <div class="inner-border">
+      <div class="card-header">
+        {{COACHING_LOGO}}
+        <div class="header-center">
+          <div class="inst-name">{{COACHING_NAME}}</div>
+          <div class="ornament-divider">✦ ✦ ✦</div>
+          <div class="inst-tagline">{{COACHING_TAGLINE}}</div>
+          <div class="inst-contact">{{COACHING_ADDRESS}} · {{COACHING_PHONE}}</div>
+        </div>
+        <div class="header-photo">{{STUDENT_PHOTO}}</div>
+      </div>
+
+      <div class="report-label">✦ ACADEMIC RESULT CERTIFICATE — {{ACADEMIC_YEAR}} ✦</div>
+
+      <div class="student-section">
+        <div>
+          <div class="detail-row"><span class="dl">Student Name</span><span class="dv">: {{STUDENT_NAME}}</span></div>
+          <div class="detail-row"><span class="dl">Roll Number</span><span class="dv">: {{STUDENT_ROLL}}</span></div>
+          <div class="detail-row"><span class="dl">Date of Birth</span><span class="dv">: {{STUDENT_DOB}}</span></div>
+          <div class="detail-row"><span class="dl">Attendance</span><span class="dv">: {{ATTENDANCE}}</span></div>
+        </div>
+        <div>
+          <div class="detail-row"><span class="dl">Board</span><span class="dv">: {{BOARD_NAME}}</span></div>
+          <div class="detail-row"><span class="dl">Class</span><span class="dv">: {{STANDARD_DISPLAY}}</span></div>
+          <div class="detail-row"><span class="dl">Father's Name</span><span class="dv">: {{FATHER_NAME}}</span></div>
+          <div class="detail-row"><span class="dl">Mother's Name</span><span class="dv">: {{MOTHER_NAME}}</span></div>
+        </div>
+      </div>
+
+      <div class="marks-area">
+        <table class="marks-table">
+          <thead>
+            <tr>
+              <th style="width:36%">Subject</th>
+              <th>Max</th>
+              <th style="display:{{SHOW_SPLIT_HEADER}}">Int.</th>
+              <th style="display:{{SHOW_SPLIT_HEADER}}">Ext.</th>
+              <th>Obtained</th>
+              <th>%</th>
+              <th style="display:{{SHOW_GRADE_COL}}">Grade</th>
+              <th style="display:{{SHOW_PF_COL}}">P/F</th>
+            </tr>
+          </thead>
+          <tbody>{{MARKS_TABLE_ROWS}}</tbody>
+        </table>
+      </div>
+
+      <div class="summary-area">
+        <div class="sa-box"><div class="sb-label">Total Marks</div><div class="sb-value">{{TOTAL_OBTAINED}}/{{TOTAL_MAX}}</div></div>
+        <div class="sa-box"><div class="sb-label">Percentage</div><div class="sb-value">{{OVERALL_PCT}}</div></div>
+        <div class="sa-box"><div class="sb-label">Grade</div><div class="sb-value" style="color:{{OVERALL_GRADE_COLOR}}">{{OVERALL_GRADE}}</div></div>
+        <div class="sa-box"><div class="sb-label">Rank</div><div class="sb-value">#{{RANK}}/{{TOTAL_STUDENTS}}</div></div>
+        <div class="sa-result"><div class="sr-l">Final Result</div><div class="sr-v">{{FINAL_STATUS}}</div></div>
+      </div>
+
+      <div class="remarks-area">
+        <span class="ra-label">Remarks:</span>
+        <span style="color:#555;font-style:italic">{{REMARKS}}</span>
+      </div>
+
+      <div class="card-footer">
+        <div class="sign-block"><div class="sign-line"></div><div class="sign-label">Class Teacher's Signature</div></div>
+        <div class="footer-center">{{COACHING_NAME}}<br>{{COACHING_WEBSITE}}</div>
+        <div class="sign-block"><div class="sign-line"></div><div class="sign-label">Principal's Signature</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&display=swap');
+  
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Nunito', sans-serif; background: #f0f7ff; }
+
+  .page { width: 210mm; min-height: 297mm; background: white; display: flex; flex-direction: column; position: relative; overflow: hidden; border-radius: 0; }
+
+  /* Watermark */
+  .watermark {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .watermark-text {
+    font-size: 72pt;
+    font-weight: 800;
+    color: rgba(26, 107, 171, 0.04);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    transform: rotate(-30deg);
+    text-align: center;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  .content { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; }
+
+  /* Top curved header */
+  .card-header {
+    background: linear-gradient(135deg, {{PRIMARY_COLOR}} 0%, #2a8fdb 100%);
+    padding: 6mm 7mm;
+    display: flex;
+    align-items: center;
+    gap: 5mm;
+    border-radius: 0 0 12px 12px;
+    margin: 0 0 0 0;
+    box-shadow: 0 4px 15px rgba(26,107,171,0.25);
+  }
+
+  .logo-circle { width: 64px; height: 64px; background: white; border-radius: 50%; padding: 5px; overflow: hidden; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+  .logo-circle img { width: 100%; height: 100%; object-fit: contain; }
+  .logo-placeholder { width: 64px; height: 64px; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; flex-shrink: 0; }
+
+  .header-info { flex: 1; }
+  .header-info .inst-name { font-size: 17pt; font-weight: 800; color: white; line-height: 1.1; }
+  .header-info .inst-tagline { font-size: 8.5pt; color: rgba(255,255,255,0.85); margin-top: 1.5mm; font-weight: 500; }
+  .header-info .inst-contact { font-size: 7pt; color: rgba(255,255,255,0.65); margin-top: 2mm; }
+
+  .header-photo { width: 64px; height: 80px; border: 3px solid rgba(255,255,255,0.6); border-radius: 8px; overflow: hidden; flex-shrink: 0; }
+  .header-photo img { width: 100%; height: 100%; object-fit: cover; }
+  .photo-placeholder { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); font-size: 6pt; text-align: center; border: 2px dashed rgba(255,255,255,0.4); }
+
+  /* Floating label pill */
+  .result-pill-bar {
+    display: flex;
+    justify-content: center;
+    margin: 4mm 0 2mm;
+  }
+  .result-pill {
+    background: linear-gradient(135deg, {{PRIMARY_COLOR}}, #2a8fdb);
+    color: white;
+    padding: 1.5mm 8mm;
+    border-radius: 20px;
+    font-size: 9pt;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    box-shadow: 0 2px 8px rgba(26,107,171,0.3);
+  }
+
+  /* Student info cards */
+  .info-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; padding: 2mm 5mm 4mm; }
+
+  .info-card { background: #f0f7ff; border: 1px solid #cce0f5; border-radius: 8px; padding: 2.5mm 3mm; }
+  .ic-label { font-size: 6.5pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: {{PRIMARY_COLOR}}; margin-bottom: 1mm; }
+  .ic-value { font-size: 8.5pt; font-weight: 600; color: #1a1a1a; }
+
+  /* Marks table */
+  .marks-area { padding: 0 5mm; flex: 1; }
+  .marks-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 7.5pt; border-radius: 8px; overflow: hidden; border: 1px solid #cce0f5; }
+  .marks-table th { background: {{PRIMARY_COLOR}}; color: white; padding: 2.5mm 1.5mm; text-align: center; font-weight: 700; font-size: 7pt; }
+  .marks-table th:first-child { text-align: left; padding-left: 3mm; border-radius: 0; }
+  .marks-table td { padding: 2mm 1.5mm; border-bottom: 1px solid #e0eeff; text-align: center; }
+  .marks-table td:first-child { text-align: left; padding-left: 3mm; font-weight: 600; }
+  .marks-table tr:nth-child(even) td { background: #f8fbff; }
+  .marks-table tr:last-child td { border-bottom: none; }
+
+  .optional-tag { font-size: 6pt; color: #aaa; font-weight: 400; }
+  .pf-cell.pass { color: #1a7a2e; font-weight: 700; }
+  .pf-cell.fail { color: #c0392b; font-weight: 700; }
+  .pf-cell.absent { color: #e67e22; }
+
+  /* Summary cards */
+  .summary-area { padding: 4mm 5mm; display: flex; gap: 3mm; }
+
+  .sum-bubble { flex: 1; background: #f0f7ff; border: 1.5px solid #cce0f5; border-radius: 10px; padding: 2.5mm; text-align: center; }
+  .sum-bubble .sb-l { font-size: 6pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #4a8abd; }
+  .sum-bubble .sb-v { font-size: 14pt; font-weight: 800; color: {{PRIMARY_COLOR}}; margin: 0.5mm 0; }
+  .sum-bubble .sb-s { font-size: 6.5pt; color: #aaa; }
+
+  .sum-result-bubble { flex: 1.5; background: linear-gradient(135deg, {{PRIMARY_COLOR}}, #2a8fdb); border-radius: 10px; padding: 2.5mm; text-align: center; color: white; box-shadow: 0 3px 10px rgba(26,107,171,0.3); }
+  .sum-result-bubble .srb-l { font-size: 6pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.75; }
+  .sum-result-bubble .srb-v { font-size: 16pt; font-weight: 800; margin: 0.5mm 0; }
+
+  /* Remarks */
+  .remarks-zone { margin: 0 5mm 3mm; background: #f8fbff; border: 1px solid #cce0f5; border-radius: 8px; padding: 2.5mm 3mm; display: flex; gap: 2mm; font-size: 8pt; }
+  .rz-label { font-weight: 800; color: {{PRIMARY_COLOR}}; white-space: nowrap; }
+  .rz-text { color: #444; font-style: italic; }
+
+  /* Footer */
+  .card-footer { padding: 3mm 5mm; border-top: 2px solid #cce0f5; display: flex; justify-content: space-between; align-items: flex-end; background: #f8fbff; }
+  .sign-block { text-align: center; }
+  .sign-line { width: 90px; border-top: 1px solid #4a8abd; margin: 10mm auto 1mm; }
+  .sign-label { font-size: 7pt; color: #4a8abd; font-weight: 600; }
+  .footer-center { text-align: center; font-size: 7pt; color: #aaa; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="watermark">
+    <div class="watermark-text">{{COACHING_NAME}}</div>
+  </div>
+  <div class="content">
+    <!-- Header -->
+    <div class="card-header">
+      {{COACHING_LOGO}}
+      <div class="header-info">
+        <div class="inst-name">{{COACHING_NAME}}</div>
+        <div class="inst-tagline">{{COACHING_TAGLINE}}</div>
+        <div class="inst-contact">{{COACHING_ADDRESS}} · {{COACHING_PHONE}} · {{COACHING_WEBSITE}}</div>
+      </div>
+      <div class="header-photo">{{STUDENT_PHOTO}}</div>
+    </div>
+
+    <!-- Pill label -->
+    <div class="result-pill-bar">
+      <div class="result-pill">Academic Result — {{ACADEMIC_YEAR}}</div>
+    </div>
+
+    <!-- Student Info -->
+    <div class="info-cards">
+      <div class="info-card"><div class="ic-label">Student Name</div><div class="ic-value">{{STUDENT_NAME}}</div></div>
+      <div class="info-card"><div class="ic-label">Board</div><div class="ic-value">{{BOARD_NAME}}</div></div>
+      <div class="info-card"><div class="ic-label">Roll Number</div><div class="ic-value">{{STUDENT_ROLL}}</div></div>
+      <div class="info-card"><div class="ic-label">Class / Standard</div><div class="ic-value">{{STANDARD_DISPLAY}}</div></div>
+      <div class="info-card"><div class="ic-label">Father's Name</div><div class="ic-value">{{FATHER_NAME}}</div></div>
+      <div class="info-card"><div class="ic-label">Date of Birth</div><div class="ic-value">{{STUDENT_DOB}}</div></div>
+      <div class="info-card"><div class="ic-label">Mother's Name</div><div class="ic-value">{{MOTHER_NAME}}</div></div>
+      <div class="info-card"><div class="ic-label">Attendance</div><div class="ic-value">{{ATTENDANCE}}</div></div>
+    </div>
+
+    <!-- Marks -->
+    <div class="marks-area">
+      <table class="marks-table">
+        <thead>
+          <tr>
+            <th style="width:35%">Subject</th>
+            <th>Max</th>
+            <th style="display:{{SHOW_SPLIT_HEADER}}">Int.</th>
+            <th style="display:{{SHOW_SPLIT_HEADER}}">Ext.</th>
+            <th>Marks</th>
+            <th>%</th>
+            <th style="display:{{SHOW_GRADE_COL}}">Grade</th>
+            <th style="display:{{SHOW_PF_COL}}">P/F</th>
+          </tr>
+        </thead>
+        <tbody>{{MARKS_TABLE_ROWS}}</tbody>
+      </table>
+    </div>
+
+    <!-- Summary -->
+    <div class="summary-area">
+      <div class="sum-bubble"><div class="sb-l">Total</div><div class="sb-v">{{TOTAL_OBTAINED}}</div><div class="sb-s">of {{TOTAL_MAX}}</div></div>
+      <div class="sum-bubble"><div class="sb-l">Percentage</div><div class="sb-v">{{OVERALL_PCT}}</div></div>
+      <div class="sum-bubble"><div class="sb-l">Grade</div><div class="sb-v" style="color:{{OVERALL_GRADE_COLOR}}">{{OVERALL_GRADE}}</div></div>
+      <div class="sum-bubble"><div class="sb-l">Rank</div><div class="sb-v">#{{RANK}}</div><div class="sb-s">of {{TOTAL_STUDENTS}}</div></div>
+      <div class="sum-result-bubble"><div class="srb-l">Final Result</div><div class="srb-v">{{FINAL_STATUS}}</div></div>
+    </div>
+
+    <!-- Remarks -->
+    <div class="remarks-zone">
+      <span class="rz-label">Remarks:</span>
+      <span class="rz-text">{{REMARKS}}</span>
+    </div>
+
+    <!-- Footer -->
+    <div class="card-footer">
+      <div class="sign-block"><div class="sign-line"></div><div class="sign-label">Class Teacher</div></div>
+      <div class="footer-center">{{COACHING_NAME}}<br>{{ACADEMIC_YEAR}}</div>
+      <div class="sign-block"><div class="sign-line"></div><div class="sign-label">Principal</div></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
