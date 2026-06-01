@@ -2,6 +2,61 @@ const express = require('express');
 const router = express.Router();
 const { db, logActivity } = require('../db/database');
 
+// GET /api/subjects/predefined
+router.get('/predefined', (req, res) => {
+  try {
+    const subjectsData = require('../data/subjects.json');
+    res.json(subjectsData.subjects);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/subjects/default?standard_number=X&stream=Y&board_id=Z
+router.get('/default', (req, res) => {
+  const { standard_number, stream, board_id } = req.query;
+  if (!standard_number) return res.status(400).json({ error: 'standard_number required' });
+
+  try {
+    let boardShort = '';
+    if (board_id) {
+      const board = db.prepare('SELECT short_name FROM boards WHERE id = ?').get(board_id);
+      if (board) boardShort = board.short_name;
+    }
+
+    const subjectsData = require('../data/subjects.json').subjects;
+    const num = parseInt(standard_number);
+    let template = null;
+
+    if (num >= 1 && num <= 5) template = subjectsData['1_5'];
+    else if (num >= 6 && num <= 8) template = subjectsData['6_8'];
+    else if (num >= 9 && num <= 10) {
+      if (boardShort === 'CBSE') template = subjectsData['9_10_CBSE'];
+      else template = subjectsData['9_10_STATE'] || subjectsData['9_10_CBSE'];
+    } else if (num >= 11 && num <= 12) {
+      if (boardShort === 'GSEB' && stream && stream.toLowerCase().includes('commerce')) {
+        template = subjectsData['11_12_Commerce_GSEB'] || subjectsData['11_12_Commerce_NoMaths'];
+      } else {
+        const streamMap = {
+          'Science (PCM)': subjectsData['11_12_Science_PCM'],
+          'Science (PCB)': subjectsData['11_12_Science_PCB'],
+          'Science (PCMB)': subjectsData['11_12_Science_PCMB'],
+          'Commerce with Maths': subjectsData['11_12_Commerce_Maths'],
+          'Commerce without Maths': subjectsData['11_12_Commerce_NoMaths'],
+          'Commerce (GSEB)': subjectsData['11_12_Commerce_GSEB'],
+          'Arts / Humanities': subjectsData['11_12_Arts'],
+          'Vocational': subjectsData['11_12_Vocational'],
+        };
+        template = streamMap[stream] || subjectsData['11_12_Science_PCM'];
+      }
+    }
+
+    res.json(template ? template.subjects : []);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/subjects?standard_id=X
 router.get('/', (req, res) => {
   const { standard_id } = req.query;
@@ -22,7 +77,8 @@ router.post('/', (req, res) => {
     internal_max || 0, external_max || (max_marks || 100),
     is_compulsory ? 1 : 0, is_language ? 1 : 0, count
   );
-  logActivity('SUBJECT_ADD', `Subject added: ${name}`);
+  const std = db.prepare('SELECT display_name FROM standards WHERE id = ?').get(standard_id);
+  logActivity('SUBJECT_ADD', `Added subject "${name}" to ${std ? std.display_name : 'Class'}`);
   res.json({ success: true, id: result.lastInsertRowid });
 });
 

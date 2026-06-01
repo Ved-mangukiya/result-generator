@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Marcellus&family=Inter:wght@400;500;700&display=swap');
+  
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #fdfaf2; color: #3e2723; }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    background: #fdfaf2;
+    padding: 12mm;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .outer-border {
+    border: 3px solid #b71c1c;
+    flex: 1;
+    padding: 2mm;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .inner-border {
+    border: 1.5px solid #d84315;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 6mm;
+  }
+
+  /* Traditional corners */
+  .corner { position: absolute; width: 20px; height: 20px; font-size: 16px; color: #b71c1c; line-height: 1; }
+  .corner-tl { top: 4px; left: 4px; }
+  .corner-tr { top: 4px; right: 4px; }
+  .corner-bl { bottom: 4px; left: 4px; }
+  .corner-br { bottom: 4px; right: 4px; }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    border-bottom: 2px dashed #b71c1c;
+    padding-bottom: 4mm;
+    margin-bottom: 5mm;
+    gap: 5mm;
+  }
+
+  .coaching-logo { width: 70px; height: 70px; border-radius: 50%; border: 2px solid #b71c1c; object-fit: contain; }
+  .logo-placeholder { width: 70px; height: 70px; background: #fff8e1; border: 2px solid #b71c1c; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+
+  .coaching-info { flex: 1; text-align: center; }
+  .coaching-name { font-family: 'Marcellus', serif; font-size: 21pt; font-weight: 700; color: #b71c1c; }
+  .coaching-tagline { font-size: 9pt; color: #d84315; font-style: italic; margin-top: 2px; font-weight: 600; }
+  .coaching-contact { font-size: 8pt; color: #5d4037; margin-top: 3px; }
+
+  .student-photo { width: 60px; height: 75px; border: 2px solid #d84315; object-fit: cover; }
+  .photo-placeholder { width: 60px; height: 75px; border: 2px dashed #d84315; display: flex; align-items: center; justify-content: center; font-size: 7pt; color: #8d6e63; }
+
+  .title-area {
+    text-align: center;
+    margin-bottom: 5mm;
+  }
+  .title-area h2 { font-family: 'Marcellus', serif; font-size: 13pt; color: #b71c1c; }
+  .sanskrit-verse { font-size: 8.5pt; color: #d84315; margin-top: 1.5mm; font-style: italic; font-weight: 600; }
+
+  /* Student details */
+  .profile-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2mm 6mm;
+    background: #fff8e1;
+    border: 1px solid #ffe082;
+    border-radius: 6px;
+    padding: 3mm 4mm;
+    margin-bottom: 5mm;
+  }
+  .info-row { display: flex; font-size: 9pt; }
+  .info-label { color: #8d6e63; font-weight: 600; width: 100px; flex-shrink: 0; }
+  .info-val { color: #3e2723; font-weight: 700; }
+
+  /* Marks */
+  .marks-section { flex: 1; margin-bottom: 5mm; }
+  .marks-table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+  .marks-table th {
+    background: #b71c1c;
+    color: white;
+    font-weight: 600;
+    font-family: 'Marcellus', serif;
+    padding: 2.5mm 2mm;
+    border: 1px solid #b71c1c;
+  }
+  .marks-table th:first-child { text-align: left; padding-left: 3mm; }
+  .marks-table td {
+    padding: 2mm;
+    border: 1px solid #ffe082;
+    text-align: center;
+    color: #4e342e;
+  }
+  .marks-table td:first-child { text-align: left; padding-left: 3mm; font-weight: 700; }
+  .marks-table tr:nth-child(even) { background: rgba(255, 248, 225, 0.5); }
+
+  .optional-tag { font-size: 6.5pt; color: #8d6e63; }
+  .pf-cell.pass { color: #2e7d32; font-weight: 700; }
+  .pf-cell.fail { color: #c62828; font-weight: 700; }
+  .pf-cell.absent { color: #ef6c00; }
+
+  /* Summary Row */
+  .summary-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr) 1.2fr;
+    gap: 3mm;
+    margin-bottom: 5mm;
+  }
+  .summary-box {
+    background: #fff8e1;
+    border: 1px solid #ffe082;
+    border-radius: 4px;
+    padding: 2.5mm;
+    text-align: center;
+  }
+  .summary-label { font-size: 6.5pt; text-transform: uppercase; color: #8d6e63; font-weight: 600; }
+  .summary-val { font-size: 11pt; font-weight: 800; color: #3e2723; margin-top: 1px; }
+  
+  .result-box {
+    background: #b71c1c;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .result-box .summary-label { color: #ffccbc; }
+  .result-box .summary-val { color: white; font-family: 'Marcellus', serif; font-size: 12pt; }
+
+  .remarks-bar {
+    border: 1px solid #ffe082;
+    background: #fffdf7;
+    padding: 3mm 4mm;
+    border-radius: 4px;
+    font-size: 8.5pt;
+    margin-bottom: 5mm;
+  }
+  .remarks-label { font-weight: 700; color: #d84315; }
+  .remarks-text { color: #5d4037; font-style: italic; }
+
+  /* Footer */
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: auto;
+    font-size: 8pt;
+  }
+  .sign-col { text-align: center; width: 115px; }
+  .sign-line { border-bottom: 1.5px solid #8d6e63; margin-bottom: 1.5mm; height: 7mm; }
+  .sign-label { font-size: 7.5pt; color: #8d6e63; font-weight: 600; }
+  
+  .footer-center { text-align: center; font-size: 7.5pt; color: #8d6e63; }
+  .swastik { font-size: 11pt; color: #b71c1c; }
+
+  /* A5 Paper size adjustments */
+  .page.size-a5 {
+    width: 148mm;
+    min-height: 210mm;
+    padding: 6mm 8mm;
+  }
+  .page.size-a5 * {
+    font-size: 92% !important;
+  }
+  .page.size-a5 .header {
+    padding-bottom: 2mm;
+    margin-bottom: 3mm;
+  }
+  .page.size-a5 .coaching-logo, .page.size-a5 .logo-placeholder {
+    width: 45px;
+    height: 45px;
+  }
+  .page.size-a5 .student-photo, .page.size-a5 .photo-placeholder {
+    width: 45px;
+    height: 55px;
+  }
+  .page.size-a5 .coaching-name {
+    font-size: 14pt !important;
+  }
+  .page.size-a5 .title-area {
+    margin-bottom: 3mm;
+  }
+  .page.size-a5 .profile-grid {
+    padding: 2mm 3mm;
+    margin-bottom: 3mm;
+  }
+  .page.size-a5 .marks-section {
+    margin-bottom: 3mm;
+  }
+  .page.size-a5 .marks-table th, .page.size-a5 .marks-table td {
+    padding: 1.2mm 1.5mm;
+  }
+  .page.size-a5 .summary-row {
+    margin-bottom: 3mm;
+  }
+  .page.size-a5 .summary-box {
+    padding: 1.5mm;
+  }
+  .page.size-a5 .remarks-bar {
+    padding: 2.2mm 3mm;
+    margin-bottom: 3mm;
+  }
+  .page.size-a5 .sign-line {
+    height: 5mm;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="outer-border">
+    <div class="corner corner-tl">🌸</div>
+    <div class="corner corner-tr">🌸</div>
+    <div class="corner corner-bl">🌸</div>
+    <div class="corner corner-br">🌸</div>
+
+    <div class="inner-border">
+      
+      <!-- Header -->
+      <div class="header">
+        {{COACHING_LOGO}}
+        <div class="coaching-info">
+          <div class="coaching-name">{{COACHING_NAME}}</div>
+          <div class="coaching-tagline">{{COACHING_TAGLINE}}</div>
+          <div class="coaching-contact">{{COACHING_ADDRESS}} | {{COACHING_PHONE}}</div>
+        </div>
+        {{STUDENT_PHOTO}}
+      </div>
+
+      <!-- Title Area -->
+      <div class="title-area">
+        <h2>विद्या प्रगति पत्र (Report of Learning Progress) — {{ACADEMIC_YEAR}}</h2>
+        <div class="sanskrit-verse">"सा विद्या या विमुक्तये" (That is knowledge which liberates)</div>
+      </div>
+
+      <!-- Student details -->
+      <div class="profile-grid">
+        <div class="info-row"><span class="info-label">छात्र (Student):</span><span class="info-val">{{STUDENT_NAME}}</span></div>
+        <div class="info-row"><span class="info-label">अनुक्रमांक (Roll No):</span><span class="info-val">{{STUDENT_ROLL}}</span></div>
+        <div class="info-row"><span class="info-label">जन्म तिथि (DOB):</span><span class="info-val">{{STUDENT_DOB}}</span></div>
+        <div class="info-row"><span class="info-label">कक्षा (Class):</span><span class="info-val">{{STANDARD_DISPLAY}}</span></div>
+        <div class="info-row"><span class="info-label">अभिभावक (Father):</span><span class="info-val">{{FATHER_NAME}}</span></div>
+        <div class="info-row"><span class="info-label">उपस्थिति (Attend):</span><span class="info-val">{{ATTENDANCE}}</span></div>
+      </div>
+
+      <!-- Marks Section -->
+      <div class="marks-section">
+        <table class="marks-table">
+          <thead>
+            <tr>
+              <th style="width: 38%; text-align: left; padding-left: 3mm;">विषय (Subject)</th>
+              <th style="width: 10%;">पूर्णांक (Max)</th>
+              <th class="split-col" style="width: 10%;">Int</th>
+              <th class="split-col" style="width: 10%;">Ext</th>
+              <th style="width: 12%;">प्राप्तांक (Obt)</th>
+              <th class="grade-col" style="width: 10%;">श्रेणी (Grade)</th>
+              <th class="pf-col" style="width: 10%;">स्थिति (P/F)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{MARKS_TABLE_ROWS}}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Summary Row -->
+      <div class="summary-row">
+        <div class="summary-box">
+          <div class="summary-label">कुल प्राप्तांक</div>
+          <div class="summary-val">{{TOTAL_OBTAINED}} / {{TOTAL_MAX}}</div>
+        </div>
+        <div class="summary-box">
+          <div class="summary-label">प्रतिशत</div>
+          <div class="summary-val">{{OVERALL_PCT}}</div>
+        </div>
+        <div class="summary-box">
+          <div class="summary-label">श्रेणी</div>
+          <div class="summary-val">{{OVERALL_GRADE}}</div>
+        </div>
+        <div class="summary-box">
+          <div class="summary-label">स्थान</div>
+          <div class="summary-val">#{{RANK}} / {{TOTAL_STUDENTS}}</div>
+        </div>
+        <div class="summary-box result-box">
+          <div class="summary-label">परिणाम (Result)</div>
+          <div class="summary-val">{{FINAL_STATUS}}</div>
+        </div>
+      </div>
+
+      <!-- Remarks -->
+      <div class="remarks-bar">
+        <span class="remarks-label">विशेष टिप्पणी (Feedback):</span>
+        <span class="remarks-text">{{REMARKS}}</span>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <div class="sign-col">
+          <div class="sign-line"></div>
+          <div class="sign-label">आचार्य (Teacher)</div>
+        </div>
+        <div class="footer-center">
+          <div class="swastik">卍</div>
+          <div>{{COACHING_WEBSITE}}</div>
+        </div>
+        <div class="sign-col">
+          <div class="sign-line"></div>
+          <div class="sign-label">संचालक (Director)</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>

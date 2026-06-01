@@ -9,6 +9,20 @@ const TEMPLATE_INFO = [
   { id:4, name:'Corporate',  desc:'Charcoal, bold sans-serif, professional boardroom', colors:['#2d2d2d','#1a3a6b'], emoji:'💼' },
   { id:5, name:'Maroon',     desc:'Maroon & cream, ornate vintage school card look', colors:['#7c1d1d','#f5f0e8'], emoji:'📜' },
   { id:6, name:'Sky Modern', desc:'Light blue, rounded elements, certificate-like', colors:['#1a6bab','#f0f7ff'], emoji:'🌤' },
+  { id:7, name:'Royal Gold', desc:'Royal Gold & slate, luxury certificate design', colors:['#1e2530','#d4af37'], emoji:'👑' },
+  { id:8, name:'Minimalist', desc:'Space Grotesk, JetBrains Mono, borderless style', colors:['#ffffff','#0f172a'], emoji:'▫️' },
+  { id:9, name:'Vibrant Indigo', desc:'Modern violet-indigo gradient, rounded card styling', colors:['#4f46e5','#7c3aed'], emoji:'👾' },
+  { id:10, name:'Vedic Heritage', desc:'Warm saffron border, traditional Sanskrit heritage feel', colors:['#fdfaf2','#b71c1c'], emoji:'🍁' },
+  { id:11, name:'Vintage Scroll', desc:'Sepia paper scroll theme with double borders', colors:['#f7ede2','#8b5a2b'], emoji:'📜' },
+  { id:12, name:'Midnight Gold', desc:'Luxurious dark charcoal and premium gold text', colors:['#181d24','#d4af37'], emoji:'🌌' },
+  { id:13, name:'Slate Blackboard', desc:'Dark chalkboard style with custom hand writing', colors:['#1e2d27','#a7f3d0'], emoji:'📝' },
+  { id:14, name:'Neon Cyber', desc:'Futuristic tech design with cyan and pink glows', colors:['#0b0f19','#00f2fe'], emoji:'⚙️' },
+  { id:15, name:'Grand Academic', desc:'Traditional university navy/gold certificate look', colors:['#0f1e36','#c5a880'], emoji:'🛡️' },
+  { id:16, name:'Blueprint Grid', desc:'Engineer grid draft with blueprint-blue borders', colors:['#f0f9ff','#0284c7'], emoji:'📐' },
+  { id:17, name:'Rangoli Orange', desc:'Traditional Indian marigold corner rangoli theme', colors:['#fffbeb','#d97706'], emoji:'🪔' },
+  { id:18, name:'Glassmorphism Pastel', desc:'Soft gradient backdrop with a translucent card blur', colors:['#ee9ca7','#a1c4fd'], emoji:'✨' },
+  { id:19, name:'Royal Emerald', desc:'Deep rich executive emerald green and gold trim', colors:['#f4fbf7','#064e3b'], emoji:'🏵️' },
+  { id:20, name:'Editorial Magazine', desc:'High fashion layout with modern italic serif font', colors:['#faf9f6','#1c1c1c'], emoji:'📰' },
 ];
 
 let _previewStudentId = null;
@@ -20,7 +34,7 @@ async function renderTemplates() {
     <div class="page-header">
       <div class="page-header-left">
         <h1>Result Card Templates</h1>
-        <p>6 premium print-ready templates — click to preview</p>
+        <p>20 premium print-ready templates — click to preview</p>
       </div>
     </div>
 

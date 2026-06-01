@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
+  
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #faf9f6; color: #1c1c1c; }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    background: #faf9f6;
+    padding: 14mm 12mm;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .outer-border {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: flex-end;
+    border-bottom: 2px solid #1c1c1c;
+    padding-bottom: 5mm;
+    margin-bottom: 6mm;
+    gap: 5mm;
+  }
+
+  .coaching-logo { width: 65px; height: 65px; border: 1.5px solid #1c1c1c; object-fit: contain; background: #ffffff; }
+  .logo-placeholder { width: 65px; height: 65px; background: #1c1c1c; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #faf9f6; }
+
+  .coaching-info { flex: 1; text-align: left; }
+  .coaching-name { font-family: 'Playfair Display', serif; font-size: 24pt; font-weight: 800; color: #1c1c1c; line-height: 1; letter-spacing: -0.5px; }
+  .coaching-tagline { font-size: 8.5pt; color: #555555; text-transform: uppercase; letter-spacing: 2px; margin-top: 5px; font-weight: 500; }
+  .coaching-contact { font-size: 8pt; color: #777777; margin-top: 3px; }
+
+  .student-photo { width: 65px; height: 80px; border: 1.5px solid #1c1c1c; object-fit: cover; }
+  .photo-placeholder { width: 65px; height: 80px; border: 1.5px dashed #1c1c1c; display: flex; align-items: center; justify-content: center; font-size: 7.5pt; color: #777777; }
+
+  .title-area {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6mm;
+    border-bottom: 1px solid #1c1c1c;
+    padding-bottom: 3mm;
+  }
+  .title-area h2 { font-family: 'Playfair Display', serif; font-size: 14pt; font-weight: 800; font-style: italic; color: #1c1c1c; }
+  .academic-yr { font-size: 9pt; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; color: #555555; }
+  
+  /* Student details */
+  .profile-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3mm 10mm;
+    border-bottom: 1px solid #1c1c1c;
+    padding-bottom: 5mm;
+    margin-bottom: 6mm;
+  }
+  .info-row { display: flex; font-size: 10pt; align-items: baseline; }
+  .info-label { color: #777777; font-size: 8.5pt; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; width: 110px; flex-shrink: 0; }
+  .info-val { color: #1c1c1c; font-weight: 600; font-size: 10pt; }
+
+  /* Marks Table */
+  .marks-section { flex: 1; margin-bottom: 6mm; }
+  .marks-table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+  .marks-table th {
+    background: transparent;
+    color: #1c1c1c;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 8.5pt;
+    padding: 3mm 2mm;
+    border-bottom: 2px solid #1c1c1c;
+  }
+  .marks-table th:first-child { text-align: left; padding-left: 2mm; }
+  .marks-table td {
+    padding: 2.5mm 2mm;
+    border-bottom: 1px solid #e0e0e0;
+    text-align: center;
+    color: #333333;
+  }
+  .marks-table td:first-child { text-align: left; padding-left: 2mm; font-weight: 600; color: #1c1c1c; }
+
+  .optional-tag { font-size: 7.5pt; color: #777777; font-style: italic; }
+  .pf-cell.pass { color: #1b5e20; font-weight: 700; }
+  .pf-cell.fail { color: #b71c1c; font-weight: 700; }
+  .pf-cell.absent { color: #e65100; }
+
+  /* Summary Row */
+  .summary-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr) 1.2fr;
+    gap: 4mm;
+    margin-bottom: 6mm;
+    border-top: 1px solid #1c1c1c;
+    padding-top: 5mm;
+  }
+  .summary-box {
+    text-align: left;
+  }
+  .summary-label { font-size: 7.5pt; text-transform: uppercase; color: #777777; font-weight: 600; letter-spacing: 0.5px; }
+  .summary-val { font-size: 13pt; font-family: 'Playfair Display', serif; font-weight: 800; color: #1c1c1c; margin-top: 2px; }
+  
+  .result-box {
+    background: #1c1c1c;
+    color: #faf9f6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2mm;
+  }
+  .result-box .summary-label { color: #999999; }
+  .result-box .summary-val { color: #faf9f6; font-family: 'Playfair Display', serif; font-size: 13pt; font-weight: 800; font-style: italic; }
+
+  .remarks-bar {
+    border-top: 1px solid #1c1c1c;
+    border-bottom: 1px solid #1c1c1c;
+    padding: 4mm 0;
+    font-size: 9.5pt;
+    margin-bottom: 6mm;
+    display: flex;
+    gap: 4mm;
+  }
+  .remarks-label { font-weight: 700; text-transform: uppercase; font-size: 8.5pt; letter-spacing: 1px; color: #1c1c1c; }
+  .remarks-text { color: #444444; font-style: italic; }
+
+  /* Footer */
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: auto;
+    font-size: 8.5pt;
+  }
+  .sign-col { text-align: left; width: 130px; }
+  .sign-line { border-bottom: 1px solid #1c1c1c; margin-bottom: 1.5mm; height: 7mm; }
+  .sign-label { font-size: 7.5pt; color: #777777; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  
+  .footer-center { text-align: center; font-size: 8pt; color: #777777; font-family: 'Playfair Display', serif; font-style: italic; }
+
+  /* A5 Paper size adjustments */
+  .page.size-a5 {
+    width: 148mm;
+    min-height: 210mm;
+    padding: 6mm 8mm;
+  }
+  .page.size-a5 * {
+    font-size: 92% !important;
+  }
+  .page.size-a5 .header {
+    padding-bottom: 2mm;
+    margin-bottom: 3mm;
+  }
+  .page.size-a5 .coaching-logo, .page.size-a5 .logo-placeholder {
+    width: 45px;
+    height: 45px;
+  }
+  .page.size-a5 .student-photo, .page.size-a5 .photo-placeholder {
+    width: 45px;
+    height: 55px;
+  }
+  .page.size-a5 .coaching-name {
+    font-size: 16pt !important;
+  }
+  .page.size-a5 .title-area {
+    margin-bottom: 3mm;
+  }
+  .page.size-a5 .profile-grid {
+    padding-bottom: 2mm;
+    margin-bottom: 3mm;
+    gap: 1.5mm 4mm;
+  }
+  .page.size-a5 .marks-section {
+    margin-bottom: 3mm;
+  }
+  .page.size-a5 .marks-table th, .page.size-a5 .marks-table td {
+    padding: 1.2mm 1.5mm;
+  }
+  .page.size-a5 .summary-row {
+    margin-bottom: 3mm;
+    padding-top: 3mm;
+  }
+  .page.size-a5 .summary-box {
+    padding: 1mm;
+  }
+  .page.size-a5 .remarks-bar {
+    padding: 2.2mm 0;
+    margin-bottom: 3mm;
+  }
+  .page.size-a5 .sign-line {
+    height: 5mm;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="outer-border">
+    
+    <!-- Header -->
+    <div class="header">
+      {{COACHING_LOGO}}
+      <div class="coaching-info">
+        <div class="coaching-name">{{COACHING_NAME}}</div>
+        <div class="coaching-tagline">{{COACHING_TAGLINE}}</div>
+        <div class="coaching-contact">{{COACHING_ADDRESS}} | {{COACHING_PHONE}}</div>
+      </div>
+      {{STUDENT_PHOTO}}
+    </div>
+
+    <!-- Title Area -->
+    <div class="title-area">
+      <h2>PERFORMANCE SUMMARY</h2>
+      <div class="academic-yr">{{ACADEMIC_YEAR}}</div>
+    </div>
+
+    <!-- Student details -->
+    <div class="profile-grid">
+      <div class="info-row"><span class="info-label">Candidate:</span><span class="info-val">{{STUDENT_NAME}}</span></div>
+      <div class="info-row"><span class="info-label">Roll Number:</span><span class="info-val">{{STUDENT_ROLL}}</span></div>
+      <div class="info-row"><span class="info-label">Date of Birth:</span><span class="info-val">{{STUDENT_DOB}}</span></div>
+      <div class="info-row"><span class="info-label">Standard:</span><span class="info-val">{{STANDARD_DISPLAY}}</span></div>
+      <div class="info-row"><span class="info-label">Parent/Guardian:</span><span class="info-val">{{FATHER_NAME}}</span></div>
+      <div class="info-row"><span class="info-label">Attendance:</span><span class="info-val">{{ATTENDANCE}}</span></div>
+    </div>
+
+    <!-- Marks Section -->
+    <div class="marks-section">
+      <table class="marks-table">
+        <thead>
+          <tr>
+            <th style="width: 38%; text-align: left; padding-left: 2mm;">Subject Course</th>
+            <th style="width: 10%;">Max</th>
+            <th class="split-col" style="width: 10%;">Int</th>
+            <th class="split-col" style="width: 10%;">Ext</th>
+            <th style="width: 12%;">Obtained</th>
+            <th class="grade-col" style="width: 10%;">Grade</th>
+            <th class="pf-col" style="width: 10%;">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{MARKS_TABLE_ROWS}}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Summary Row -->
+    <div class="summary-row">
+      <div class="summary-box">
+        <div class="summary-label">Marks Cumulative</div>
+        <div class="summary-val">{{TOTAL_OBTAINED}} / {{TOTAL_MAX}}</div>
+      </div>
+      <div class="summary-box">
+        <div class="summary-label">Percentage</div>
+        <div class="summary-val">{{OVERALL_PCT}}</div>
+      </div>
+      <div class="summary-box">
+        <div class="summary-label">Grade Letter</div>
+        <div class="summary-val">{{OVERALL_GRADE}}</div>
+      </div>
+      <div class="summary-box">
+        <div class="summary-label">Rank Position</div>
+        <div class="summary-val">#{{RANK}} / {{TOTAL_STUDENTS}}</div>
+      </div>
+      <div class="summary-box result-box">
+        <div class="summary-label">Outcome</div>
+        <div class="summary-val">{{FINAL_STATUS}}</div>
+      </div>
+    </div>
+
+    <!-- Remarks -->
+    <div class="remarks-bar">
+      <span class="remarks-label">Tutor Notes:</span>
+      <span class="remarks-text">{{REMARKS}}</span>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div class="sign-col">
+        <div class="sign-line"></div>
+        <div class="sign-label">Class Preceptor</div>
+      </div>
+      <div class="footer-center">
+        <div>{{COACHING_WEBSITE}}</div>
+      </div>
+      <div class="sign-col">
+        <div class="sign-line"></div>
+        <div class="sign-label">Academic Dean</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

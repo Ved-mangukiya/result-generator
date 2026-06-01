@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+  
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Outfit', sans-serif; background: #f8fafc; color: #1e293b; }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    background: #f8fafc;
+    padding: 12mm;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Decorative gradient blobs */
+  .blob-top { position: absolute; top: -100px; left: -100px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%); pointer-events: none; }
+  .blob-bottom { position: absolute; bottom: -100px; right: -100px; width: 350px; height: 350px; background: radial-gradient(circle, rgba(168, 85, 247, 0.15) 0%, transparent 70%); pointer-events: none; }
+
+  .card-container {
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    border-radius: 16px;
+    flex: 1;
+    padding: 6mm;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+  }
+
+  .header {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    border-radius: 12px;
+    padding: 5mm 6mm;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 5mm;
+    box-shadow: 0 4px 20px rgba(79, 70, 229, 0.25);
+    margin-bottom: 5mm;
+  }
+
+  .coaching-logo { width: 55px; height: 55px; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(5px); border-radius: 10px; padding: 4px; object-fit: contain; }
+  .logo-placeholder { width: 55px; height: 55px; background: rgba(255,255,255,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; }
+
+  .coaching-info { flex: 1; }
+  .coaching-name { font-size: 18pt; font-weight: 800; letter-spacing: -0.01em; line-height: 1.2; }
+  .coaching-tagline { font-size: 8.5pt; color: #e0e7ff; opacity: 0.9; margin-top: 1px; }
+  .coaching-contact { font-size: 7.5pt; color: #c7d2fe; margin-top: 2px; }
+
+  .student-photo { width: 60px; height: 75px; border-radius: 8px; object-fit: cover; border: 2px solid rgba(255, 255, 255, 0.3); }
+  .photo-placeholder { width: 60px; height: 75px; background: rgba(255, 255, 255, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 6.5pt; color: #c7d2fe; }
+
+  .result-banner {
+    text-align: center;
+    font-size: 10.5pt;
+    font-weight: 700;
+    color: #4f46e5;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 5mm;
+  }
+
+  .profile-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3mm 8mm;
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 4mm 6mm;
+    margin-bottom: 5mm;
+    border: 1px solid #f1f5f9;
+  }
+  .info-row { display: flex; align-items: center; font-size: 8.5pt; }
+  .info-label { color: #64748b; font-weight: 500; width: 100px; flex-shrink: 0; }
+  .info-val { color: #1e293b; font-weight: 600; }
+
+  .marks-section { flex: 1; margin-bottom: 5mm; }
+  .marks-table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+  .marks-table th {
+    background: #f1f5f9;
+    color: #4f46e5;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 7.5pt;
+    letter-spacing: 0.05em;
+    padding: 2.2mm;
+    border-bottom: 2px solid #e2e8f0;
+  }
+  .marks-table th:first-child { text-align: left; border-radius: 6px 0 0 6px; padding-left: 3mm; }
+  .marks-table th:last-child { border-radius: 0 6px 6px 0; }
+  .marks-table td {
+    padding: 2.2mm;
+    border-bottom: 1px solid #f1f5f9;
+    text-align: center;
+    color: #334155;
+  }
+  .marks-table td:first-child { text-align: left; padding-left: 3mm; font-weight: 600; color: #1e293b; }
+  
+  .optional-tag { font-size: 6pt; color: #94a3b8; font-weight: normal; margin-left: 1px; }
+  .pf-cell { font-weight: 700; }
+  .pf-cell.pass { color: #10b981; }
+  .pf-cell.fail { color: #ef4444; }
+  .pf-cell.absent { color: #f59e0b; }
+
+  .summary-row {
+    display: flex;
+    gap: 3mm;
+    margin-bottom: 5mm;
+  }
+  .summary-box {
+    flex: 1;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 3mm;
+    text-align: center;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+  }
+  .summary-label { font-size: 7pt; color: #64748b; text-transform: uppercase; font-weight: 600; letter-spacing: 0.05em; }
+  .summary-val { font-size: 13pt; font-weight: 700; color: #1e293b; margin-top: 1mm; }
+  
+  .result-pill {
+    flex: 1.5;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: white;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.2);
+  }
+  .result-pill .summary-label { color: #e0e7ff; }
+  .result-pill .summary-val { color: white; font-size: 14pt; }
+
+  .remarks-bar {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 3mm 4mm;
+    display: flex;
+    gap: 3mm;
+    font-size: 8.5pt;
+    margin-bottom: 5mm;
+    border: 1px solid #f1f5f9;
+  }
+  .remarks-label { font-weight: 700; color: #4f46e5; }
+  .remarks-text { color: #475569; font-style: italic; }
+
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+    font-size: 8pt;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 4mm;
+  }
+  .sign-block { text-align: center; }
+  .sign-line { width: 110px; border-bottom: 1.5px solid #cbd5e1; margin-bottom: 1.5mm; height: 6mm; }
+  .sign-label { font-size: 7.5pt; color: #64748b; font-weight: 500; }
+  
+  .footer-center { text-align: center; font-size: 7.5pt; color: #94a3b8; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="blob-top"></div>
+  <div class="blob-bottom"></div>
+
+  <div class="card-container">
+    
+    <!-- Header -->
+    <div class="header" style="background: linear-gradient(135deg, var(--primary-color), var(--primary-color));">
+      {{COACHING_LOGO}}
+      <div class="coaching-info">
+        <div class="coaching-name">{{COACHING_NAME}}</div>
+        <div class="coaching-tagline">{{COACHING_TAGLINE}}</div>
+        <div class="coaching-contact">{{COACHING_ADDRESS}} | {{COACHING_PHONE}}</div>
+      </div>
+      {{STUDENT_PHOTO}}
+    </div>
+
+    <div class="result-banner" style="color: var(--primary-color);">REPORT OF ACADEMIC ACHIEVEMENT — {{ACADEMIC_YEAR}}</div>
+
+    <!-- Student Details -->
+    <div class="profile-grid">
+      <div class="info-row"><span class="info-label">Student Name</span><span class="info-val">{{STUDENT_NAME}}</span></div>
+      <div class="info-row"><span class="info-label">Board / Class</span><span class="info-val">{{BOARD_SHORT}} / {{STANDARD_DISPLAY}}</span></div>
+      <div class="info-row"><span class="info-label">Roll Number</span><span class="info-val">{{STUDENT_ROLL}}</span></div>
+      <div class="info-row"><span class="info-label">Father's Name</span><span class="info-val">{{FATHER_NAME}}</span></div>
+      <div class="info-row"><span class="info-label">Date of Birth</span><span class="info-val">{{STUDENT_DOB}}</span></div>
+      <div class="info-row"><span class="info-label">Attendance</span><span class="info-val">{{ATTENDANCE}}</span></div>
+    </div>
+
+    <!-- Marks Table -->
+    <div class="marks-section">
+      <table class="marks-table">
+        <thead>
+          <tr>
+            <th style="width: 38%; text-align: left; padding-left: 3mm;">Subject Title</th>
+            <th style="width: 10%;">Max</th>
+            <th class="split-col" style="width: 10%;">Int</th>
+            <th class="split-col" style="width: 10%;">Ext</th>
+            <th style="width: 12%;">Obtained</th>
+            <th class="grade-col" style="width: 10%;">Grade</th>
+            <th class="pf-col" style="width: 12%;">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{MARKS_TABLE_ROWS}}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Summary Row -->
+    <div class="summary-row">
+      <div class="summary-box">
+        <div class="summary-label">Marks Scored</div>
+        <div class="summary-val">{{TOTAL_OBTAINED}} / {{TOTAL_MAX}}</div>
+      </div>
+      <div class="summary-box">
+        <div class="summary-label">Percentage</div>
+        <div class="summary-val">{{OVERALL_PCT}}</div>
+      </div>
+      <div class="summary-box">
+        <div class="summary-label">Final Grade</div>
+        <div class="summary-val">{{OVERALL_GRADE}}</div>
+      </div>
+      <div class="summary-box">
+        <div class="summary-label">Class Rank</div>
+        <div class="summary-val">#{{RANK}} / {{TOTAL_STUDENTS}}</div>
+      </div>
+      <div class="summary-box result-pill" style="background: linear-gradient(135deg, var(--primary-color), var(--primary-color));">
+        <div class="summary-label">Evaluation</div>
+        <div class="summary-val">{{FINAL_STATUS}}</div>
+      </div>
+    </div>
+
+    <!-- Remarks -->
+    <div class="remarks-bar">
+      <span class="remarks-label">Coordinator Feedback:</span>
+      <span class="remarks-text">"${REMARKS}"</span>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div class="sign-block">
+        <div class="sign-line"></div>
+        <div class="sign-label">Class Mentor</div>
+      </div>
+      <div class="footer-center">
+        <div>{{COACHING_WEBSITE}}</div>
+        <div style="font-size: 6.5pt; margin-top: 1px; color: #cbd5e1;">Generated by Result-Gen</div>
+      </div>
+      <div class="sign-block">
+        <div class="sign-line"></div>
+        <div class="sign-label">Director</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

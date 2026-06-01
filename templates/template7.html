@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;800&family=Montserrat:wght@400;500;600;700&display=swap');
+  
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Montserrat', sans-serif; background: #faf8f5; color: #1c1c1c; }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    background: #1e2530;
+    color: #f3f4f6;
+    padding: 10mm;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .outer-border {
+    border: 3px double #d4af37;
+    flex: 1;
+    padding: 5mm;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .inner-border {
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 6mm;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid #d4af37;
+    padding-bottom: 5mm;
+    margin-bottom: 5mm;
+    gap: 4mm;
+  }
+
+  .coaching-logo { width: 60px; height: 60px; object-fit: contain; }
+  .logo-placeholder { width: 60px; height: 60px; border: 2px dashed #d4af37; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+
+  .coaching-info { text-align: center; flex: 1; }
+  .coaching-name { font-family: 'Cinzel', serif; font-size: 22pt; font-weight: 800; color: #d4af37; letter-spacing: 0.05em; }
+  .coaching-tagline { font-size: 8pt; color: #a1a1aa; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 1px; }
+  .coaching-contact { font-size: 7.5pt; color: #d4af37; margin-top: 3px; }
+
+  .student-photo { width: 65px; height: 80px; border: 2px solid #d4af37; object-fit: cover; }
+  .photo-placeholder { width: 65px; height: 80px; border: 2px dashed rgba(212, 175, 55, 0.5); display: flex; align-items: center; justify-content: center; font-size: 7pt; color: #a1a1aa; }
+
+  .title-strip {
+    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.2), transparent);
+    border-top: 1px solid rgba(212, 175, 55, 0.3);
+    border-bOTtom: 1px solid rgba(212, 175, 55, 0.3);
+    text-align: center;
+    padding: 3mm 0;
+    margin-bottom: 5mm;
+  }
+  .title-strip h2 { font-family: 'Cinzel', serif; font-size: 13pt; font-weight: 700; color: #d4af37; letter-spacing: 0.1em; }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4mm;
+    margin-bottom: 5mm;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(212, 175, 55, 0.15);
+    padding: 4mm 6mm;
+    border-radius: 4px;
+  }
+  .info-row { display: flex; font-size: 8.5pt; line-height: 1.6; }
+  .info-label { color: #d4af37; font-weight: 600; min-width: 110px; }
+  .info-val { color: #f3f4f6; }
+
+  .marks-section { flex: 1; margin-bottom: 5mm; }
+  .marks-table { width: 100%; border-collapse: collapse; font-size: 8pt; }
+  .marks-table th {
+    background: rgba(212, 175, 55, 0.15);
+    color: #d4af37;
+    font-weight: 700;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    padding: 2.5mm 2mm;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.05em;
+  }
+  .marks-table th:first-child { text-align: left; padding-left: 3mm; }
+  .marks-table td {
+    padding: 2.2mm 2mm;
+    border: 1px solid rgba(212, 175, 55, 0.15);
+    text-align: center;
+    color: #e5e7eb;
+  }
+  .marks-table td:first-child { text-align: left; padding-left: 3mm; font-weight: 600; }
+  .marks-table tr:nth-child(even) { background: rgba(255, 255, 255, 0.01); }
+
+  .optional-tag { font-size: 6pt; color: #a1a1aa; font-style: italic; }
+  .pf-cell.pass { color: #34d399; font-weight: 700; }
+  .pf-cell.fail { color: #f87171; font-weight: 700; }
+  .pf-cell.absent { color: #fbbf24; }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 3mm;
+    margin-bottom: 5mm;
+  }
+  .summary-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-radius: 4px;
+    padding: 2.5mm;
+    text-align: center;
+  }
+  .summary-label { font-size: 6.5pt; text-transform: uppercase; color: #a1a1aa; letter-spacing: 0.05em; }
+  .summary-val { font-size: 12pt; font-weight: 700; color: #d4af37; margin-top: 1mm; }
+
+  .result-card {
+    grid-column: span 2;
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(212, 175, 55, 0.03));
+    border: 1.5px solid #d4af37;
+  }
+
+  .remarks-box {
+    border: 1px solid rgba(212, 175, 55, 0.15);
+    padding: 3mm 5mm;
+    font-size: 8pt;
+    border-radius: 4px;
+    margin-bottom: 5mm;
+    background: rgba(255, 255, 255, 0.01);
+  }
+  .remarks-title { font-weight: 700; color: #d4af37; margin-bottom: 0.5mm; }
+  .remarks-content { font-style: italic; color: #d1d5db; }
+
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: auto;
+  }
+  .sign-col { text-align: center; width: 120px; }
+  .sign-line { border-bottom: 1px solid rgba(212, 175, 55, 0.4); margin-bottom: 1.5mm; height: 8mm; }
+  .sign-text { font-size: 7.5pt; color: #a1a1aa; }
+
+  .center-stamp { text-align: center; font-size: 7pt; color: rgba(212, 175, 55, 0.3); font-family: 'Cinzel', serif; letter-spacing: 0.1em; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="outer-border">
+    <div class="inner-border">
+      
+      <!-- Header -->
+      <div class="header">
+        {{COACHING_LOGO}}
+        <div class="coaching-info">
+          <div class="coaching-name">{{COACHING_NAME}}</div>
+          <div class="coaching-tagline">{{COACHING_TAGLINE}}</div>
+          <div class="coaching-contact">{{COACHING_ADDRESS}} | ${COACHING_PHONE}</div>
+        </div>
+        {{STUDENT_PHOTO}}
+      </div>
+
+      <!-- Title Strip -->
+      <div class="title-strip">
+        <h2>ACADEMIC EVALUATION REPORT — {{ACADEMIC_YEAR}}</h2>
+      </div>
+
+      <!-- Student Details -->
+      <div class="info-grid">
+        <div>
+          <div class="info-row"><span class="info-label">Student Name:</span><span class="info-val">{{STUDENT_NAME}}</span></div>
+          <div class="info-row"><span class="info-label">Roll Number:</span><span class="info-val">{{STUDENT_ROLL}}</span></div>
+          <div class="info-row"><span class="info-label">Date of Birth:</span><span class="info-val">{{STUDENT_DOB}}</span></div>
+          <div class="info-row"><span class="info-label">Attendance:</span><span class="info-val">{{ATTENDANCE}}</span></div>
+        </div>
+        <div>
+          <div class="info-row"><span class="info-label">Board / Class:</span><span class="info-val">{{BOARD_NAME}} ({{BOARD_SHORT}}) / {{STANDARD_DISPLAY}}</span></div>
+          <div class="info-row"><span class="info-label">Father's Name:</span><span class="info-val">{{FATHER_NAME}}</span></div>
+          <div class="info-row"><span class="info-label">Mother's Name:</span><span class="info-val">{{MOTHER_NAME}}</span></div>
+        </div>
+      </div>
+
+      <!-- Marks Section -->
+      <div class="marks-section">
+        <table class="marks-table">
+          <thead>
+            <tr>
+              <th style="width: 38%;">Subject</th>
+              <th style="width: 10%;">Max Marks</th>
+              <th class="split-col" style="width: 10%;">Int. Marks</th>
+              <th class="split-col" style="width: 10%;">Ext. Marks</th>
+              <th style="width: 12%;">Obtained</th>
+              <th class="grade-col" style="width: 10%;">Grade</th>
+              <th class="pf-col" style="width: 10%;">Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{MARKS_TABLE_ROWS}}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Summary Section -->
+      <div class="summary-grid">
+        <div class="summary-card">
+          <div class="summary-label">Total Marks</div>
+          <div class="summary-val">{{TOTAL_OBTAINED}} / {{TOTAL_MAX}}</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-label">Percentage</div>
+          <div class="summary-val">{{OVERALL_PCT}}</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-label">Grade Rank</div>
+          <div class="summary-val">{{OVERALL_GRADE}} / #{{RANK}}</div>
+        </div>
+        <div class="summary-card result-card">
+          <div class="summary-label" style="color: #d4af37;">Final Result</div>
+          <div class="summary-val" style="color: #f3f4f6; font-family: 'Cinzel', serif;">{{FINAL_STATUS}}</div>
+        </div>
+      </div>
+
+      <!-- Remarks Box -->
+      <div class="remarks-box">
+        <div class="remarks-title">Remarks & Observations</div>
+        <div class="remarks-content">{{REMARKS}}</div>
+      </div>
+
+      <!-- Footer Signatures -->
+      <div class="footer">
+        <div class="sign-col">
+          <div class="sign-line"></div>
+          <div class="sign-text">Class Coordinator</div>
+        </div>
+        <div class="center-stamp">
+          <div>🎓</div>
+          <div>OFFICIAL REPORT CARD</div>
+          <div>{{COACHING_WEBSITE}}</div>
+        </div>
+        <div class="sign-col">
+          <div class="sign-line"></div>
+          <div class="sign-text">Principal / Director</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>

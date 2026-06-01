@@ -4,7 +4,7 @@
 
 let _selectedLogoFile = null;
 let _obCurrentStep = 0;
-const OB_TOTAL_STEPS = 3;
+const OB_TOTAL_STEPS = 4;
 
 async function initAuth() {
   // Try to restore session
@@ -141,7 +141,10 @@ async function finishOnboarding() {
       address: getVal('ob-address'),
       phone: getVal('ob-phone'),
       website: getVal('ob-website'),
-      primary_color: document.getElementById('ob-color').value || '#1a3a6b',
+      primary_color: document.getElementById('ob-color').value || '#7a6130',
+      weekly_tests_count: parseInt(getVal('ob-weekly-tests')) || 40,
+      has_midsem: document.getElementById('ob-has-midsem').checked ? 1 : 0,
+      has_final: document.getElementById('ob-has-final').checked ? 1 : 0,
       onboarding_complete: true
     });
     

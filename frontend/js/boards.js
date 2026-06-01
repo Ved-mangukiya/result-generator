@@ -5,6 +5,54 @@
 let _selectedBoardId = null;
 let _selectedStandardId = null;
 let _streams = [];
+let _standardDefaultSubjects = [];
+
+const COMMON_SUBJECT_TEMPLATES = [
+  { name: 'English', max_marks: 100, marks_type: 'total', is_compulsory: true, is_language: true },
+  { name: 'Gujarati', max_marks: 100, marks_type: 'total', is_compulsory: true, is_language: true },
+  { name: 'Hindi', max_marks: 100, marks_type: 'total', is_compulsory: true, is_language: true },
+  { name: 'Sanskrit', max_marks: 100, marks_type: 'total', is_compulsory: false, is_language: true },
+  { name: 'Mathematics', max_marks: 100, marks_type: 'total', is_compulsory: true, is_language: false },
+  { name: 'Science', max_marks: 100, marks_type: 'total', is_compulsory: true, is_language: false },
+  { name: 'Social Science', max_marks: 100, marks_type: 'total', is_compulsory: true, is_language: false },
+  { name: 'Elements of Accounts', max_marks: 100, marks_type: 'total', is_compulsory: true, is_language: false },
+  { name: 'Organisation of Commerce (OCM)', max_marks: 100, marks_type: 'total', is_compulsory: true, is_language: false },
+  { name: 'Statistics', max_marks: 100, marks_type: 'total', is_compulsory: true, is_language: false },
+  { name: 'Economics', max_marks: 100, marks_type: 'total', is_compulsory: true, is_language: false },
+  { name: 'Secretarial Practice & Commercial Correspondence (SPCC)', max_marks: 100, marks_type: 'total', is_compulsory: false, is_language: false },
+  { name: 'Computer Studies', max_marks: 100, marks_type: 'total', is_compulsory: false, is_language: false },
+  { name: 'Physics', max_marks: 100, marks_type: 'split', internal_max: 30, external_max: 70, is_compulsory: true, is_language: false },
+  { name: 'Chemistry', max_marks: 100, marks_type: 'split', internal_max: 30, external_max: 70, is_compulsory: true, is_language: false },
+  { name: 'Biology', max_marks: 100, marks_type: 'split', internal_max: 30, external_max: 70, is_compulsory: true, is_language: false },
+];
+
+function onSubjectTemplateChange(val) {
+  if (val === 'custom') {
+    document.getElementById('subj-name').value = '';
+    return;
+  }
+  const t = COMMON_SUBJECT_TEMPLATES[parseInt(val)];
+  if (!t) return;
+  
+  document.getElementById('subj-name').value = t.name;
+  document.getElementById('subj-max').value = t.max_marks;
+  document.getElementById('subj-type').value = t.marks_type;
+  
+  const splitFields = document.getElementById('split-fields');
+  if (t.marks_type === 'split') {
+    splitFields.style.display = 'grid';
+    document.getElementById('subj-internal').value = t.internal_max || 20;
+    document.getElementById('subj-external').value = t.external_max || 80;
+  } else {
+    splitFields.style.display = 'none';
+  }
+  
+  document.getElementById('subj-compulsory').checked = t.is_compulsory;
+  document.getElementById('subj-language').checked = t.is_language;
+}
+
+window.COMMON_SUBJECT_TEMPLATES = COMMON_SUBJECT_TEMPLATES;
+window.onSubjectTemplateChange = onSubjectTemplateChange;
 
 async function renderBoards() {
   setPageTitle('Boards & Classes', 'Boards & Classes');
@@ -271,14 +319,19 @@ function showAddStandardModal(boardId) {
         <select class="form-control" id="std-stream">${streamOptions}</select>
       </div>
     </div>
-    <div class="form-group">
+    <div class="form-group mb-4">
       <label class="form-label">Display Name (auto-generated)</label>
       <input type="text" class="form-control" id="std-display" placeholder="e.g. 10th Standard">
     </div>
-    <p class="form-hint mt-2">✅ Subjects will be auto-loaded based on the standard and stream selected.</p>`,
+    <div id="std-subjects-section" style="margin-top:var(--space-4)">
+      <label class="form-label" style="font-weight:600">Select Subjects to Include:</label>
+      <div id="std-subjects-checklist" style="max-height:180px; overflow-y:auto; border:1px solid var(--border); border-radius:var(--radius); padding:10px; background:var(--bg-card); display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <span class="text-muted text-xs">Loading subjects...</span>
+      </div>
+    </div>`,
     `<button class="btn btn-outline" onclick="closeModal('add-std-modal')">Cancel</button>
      <button class="btn btn-primary" onclick="addStandard(${boardId})">Add Class</button>`,
-    'modal-sm'
+    'modal-md'
   );
   
   // Auto-update display name
@@ -288,22 +341,47 @@ function showAddStandardModal(boardId) {
     const display = `${Format.ordinal(n)} Standard${s !== 'General' ? ' — ' + s : ''}`;
     document.getElementById('std-display').value = display;
   };
-  updateDisplay();
-  document.getElementById('std-number').addEventListener('change', updateDisplay);
-  document.getElementById('std-stream').addEventListener('change', () => {
-    updateDisplay();
+
+  const loadDefaultSubjects = async () => {
+    const n = document.getElementById('std-number').value;
+    const s = document.getElementById('std-stream').value;
+    const checklist = document.getElementById('std-subjects-checklist');
+    if (!checklist) return;
+    
+    checklist.innerHTML = `<span class="text-muted text-xs">Loading subjects...</span>`;
+    try {
+      _standardDefaultSubjects = await API.subjects.getDefault(n, s, boardId);
+      if (_standardDefaultSubjects.length === 0) {
+        checklist.innerHTML = `<span class="text-muted text-xs">No template subjects found. You can add them manually later.</span>`;
+        return;
+      }
+      
+      checklist.innerHTML = _standardDefaultSubjects.map((sub, i) => `
+        <label class="checkbox-container" style="display:flex;align-items:center;gap:6px;font-size:0.8rem;margin-bottom:0;cursor:pointer;">
+          <input type="checkbox" data-index="${i}" checked style="cursor:pointer;">
+          <span>${sub.name} <span class="text-muted" style="font-size:0.7rem">(${sub.is_compulsory ? 'Compulsory' : 'Optional'})</span></span>
+        </label>
+      `).join('');
+    } catch (err) {
+      checklist.innerHTML = `<span class="text-danger text-xs">Error loading template: ${err.message}</span>`;
+    }
+  };
+
+  const onConfigChange = () => {
     const n = parseInt(document.getElementById('std-number').value);
     const streamSel = document.getElementById('std-stream');
-    if (n <= 10) {
+    if (n <= 10 && streamSel.value !== 'General') {
       streamSel.value = 'General';
     }
-  });
-  document.getElementById('std-number').addEventListener('change', () => {
-    const n = parseInt(document.getElementById('std-number').value);
-    const streamSel = document.getElementById('std-stream');
-    if (n <= 10) streamSel.value = 'General';
     updateDisplay();
-  });
+    loadDefaultSubjects();
+  };
+
+  updateDisplay();
+  loadDefaultSubjects();
+  
+  document.getElementById('std-number').addEventListener('change', onConfigChange);
+  document.getElementById('std-stream').addEventListener('change', onConfigChange);
 }
 
 async function addStandard(boardId) {
@@ -311,10 +389,28 @@ async function addStandard(boardId) {
   const stream = document.getElementById('std-stream').value;
   const display_name = document.getElementById('std-display').value.trim();
   
+  const checkboxes = document.querySelectorAll('#std-subjects-checklist input[type="checkbox"]');
+  const selectedSubjects = [];
+  checkboxes.forEach(cb => {
+    if (cb.checked) {
+      const idx = parseInt(cb.dataset.index);
+      const sub = _standardDefaultSubjects[idx];
+      if (sub) {
+        selectedSubjects.push(sub);
+      }
+    }
+  });
+
   try {
-    await API.standards.add({ board_id: boardId, standard_number, stream, display_name });
+    await API.standards.add({ 
+      board_id: boardId, 
+      standard_number, 
+      stream, 
+      display_name,
+      subjects: selectedSubjects
+    });
     closeModal('add-std-modal');
-    Toast.success('Class Added', `${display_name} created with auto-loaded subjects.`);
+    Toast.success('Class Added', `${display_name} created with selected subjects.`);
     await loadStandards(boardId);
   } catch (err) {
     Toast.error('Add Failed', err.message);
@@ -369,8 +465,16 @@ async function showSubjectsPanel(standardId) {
 }
 
 function showAddSubjectModal(standardId) {
+  const tOptions = COMMON_SUBJECT_TEMPLATES.map((t, i) => `<option value="${i}">${t.name} (Max: ${t.max_marks}${t.is_compulsory ? ', Compulsory' : ', Optional'})</option>`).join('');
   createModal('add-subject-modal', '➕ Add Subject',
     `<div class="form-group mb-4">
+      <label class="form-label">Predefined Subjects (Autofills form)</label>
+      <select class="form-control" id="subj-template-select" onchange="onSubjectTemplateChange(this.value)">
+        <option value="custom">— Custom Subject (Type below) —</option>
+        ${tOptions}
+      </select>
+    </div>
+    <div class="form-group mb-4">
       <label class="form-label">Subject Name <span class="required">*</span></label>
       <input type="text" class="form-control" id="subj-name" placeholder="e.g. Mathematics, Physics">
     </div>
@@ -397,10 +501,13 @@ function showAddSubjectModal(standardId) {
         <input type="number" class="form-control" id="subj-external" value="80" min="0">
       </div>
     </div>
-    <div class="flex gap-6">
+    <div class="flex gap-6 mb-4">
       <label class="toggle-group"><span class="toggle-label">Compulsory</span><label class="toggle"><input type="checkbox" id="subj-compulsory" checked><span class="toggle-slider"></span></label></label>
       <label class="toggle-group"><span class="toggle-label">Language Subject</span><label class="toggle"><input type="checkbox" id="subj-language"><span class="toggle-slider"></span></label></label>
-    </div>`,
+    </div>
+    <p class="form-hint mt-2 text-xs" style="color:var(--text-secondary); background:rgba(212,175,55,0.05); padding:10px; border-radius:var(--radius); border:1px solid rgba(212,175,55,0.2)">
+      💡 **Elective Subject Tip:** For subjects like SPCC and Computer where students choose one, mark both as **Optional (Compulsory = No)**. When entering marks, leave the other completely blank for students who did not take it. The system will automatically exclude it from their final result calculations.
+    </p>`,
     `<button class="btn btn-outline" onclick="closeModal('add-subject-modal')">Cancel</button>
      <button class="btn btn-primary" onclick="addSubject(${standardId})">Add Subject</button>`,
     'modal-sm'
@@ -527,7 +634,20 @@ async function editSubject(subjectId, standardId) {
 
 async function showGradeEditor(boardId, boardName) {
   const grades = await API.boards.getGrades(boardId);
-  
+  const allBoards = await API.boards.list().catch(() => []);
+  const otherBoards = allBoards.filter(b => b.id !== boardId);
+
+  const copyHTML = otherBoards.length > 0
+    ? `<div style="display:flex; gap:10px; align-items:center; margin-bottom:15px; background:rgba(138, 109, 59, 0.05); padding:10px; border-radius:var(--radius); border:1px solid rgba(138, 109, 59, 0.15)">
+        <label class="form-label" style="margin-bottom:0; font-size:0.8rem; font-weight:600; color:var(--text-secondary)">📋 Copy scale from another board: </label>
+        <select class="form-control" id="copy-grade-board-select" style="width:180px; height:32px; padding:0 8px; font-size:0.8rem">
+          <option value="">— Select Board —</option>
+          ${otherBoards.map(b => `<option value="${b.id}">${b.short_name}</option>`).join('')}
+        </select>
+        <button class="btn btn-outline btn-sm" onclick="copyGradeScaleFromBoard()" style="padding:4px 10px; height:32px;">Copy</button>
+      </div>`
+    : '';
+
   const rows = grades.map((g, i) => `
     <tr data-index="${i}">
       <td style="padding:var(--space-2) var(--space-3)"><input class="form-control" style="width:80px" value="${g.label}" data-field="label"></td>
@@ -547,7 +667,8 @@ async function showGradeEditor(boardId, boardName) {
     </tr>`).join('');
   
   createModal('grade-editor', `📊 Grade Scale — ${boardName}`,
-    `<div class="table-wrap">
+    `${copyHTML}
+    <div class="table-wrap">
       <table>
         <thead><tr>
           <th>Grade</th><th>Min%</th><th>Max%</th><th>Result Status</th><th>Color</th><th></th>
@@ -560,6 +681,46 @@ async function showGradeEditor(boardId, boardName) {
      <button class="btn btn-primary" onclick="saveGrades(${boardId})">💾 Save Grade Scale</button>`,
     'modal-lg'
   );
+}
+
+async function copyGradeScaleFromBoard() {
+  const select = document.getElementById('copy-grade-board-select');
+  if (!select) return;
+  const sourceBoardId = select.value;
+  if (!sourceBoardId) {
+    Toast.warning('Select Board', 'Please select a board to copy the grade scale from.');
+    return;
+  }
+  try {
+    const grades = await API.boards.getGrades(sourceBoardId);
+    if (grades.length === 0) {
+      Toast.warning('No Grades', 'The selected board has no grade scale configured.');
+      return;
+    }
+    const tbody = document.getElementById('grade-rows');
+    if (tbody) {
+      tbody.innerHTML = grades.map((g, i) => `
+        <tr data-index="${i}">
+          <td style="padding:var(--space-2) var(--space-3)"><input class="form-control" style="width:80px" value="${g.label}" data-field="label"></td>
+          <td style="padding:var(--space-2) var(--space-3)"><input type="number" class="form-control marks-input" value="${g.min_pct}" data-field="min_pct"></td>
+          <td style="padding:var(--space-2) var(--space-3)"><input type="number" class="form-control marks-input" value="${g.max_pct}" data-field="max_pct"></td>
+          <td style="padding:var(--space-2) var(--space-3)">
+            <select class="form-control" data-field="result_status" style="width:140px">
+              ${['Distinction','First Class','Second Class','Pass','Fail'].map(s => `<option ${g.result_status === s ? 'selected' : ''}>${s}</option>`).join('')}
+            </select>
+          </td>
+          <td style="padding:var(--space-2) var(--space-3)">
+            <input type="color" value="${g.color}" data-field="color" style="width:40px;height:36px;border:none;border-radius:var(--radius);cursor:pointer">
+          </td>
+          <td style="padding:var(--space-2) var(--space-3)">
+            <button class="btn btn-ghost btn-icon-sm" onclick="this.closest('tr').remove()">🗑</button>
+          </td>
+        </tr>`).join('');
+      Toast.success('Grade Scale Loaded', 'Click "Save Grade Scale" to persist changes.');
+    }
+  } catch (err) {
+    Toast.error('Load Failed', err.message);
+  }
 }
 
 function addGradeRow() {
@@ -620,5 +781,6 @@ window.showEditSubjectModal = showEditSubjectModal;
 window.toggleEditSplitFields = toggleEditSplitFields;
 window.editSubject = editSubject;
 window.showGradeEditor = showGradeEditor;
+window.copyGradeScaleFromBoard = copyGradeScaleFromBoard;
 window.addGradeRow = addGradeRow;
 window.saveGrades = saveGrades;

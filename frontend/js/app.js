@@ -7,6 +7,8 @@ const PAGES = {
   boards:    { render: () => renderBoards(),    title: 'Boards & Classes' },
   students:  { render: (p) => renderStudents(p), title: 'Students' },
   results:   { render: (p) => renderResults(p),  title: 'Results' },
+  tests:     { render: (p) => renderTests(p),    title: 'Test Scheduler' },
+  reminders: { render: () => renderReminders(),  title: 'Timetables & Reminders' },
   templates: { render: () => renderTemplates(),  title: 'Templates' },
   import:    { render: () => renderImport(),     title: 'Import Excel' },
   settings:  { render: () => renderSettings(),  title: 'Settings' },
@@ -14,6 +16,7 @@ const PAGES = {
 
 const Router = {
   current: null,
+  _ignoreHashChange: false,
   
   navigate(page, params = {}) {
     if (!PAGES[page]) { console.warn('Unknown page:', page); return; }
@@ -23,8 +26,10 @@ const Router = {
       item.classList.toggle('active', item.dataset.page === page);
     });
     
-    // Update hash
+    // Update hash without triggering hashchange loop
+    this._ignoreHashChange = true;
     window.location.hash = page;
+    setTimeout(() => { this._ignoreHashChange = false; }, 50);
     
     // Animate out
     const content = document.getElementById('page-content');
@@ -56,6 +61,15 @@ const Router = {
 
 // ─── Navigation Click Handlers ────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  // Hashchange listener for browser back/forward buttons
+  window.addEventListener('hashchange', () => {
+    if (Router._ignoreHashChange) return;
+    const page = window.location.hash.replace('#', '') || 'dashboard';
+    if (Router.current !== page && PAGES[page]) {
+      Router.navigate(page);
+    }
+  });
+
   // Nav items
   $$('.nav-item[data-page]').forEach(item => {
     item.addEventListener('click', (e) => {

@@ -42,6 +42,7 @@ function calculateStudentResult(student, subjects, marksMap, boardId) {
   let totalObtained = 0;
   let totalMaxMarks = 0;
   let hasAnyFail = false;
+  let isPending = false;
   let subjectResults = [];
   let marksCount = 0;
 
@@ -71,8 +72,12 @@ function calculateStudentResult(student, subjects, marksMap, boardId) {
       : null;
     const grade = pct !== null ? getGrade(boardId, pct) : { label: '-', status: '-', color: '#999' };
 
-    if (subject.is_compulsory && (pct === null || pct < getPassMark(boardId))) {
-      hasAnyFail = true;
+    if (subject.is_compulsory) {
+      if (!mark || (!isAbsent && obtained === null)) {
+        isPending = true;
+      } else if (pct !== null && pct < getPassMark(boardId)) {
+        hasAnyFail = true;
+      }
     }
 
     if (obtained !== null) {
@@ -107,7 +112,7 @@ function calculateStudentResult(student, subjects, marksMap, boardId) {
     : null;
   
   const overallGrade = overallPct !== null ? getGrade(boardId, overallPct) : { label: '-', status: '-', color: '#999' };
-  const finalStatus = marksCount > 0 ? getFinalStatus(boardId, overallPct, hasAnyFail) : 'Pending';
+  const finalStatus = isPending ? 'Pending' : (marksCount > 0 ? getFinalStatus(boardId, overallPct, hasAnyFail) : 'Pending');
 
   return {
     subjectResults,

@@ -120,6 +120,19 @@
         { "name": "Vocational Theory", "max_marks": 100, "marks_type": "split", "internal_max": 30, "external_max": 70, "is_compulsory": true, "is_language": false },
         { "name": "Vocational Practical", "max_marks": 100, "marks_type": "total", "is_compulsory": true, "is_language": false }
       ]
+    },
+    "11_12_Commerce_GSEB": {
+      "streams": ["Commerce (GSEB)", "Commerce with Maths", "Commerce without Maths"],
+      "subjects": [
+        { "name": "English", "max_marks": 100, "marks_type": "total", "is_compulsory": true, "is_language": true },
+        { "name": "Gujarati / Hindi", "max_marks": 100, "marks_type": "total", "is_compulsory": true, "is_language": true },
+        { "name": "Elements of Accounts", "max_marks": 100, "marks_type": "total", "is_compulsory": true, "is_language": false },
+        { "name": "Organisation of Commerce & Management", "max_marks": 100, "marks_type": "total", "is_compulsory": true, "is_language": false },
+        { "name": "Economics", "max_marks": 100, "marks_type": "total", "is_compulsory": true, "is_language": false },
+        { "name": "Statistics", "max_marks": 100, "marks_type": "total", "is_compulsory": true, "is_language": false },
+        { "name": "Secretarial Practice & Commercial Correspondence (SPCC)", "max_marks": 100, "marks_type": "total", "is_compulsory": false, "is_language": false },
+        { "name": "Computer Studies", "max_marks": 100, "marks_type": "total", "is_compulsory": false, "is_language": false }
+      ]
     }
   }
 }

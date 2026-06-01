@@ -15,6 +15,9 @@ const studentsRoutes = require('./routes/students');
 const exportRoutes = require('./routes/export');
 const importRoutes = require('./routes/import');
 const { router: uploadRoutes } = require('./routes/upload');
+const testsRoutes = require('./routes/tests');
+const feesRoutes = require('./routes/fees');
+const testCyclesRoutes = require('./routes/testCycles');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -66,6 +69,9 @@ app.use('/api/students', requireAuth, studentsRoutes);
 app.use('/api/export', requireAuth, exportRoutes);
 app.use('/api/import', requireAuth, importRoutes);
 app.use('/api/upload', requireAuth, uploadRoutes);
+app.use('/api/tests', requireAuth, testsRoutes);
+app.use('/api/fees', requireAuth, feesRoutes);
+app.use('/api/test-cycles', requireAuth, testCyclesRoutes);
 
 // Dashboard stats
 app.get('/api/dashboard', requireAuth, (req, res) => {
@@ -75,6 +81,7 @@ app.get('/api/dashboard', requireAuth, (req, res) => {
   const totalBoards = db.prepare('SELECT COUNT(*) as count FROM boards').get().count;
   const totalStudents = db.prepare('SELECT COUNT(*) as count FROM students').get().count;
   const totalStandards = db.prepare('SELECT COUNT(*) as count FROM standards').get().count;
+  const totalTests = db.prepare('SELECT COUNT(*) as count FROM tests').get().count;
   const recentActivity = db.prepare('SELECT * FROM activity_log ORDER BY created_at DESC LIMIT 15').all();
 
   // Class-level pass/fail/distinction stats
@@ -96,12 +103,12 @@ app.get('/api/dashboard', requireAuth, (req, res) => {
       const result = calculateStudentResult(student, subjects, marksMap, std.board_id_val);
       if (result.finalStatus === 'Distinction') distinction++;
       if (result.finalStatus === 'Fail') fail++;
-      else pass++;
+      else if (result.finalStatus !== 'Pending') pass++;
     }
     classStats.push({ standard_id: std.id, standard_name: std.display_name, total: students.length, pass, fail, distinction });
   }
 
-  res.json({ totalBoards, totalStudents, totalStandards, recentActivity, classStats });
+  res.json({ totalBoards, totalStudents, totalStandards, totalTests, recentActivity, classStats });
 });
 
 // SPA fallback — serve index.html for all non-API routes
@@ -119,15 +126,36 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: err.message || 'Internal server error' });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`
 ╔════════════════════════════════════════════╗
-║     🎓 Result Generator Server Running     ║
-║     http://localhost:${PORT}                  ║
-║     Default login: admin@result.local      ║
-║     Default password: admin123             ║
+║     🎓 Apex Tuition ERP — Server Running   ║
+║     ➤  http://localhost:${PORT}               ║
+║     Login: admin@result.local / admin123   ║
 ╚════════════════════════════════════════════╝
   `);
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`
+❌  Port ${PORT} is already in use!
+
+To fix this, run ONE of these commands:
+
+  Option 1 (kill the old process):
+    npx kill-port ${PORT}
+
+  Option 2 (find & kill manually):
+    netstat -ano | findstr :${PORT}
+    taskkill /PID <PID_NUMBER> /F
+
+Then restart with:  npm run dev
+    `);
+    process.exit(1);
+  } else {
+    throw err;
+  }
 });
 
 module.exports = app;

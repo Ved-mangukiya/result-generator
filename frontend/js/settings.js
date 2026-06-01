@@ -67,13 +67,55 @@ async function renderSettings() {
           <div class="form-group mb-6">
             <label class="form-label">Primary Brand Color</label>
             <div class="flex gap-3 items-center">
-              <input type="color" class="form-control" id="s-color" value="${profile.primary_color || '#1a3a6b'}" style="width:60px;height:42px;cursor:pointer">
+              <input type="color" class="form-control" id="s-color" value="${profile.primary_color || '#7a6130'}" style="width:60px;height:42px;cursor:pointer">
               <div class="color-swatch-grid" id="s-color-swatches">
-                ${['#1a3a6b','#7c1d1d','#0f4c2e','#1a1a2e','#c17f24','#1a4a6b','#4a1a6b','#2d4a1a'].map(c => `
-                  <div class="color-swatch ${profile.primary_color === c ? 'selected' : ''}" data-color="${c}" style="background:${c}" onclick="setProfileColor('${c}')"></div>`).join('')}
+                ${['#7a6130','#d4af37','#7c1d1d','#0f4c2e','#1a1a2e','#c17f24','#4a1a6b','#2d4a1a'].map(c => `
+                  <div class="color-swatch ${(profile.primary_color || '#7a6130') === c ? 'selected' : ''}" data-color="${c}" style="background:${c}" onclick="setProfileColor('${c}')"></div>`).join('')}
               </div>
             </div>
           </div>
+          
+          <p class="form-section-title mt-4">Academic & Exam Structure</p>
+          <div class="form-group mb-4">
+            <label class="form-label">Weekly/Monthly Tests per Year</label>
+            <input type="number" class="form-control" id="s-weekly-tests" value="${profile.weekly_tests_count ?? 40}" min="0" max="150">
+          </div>
+          <div class="form-group mb-4">
+            <label class="toggle-group">
+              <label class="toggle"><input type="checkbox" id="s-has-midsem" ${profile.has_midsem !== 0 ? 'checked' : ''}><span class="toggle-slider"></span></label>
+              <span class="toggle-label">Conduct Semester 1 / Midterm Exam</span>
+            </label>
+          </div>
+          <div class="form-group mb-6">
+            <label class="toggle-group">
+              <label class="toggle"><input type="checkbox" id="s-has-final" ${profile.has_final !== 0 ? 'checked' : ''}><span class="toggle-slider"></span></label>
+              <span class="toggle-label">Conduct Semester 2 / Final Exam</span>
+            </label>
+          </div>
+
+          <p class="form-section-title mt-4">Signatory Signature (for Notices &amp; Reminders)</p>
+          <div class="form-group mb-4">
+            <label class="form-label">Signatory Name (shown below signature)</label>
+            <input type="text" class="form-control" id="s-signatory-name" value="${profile.signatory_name || ''}" placeholder="e.g. Principal / Director Name">
+          </div>
+          <div class="form-group mb-6">
+            <label class="form-label">Signature Image</label>
+            <div class="flex gap-4 items-center">
+              <div id="sig-preview-wrap" style="width:160px;height:60px;border:2px dashed var(--border-medium);border-radius:var(--radius-lg);overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--bg-surface)">
+                ${profile.signature_path
+                  ? `<img src="/${profile.signature_path}?t=${Date.now()}" style="width:100%;height:100%;object-fit:contain;padding:4px" id="sig-img">`
+                  : `<span style="font-size:0.75rem;color:var(--text-muted);text-align:center">No signature<br>uploaded</span>`}
+              </div>
+              <div>
+                <label class="btn btn-outline btn-sm" style="cursor:pointer">
+                  ✍️ Upload Signature
+                  <input type="file" accept="image/*" style="display:none" onchange="uploadSignatureImg(this)">
+                </label>
+                <p class="text-xs text-muted mt-2">PNG with transparent background recommended · Max 5MB</p>
+              </div>
+            </div>
+          </div>
+          
           <button class="btn btn-primary w-full" onclick="saveCoachingProfile()">💾 Save Profile</button>
         </div>
       </div>
@@ -167,6 +209,10 @@ async function saveCoachingProfile() {
       phone: getVal('s-phone'),
       website: getVal('s-website'),
       primary_color: document.getElementById('s-color').value,
+      weekly_tests_count: parseInt(getVal('s-weekly-tests')) || 40,
+      has_midsem: document.getElementById('s-has-midsem').checked ? 1 : 0,
+      has_final: document.getElementById('s-has-final').checked ? 1 : 0,
+      signatory_name: getVal('s-signatory-name'),
       onboarding_complete: true
     });
     
@@ -197,8 +243,12 @@ async function changePassword() {
   }
 }
 
-window.renderSettings = renderSettings;
-window.setProfileColor = setProfileColor;
-window.uploadLogo = uploadLogo;
-window.saveCoachingProfile = saveCoachingProfile;
-window.changePassword = changePassword;
+async function uploadSignatureImg(input) {
+  const file = input.files[0];
+  if (!file) return;
+  
+  const form = new FormData();
+  form.append('signature', file);
+  
+  try {
+    const result = await API.u

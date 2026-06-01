@@ -72,8 +72,13 @@ function initializeDatabase() {
       address TEXT DEFAULT '',
       phone TEXT DEFAULT '',
       website TEXT DEFAULT '',
-      primary_color TEXT DEFAULT '#1a3a6b',
+      primary_color TEXT DEFAULT '#7a6130',
       onboarding_complete INTEGER DEFAULT 0,
+      weekly_tests_count INTEGER DEFAULT 40,
+      has_midsem INTEGER DEFAULT 1,
+      has_final INTEGER DEFAULT 1,
+      signature_path TEXT DEFAULT '',
+      signatory_name TEXT DEFAULT '',
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -137,6 +142,10 @@ function initializeDatabase() {
       photo_path TEXT DEFAULT '',
       remarks TEXT DEFAULT '',
       attendance_pct REAL DEFAULT NULL,
+      admission_date TEXT DEFAULT '',
+      status TEXT DEFAULT 'Active',
+      total_fees REAL DEFAULT 0,
+      paid_fees REAL DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (standard_id) REFERENCES standards(id) ON DELETE CASCADE
     );
@@ -153,6 +162,56 @@ function initializeDatabase() {
       UNIQUE(student_id, subject_id),
       FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
       FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
+    );
+
+    -- Test Cycles (grouped tests)
+    CREATE TABLE IF NOT EXISTS test_cycles (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      standard_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      max_marks REAL NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (standard_id) REFERENCES standards(id) ON DELETE CASCADE
+    );
+
+    -- Tests (small tests)
+    CREATE TABLE IF NOT EXISTS tests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      standard_id INTEGER NOT NULL,
+      subject_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      max_marks REAL NOT NULL,
+      test_date TEXT,
+      cycle_id INTEGER DEFAULT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (standard_id) REFERENCES standards(id) ON DELETE CASCADE,
+      FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
+      FOREIGN KEY (cycle_id) REFERENCES test_cycles(id) ON DELETE CASCADE
+    );
+
+    -- Test Marks
+    CREATE TABLE IF NOT EXISTS test_marks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      test_id INTEGER NOT NULL,
+      student_id INTEGER NOT NULL,
+      obtained_marks REAL DEFAULT NULL,
+      is_absent INTEGER DEFAULT 0,
+      remarks TEXT DEFAULT '',
+      UNIQUE(test_id, student_id),
+      FOREIGN KEY (test_id) REFERENCES tests(id) ON DELETE CASCADE,
+      FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+    );
+
+    -- Fee payments
+    CREATE TABLE IF NOT EXISTS fee_payments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      student_id INTEGER NOT NULL,
+      amount REAL NOT NULL,
+      payment_date TEXT NOT NULL,
+      payment_method TEXT NOT NULL,
+      remarks TEXT DEFAULT '',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
     );
 
     -- Result card settings per standard
@@ -185,6 +244,33 @@ function initializeDatabase() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
+
+  // Dynamic migrations helper
+  const runMigrationSafe = (query) => {
+    try {
+      db.exec(query);
+    } catch (e) {
+      // Column/index probably already exists, safe to ignore
+    }
+  };
+
+  runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN weekly_tests_count INTEGER DEFAULT 40");
+  runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN has_midsem INTEGER DEFAULT 1");
+  runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN has_final INTEGER DEFAULT 1");
+  runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN signature_path TEXT DEFAULT ''");
+  runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN signatory_name TEXT DEFAULT ''");
+  runMigrationSafe("ALTER TABLE students ADD COLUMN admission_date TEXT DEFAULT ''");
+  runMigrationSafe("ALTER TABLE students ADD COLUMN status TEXT DEFAULT 'Active'");
+  runMigrationSafe("ALTER TABLE students ADD COLUMN total_fees REAL DEFAULT 0");
+  runMigrationSafe("ALTER TABLE students ADD COLUMN paid_fees REAL DEFAULT 0");
+  runMigrationSafe("ALTER TABLE tests ADD COLUMN cycle_id INTEGER DEFAULT NULL");
+
+  // Cleanup generic/testing log entries to keep dashboard recent feed beautiful
+  try {
+    db.exec("DELETE FROM activity_log WHERE description LIKE '%undefined%' OR description LIKE '%null%' OR description LIKE '%test ID%'");
+  } catch (e) {
+    // ignore
+  }
 
   console.log('✅ Database initialized successfully');
 }

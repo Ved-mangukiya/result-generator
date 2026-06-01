@@ -6,9 +6,11 @@ const API = {
   async _req(method, url, data, isFormData = false) {
     const opts = {
       method,
-      credentials: 'same-origin',
-      headers: isFormData ? {} : { 'Content-Type': 'application/json' }
+      credentials: 'same-origin'
     };
+    if (!isFormData) {
+      opts.headers = { 'Content-Type': 'application/json' };
+    }
     if (data) opts.body = isFormData ? data : JSON.stringify(data);
     
     const res = await fetch(url, opts);
@@ -37,7 +39,7 @@ const API = {
   post:   (url, data)  => API._req('POST', url, data),
   put:    (url, data)  => API._req('PUT', url, data),
   delete: (url)        => API._req('DELETE', url),
-  upload: (url, form)  => API._req('POST', url, form, true),
+  uploadFile: (url, form)  => API._req('POST', url, form, true),
 
   // ─── Auth ──────────────────────────────────────
   auth: {
@@ -81,11 +83,13 @@ const API = {
 
   // ─── Subjects ──────────────────────────────────
   subjects: {
-    list:    (standardId)       => API.get(`/api/subjects?standard_id=${standardId}`),
-    add:     (data)             => API.post('/api/subjects', data),
-    update:  (id, data)         => API.put(`/api/subjects/${id}`, data),
-    delete:  (id)               => API.delete(`/api/subjects/${id}`),
-    reorder: (order)            => API.put('/api/subjects/reorder', { order }),
+    list:       (standardId)       => API.get(`/api/subjects?standard_id=${standardId}`),
+    add:        (data)             => API.post('/api/subjects', data),
+    update:     (id, data)         => API.put(`/api/subjects/${id}`, data),
+    delete:     (id)               => API.delete(`/api/subjects/${id}`),
+    reorder:    (order)            => API.put('/api/subjects/reorder', { order }),
+    predefined: ()                 => API.get('/api/subjects/predefined'),
+    getDefault: (stdNum, stream, boardId) => API.get(`/api/subjects/default?standard_number=${stdNum}&stream=${encodeURIComponent(stream)}&board_id=${boardId}`),
   },
 
   // ─── Students ──────────────────────────────────
@@ -105,18 +109,49 @@ const API = {
     getMarks:   (id)            => API.get(`/api/students/${id}/marks`),
     saveMarks:  (id, marks)     => API.post(`/api/students/${id}/marks`, { marks }),
     getResult:  (id)            => API.get(`/api/students/${id}/result`),
+    getNextRoll:(standardId)    => API.get(`/api/students/next-roll?standard_id=${standardId}`),
+    resequence: (standardId)    => API.post('/api/students/resequence', { standard_id: standardId }),
+  },
+
+  // ─── Tests ─────────────────────────────────────
+  tests: {
+    list:        (standardId)   => API.get(`/api/tests?standard_id=${standardId}`),
+    add:         (data)         => API.post('/api/tests', data),
+    update:      (id, data)     => API.put(`/api/tests/${id}`, data),
+    delete:      (id)           => API.delete(`/api/tests/${id}`),
+    getMarks:    (id)           => API.get(`/api/tests/${id}/marks`),
+    saveMarks:   (id, marks)    => API.post(`/api/tests/${id}/marks`, { marks }),
+    excel:       (id)           => `/api/tests/${id}/export/excel`,
+    pdf:         (id)           => `/api/tests/${id}/export/pdf`,
+    importMarks: (id, form)     => API.uploadFile(`/api/tests/${id}/import`, form),
+  },
+
+  // ─── Fees ──────────────────────────────────────
+  fees: {
+    getLedger:     (studentId)       => API.get(`/api/fees/student/${studentId}`),
+    addPayment:    (studentId, data) => API.post(`/api/fees/student/${studentId}/payments`, data),
+    deletePayment: (paymentId)       => API.delete(`/api/fees/payments/${paymentId}`),
+  },
+
+  // ─── Test Cycles ───────────────────────────────
+  testCycles: {
+    list:   (standardId) => API.get(`/api/test-cycles?standard_id=${standardId}`),
+    get:    (id)         => API.get(`/api/test-cycles/${id}`),
+    create: (data)       => API.post('/api/test-cycles', data),
+    delete: (id)         => API.delete(`/api/test-cycles/${id}`),
   },
 
   // ─── Import ────────────────────────────────────
   import: {
-    parse:   (formData)         => API.upload('/api/upload/import', formData),
+    parse:   (formData)         => API.uploadFile('/api/upload/import', formData),
     execute: (data)             => API.post('/api/import/execute', data),
   },
 
-  // ─── Upload ────────────────────────────────────
+  // ─── Upload ──────────────────────────────────────
   upload: {
-    logo:    (formData)         => API.upload('/api/upload/logo', formData),
-    photo:   (studentId, form)  => API.upload(`/api/upload/photo/${studentId}`, form),
+    logo:      (formData)         => API.uploadFile('/api/upload/logo', formData),
+    photo:     (studentId, form)  => API.uploadFile(`/api/upload/photo/${studentId}`, form),
+    signature: (formData)         => API.uploadFile('/api/upload/signature', formData),
   },
 
   // ─── Export ────────────────────────────────────
@@ -131,6 +166,7 @@ const API = {
     pdfSingle:      (studentId, templateId)   => `/api/export/pdf/single/${studentId}/download${templateId ? `?template_id=${templateId}` : ''}`,
     pdfBulk:        (standardId, templateId)  => `/api/export/pdf/bulk/${standardId}/download${templateId ? `?template_id=${templateId}` : ''}`,
     excel:          (standardId)              => `/api/export/excel/${standardId}/download`,
+    reminderPDF:    (data)                    => API.post('/api/export/reminder-pdf', data),
   }
 };
 

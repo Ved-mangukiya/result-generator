@@ -89,7 +89,7 @@ async function loadResultsForClass(standardId) {
     actionsEl.style.display = 'flex';
     
     // Summary bar
-    const passCount = students.filter(s => s.finalStatus !== 'Fail').length;
+    const passCount = students.filter(s => s.finalStatus !== 'Fail' && s.finalStatus !== 'Pending').length;
     const failCount = students.filter(s => s.finalStatus === 'Fail').length;
     const distCount = students.filter(s => s.finalStatus === 'Distinction').length;
     const avgPct = students.length > 0
@@ -229,25 +229,36 @@ async function showResultSettings() {
         ['show_attendance', 'Show Attendance', settings.show_attendance],
         ['show_remarks', 'Show Remarks', settings.show_remarks],
         ['show_photo', 'Show Photo', settings.show_photo],
-        ['show_parent_names', "Show Parent Names", settings.show_parent_names],
+        ['show_parent_names', 'Show Parent Names', settings.show_parent_names],
         ['show_dob', 'Show Date of Birth', settings.show_dob],
         ['show_split_marks', 'Show Int/Ext Split', settings.show_split_marks],
         ['show_grade', 'Show Grade', settings.show_grade],
-        ['show_pass_fail', 'Show Pass/Fail', settings.show_pass_fail],
-      ].map(([id, label, val]) => `
+        ['show_pass_fail', 'Show Pass/Fail', settings.show_pass_fail]
+      ].map(opt => `
         <label class="toggle-group">
-          <label class="toggle"><input type="checkbox" id="rs-${id}" ${val ? 'checked' : ''}><span class="toggle-slider"></span></label>
-          <span class="toggle-label">${label}</span>
-        </label>`).join('')}
+          <span class="toggle-label">${opt[1]}</span>
+          <span class="toggle">
+            <input type="checkbox" id="rs-${opt[0]}" ${opt[2] !== 0 ? 'checked' : ''}>
+            <span class="toggle-slider"></span>
+          </span>
+        </label>
+      `).join('')}
+    </div>
+    
+    <div class="form-group mb-6">
+      <label class="form-label">Paper Sizing</label>
+      <select class="form-control" id="rs-paper_size" style="width:100%">
+        <option value="A4 Portrait" ${settings.paper_size === 'A5 Portrait' ? '' : 'selected'}>A4 Portrait (Standard A4 Sheet)</option>
+        <option value="A5 Portrait" ${settings.paper_size === 'A5 Portrait' ? 'selected' : ''}>A5 Portrait (Half A4 Sheet - Compact)</option>
+      </select>
     </div>
     
     <p class="form-section-title">Template</p>
     <div class="flex gap-2 flex-wrap mb-4" id="template-quick-select">
-      ${[1,2,3,4,5,6].map(i => {
-        const names = ['Imperial','Saffron','Emerald','Corporate','Maroon','Sky Modern'];
-        return `<button type="button" class="btn ${settings.template_id === i ? 'btn-primary' : 'btn-outline'} btn-sm" 
-          onclick="selectQuickTemplate(${i})" data-tid="${i}">${i}. ${names[i-1]}</button>`;
-      }).join('')}
+      ${(typeof TEMPLATE_INFO !== 'undefined' ? TEMPLATE_INFO : []).map(t => `
+        <button type="button" class="btn ${settings.template_id === t.id ? 'btn-primary' : 'btn-outline'} btn-sm" 
+          onclick="selectQuickTemplate(${t.id})" data-tid="${t.id}">${t.id}. ${t.name}</button>
+      `).join('')}
     </div>
     <input type="hidden" id="rs-template" value="${settings.template_id || 1}">
     
@@ -255,7 +266,7 @@ async function showResultSettings() {
     <div class="form-grid">
       <div class="form-group">
         <label class="form-label">Primary Color</label>
-        <input type="color" class="form-control" id="rs-primary-color" value="${settings.primary_color || '#1a3a6b'}" style="height:42px;cursor:pointer">
+        <input type="color" class="form-control" id="rs-primary-color" value="${settings.primary_color || '#7a6130'}" style="height:42px;cursor:pointer">
       </div>
       <div class="form-group">
         <label class="form-label">Accent Color</label>
@@ -289,6 +300,7 @@ async function saveResultSettings(standardId) {
     show_split_marks: document.getElementById('rs-show_split_marks').checked,
     show_grade: document.getElementById('rs-show_grade').checked,
     show_pass_fail: document.getElementById('rs-show_pass_fail').checked,
+    paper_size: document.getElementById('rs-paper_size').value,
     result_categories: ['Distinction','First Class','Second Class','Pass','Fail']
   };
   

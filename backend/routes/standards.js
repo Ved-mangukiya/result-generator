@@ -10,6 +10,7 @@ const STREAMS = [
   'Science (PCMB)',
   'Commerce with Maths',
   'Commerce without Maths',
+  'Commerce (GSEB)',
   'Arts / Humanities',
   'Vocational',
   'Custom'
@@ -32,7 +33,7 @@ router.get('/:id', (req, res) => {
 
 // POST /api/standards — create a standard under a board
 router.post('/', (req, res) => {
-  const { board_id, standard_number, stream, display_name } = req.body;
+  const { board_id, standard_number, stream, display_name, subjects } = req.body;
   if (!board_id || !standard_number) return res.status(400).json({ error: 'board_id and standard_number required' });
 
   const streamVal = stream || 'General';
@@ -45,16 +46,39 @@ router.post('/', (req, res) => {
   const result = db.prepare('INSERT INTO standards (board_id, standard_number, stream, display_name) VALUES (?, ?, ?, ?)').run(board_id, standard_number, streamVal, displayName);
   const standardId = result.lastInsertRowid;
 
-  // Auto-seed subjects based on standard number and stream
-  const subjectTemplate = getSubjectTemplate(standard_number, streamVal);
-  if (subjectTemplate) {
-    const insertSubject = db.prepare(`INSERT INTO subjects (standard_id, name, max_marks, marks_type, internal_max, external_max, is_compulsory, is_language, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+  // Auto-seed subjects
+  const insertSubject = db.prepare(`INSERT INTO subjects (standard_id, name, max_marks, marks_type, internal_max, external_max, is_compulsory, is_language, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+  
+  if (subjects && Array.isArray(subjects) && subjects.length > 0) {
     const seedSubjects = db.transaction(() => {
-      subjectTemplate.subjects.forEach((s, i) => {
-        insertSubject.run(standardId, s.name, s.max_marks || 100, s.marks_type || 'total', s.internal_max || 0, s.external_max || s.max_marks || 100, s.is_compulsory ? 1 : 0, s.is_language ? 1 : 0, i);
+      subjects.forEach((s, i) => {
+        insertSubject.run(
+          standardId, 
+          s.name, 
+          s.max_marks || 100, 
+          s.marks_type || 'total', 
+          s.internal_max || 0, 
+          s.external_max || s.max_marks || 100, 
+          s.is_compulsory ? 1 : 0, 
+          s.is_language ? 1 : 0, 
+          i
+        );
       });
     });
     seedSubjects();
+  } else {
+    // Auto-seed subjects based on standard number and stream template
+    const board = db.prepare('SELECT short_name FROM boards WHERE id = ?').get(board_id);
+    const boardShort = board ? board.short_name : '';
+    const subjectTemplate = getSubjectTemplate(standard_number, streamVal, boardShort);
+    if (subjectTemplate) {
+      const seedSubjects = db.transaction(() => {
+        subjectTemplate.subjects.forEach((s, i) => {
+          insertSubject.run(standardId, s.name, s.max_marks || 100, s.marks_type || 'total', s.internal_max || 0, s.external_max || s.max_marks || 100, s.is_compulsory ? 1 : 0, s.is_language ? 1 : 0, i);
+        });
+      });
+      seedSubjects();
+    }
   }
 
   logActivity('STANDARD_ADD', `Standard added: ${displayName}`);
@@ -122,13 +146,19 @@ function buildDisplayName(num, stream) {
   return `${ord} Standard`;
 }
 
-function getSubjectTemplate(stdNum, stream) {
+function getSubjectTemplate(stdNum, stream, boardShort = '') {
   const subjects = subjectsData.subjects;
   const num = parseInt(stdNum);
   if (num >= 1 && num <= 5) return subjects['1_5'];
   if (num >= 6 && num <= 8) return subjects['6_8'];
-  if (num >= 9 && num <= 10) return subjects['9_10_CBSE']; // default CBSE style; can be adjusted per board
+  if (num >= 9 && num <= 10) {
+    if (boardShort === 'CBSE') return subjects['9_10_CBSE'];
+    return subjects['9_10_STATE'] || subjects['9_10_CBSE'];
+  }
   if (num >= 11 && num <= 12) {
+    if (boardShort === 'GSEB' && stream.toLowerCase().includes('commerce')) {
+      return subjects['11_12_Commerce_GSEB'] || subjects['11_12_Commerce_NoMaths'];
+    }
     const streamMap = {
       'Science (PCM)': subjects['11_12_Science_PCM'],
       'Science (PCB)': subjects['11_12_Science_PCB'],

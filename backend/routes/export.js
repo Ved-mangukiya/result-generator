@@ -14,7 +14,7 @@ router.get('/results/:standardId', (req, res) => {
   if (!standard) return res.status(404).json({ error: 'Standard not found' });
 
   const subjects = db.prepare('SELECT * FROM subjects WHERE standard_id = ? ORDER BY sort_order').all(req.params.standardId);
-  const students = db.prepare('SELECT * FROM students WHERE standard_id = ? ORDER BY roll_number').all(req.params.standardId);
+  const students = db.prepare('SELECT * FROM students WHERE standard_id = ? ORDER BY CAST(roll_number AS INTEGER) ASC, roll_number ASC').all(req.params.standardId);
 
   const studentResults = students.map(student => {
     const marksRows = db.prepare('SELECT * FROM marks WHERE student_id = ?').all(student.id);
@@ -79,8 +79,9 @@ router.get('/pdf/single/:studentId/download', async (req, res) => {
     const settings = db.prepare(`SELECT rcs.template_id FROM result_card_settings rcs 
       JOIN students st ON st.standard_id = rcs.standard_id WHERE st.id = ?`).get(req.params.studentId);
     const templateId = req.query.template_id || settings?.template_id || 1;
+    const templatePath = path.join(__dirname, `../../templates/template${templateId}.html`);
 
-    const { filename, outputPath } = await generateSinglePDF(parseInt(req.params.studentId), parseInt(templateId));
+    const { filename, outputPath } = await generateSinglePDF(parseInt(req.params.studentId), templatePath);
     res.download(outputPath, filename, (err) => {
       if (err) console.error('Download error:', err);
       // Clean up after download
@@ -128,6 +129,23 @@ router.get('/excel/:standardId/download', (req, res) => {
     });
   } catch (err) {
     console.error('Excel export error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/export/reminder-pdf — Generate a printable notice / reminder PDF
+router.post('/reminder-pdf', async (req, res) => {
+  try {
+    const { generateReminderPDF } = require('../services/pdfService');
+    const { filename, outputPath } = await generateReminderPDF(req.body);
+    
+    res.download(outputPath, filename, (err) => {
+      if (err) console.error('Download error:', err);
+      // Clean up after download
+      try { fs.unlinkSync(outputPath); } catch(e) {}
+    });
+  } catch (err) {
+    console.error('Reminder PDF error:', err);
     res.status(500).json({ error: err.message });
   }
 });

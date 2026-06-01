@@ -23,6 +23,22 @@ async function renderDashboard() {
       ${[1,2,3,4].map(() => `<div class="stat-card"><div class="skeleton skeleton-avatar mb-4"></div><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-text"></div></div>`).join('')}
     </div>
 
+    <!-- Getting Started Checklist -->
+    <div class="card mb-6" id="dashboard-checklist-card">
+      <div class="card-header" style="background: rgba(255, 255, 255, 0.01); border-bottom: 1px solid var(--border)">
+        <div class="flex items-center gap-2">
+          <span style="font-size:1.1rem;">🚀</span>
+          <h3>Getting Started Checklist</h3>
+        </div>
+        <span class="badge badge-gold" id="checklist-progress-badge">0/4 Complete</span>
+      </div>
+      <div class="card-body p-4">
+        <div class="grid grid-4 gap-4" id="checklist-steps">
+          <!-- Dynamically loaded -->
+        </div>
+      </div>
+    </div>
+
     <!-- Class Stats + Activity -->
     <div class="grid gap-6" style="grid-template-columns:1fr 340px">
       <!-- Class Performance -->
@@ -59,7 +75,7 @@ async function renderDashboard() {
             { icon:'🏛', label:'Add Board', page:'boards', sub:'Setup a new board' },
             { icon:'👤', label:'Add Student', page:'students', sub:'Enroll manually' },
             { icon:'📥', label:'Import Excel', page:'import', sub:'Bulk student import' },
-            { icon:'📄', label:'Generate PDFs', page:'results', sub:'Export result cards' },
+            { icon:'📝', label:'Test Tracker', page:'tests', sub:'Manage small tests' },
           ].map(a => `
             <button class="stat-card" style="cursor:pointer;border:none;text-align:left" onclick="Router.navigate('${a.page}')">
               <div class="stat-card-icon blue" style="font-size:1.5rem">${a.icon}</div>
@@ -75,11 +91,69 @@ async function renderDashboard() {
   // Load real data
   try {
     const data = await API.dashboard.get();
+    const coaching = await API.coaching.get();
     renderDashboardStats(data);
+    renderChecklist(coaching, data);
     renderClassStats(data.classStats);
     renderActivityLog(data.recentActivity);
   } catch (err) {
     Toast.error('Dashboard Error', err.message);
+  }
+}
+
+function renderChecklist(coaching, data) {
+  const steps = [
+    {
+      label: 'Set Up Profile',
+      desc: 'Add address & logo',
+      done: !!(coaching.name && coaching.onboarding_complete),
+      page: 'settings',
+      icon: '🏫'
+    },
+    {
+      label: 'Setup Classrooms',
+      desc: 'Setup standards & subjects',
+      done: data.totalStandards > 0,
+      page: 'boards',
+      icon: '🏛'
+    },
+    {
+      label: 'Enroll Students',
+      desc: 'Add manually or import Excel',
+      done: data.totalStudents > 0,
+      page: 'students',
+      icon: '👥'
+    },
+    {
+      label: 'Small Test Tracker',
+      desc: 'Record unit exams & test scores',
+      done: data.totalTests > 0,
+      page: 'tests',
+      icon: '📝'
+    }
+  ];
+
+  const doneCount = steps.filter(s => s.done).length;
+  const progressBadge = document.getElementById('checklist-progress-badge');
+  if (progressBadge) {
+    progressBadge.textContent = `${doneCount}/${steps.length} Complete`;
+    progressBadge.className = `badge ${doneCount === steps.length ? 'badge-success' : 'badge-gold'}`;
+  }
+
+  const stepsContainer = document.getElementById('checklist-steps');
+  if (stepsContainer) {
+    stepsContainer.innerHTML = steps.map((s) => `
+      <div class="stat-card flex flex-col items-start justify-between hover-lift" style="border:1px solid ${s.done ? 'var(--success)' : 'var(--border-medium)'}; background:${s.done ? 'rgba(34, 197, 94, 0.02)' : 'var(--bg-card)'}; cursor:pointer;" onclick="Router.navigate('${s.page}')">
+        <div class="flex justify-between items-center w-full mb-2">
+          <span style="font-size:1.4rem;">${s.icon}</span>
+          <span style="font-weight:700; color:${s.done ? 'var(--success)' : 'var(--text-muted)'}; font-size:1.1rem">${s.done ? '✓' : '○'}</span>
+        </div>
+        <div>
+          <div style="font-weight:700; color:${s.done ? 'var(--success)' : 'var(--text-primary)'}; font-size:0.9rem">${s.label}</div>
+          <div class="text-xs text-muted mt-1">${s.desc}</div>
+        </div>
+      </div>
+    `).join('');
   }
 }
 
@@ -88,7 +162,7 @@ function renderDashboardStats(data) {
     { icon: '🏛', label: 'Boards', value: data.totalBoards || 0, iconClass: 'blue' },
     { icon: '📚', label: 'Classes', value: data.totalStandards || 0, iconClass: 'purple' },
     { icon: '👥', label: 'Students', value: data.totalStudents || 0, iconClass: 'green' },
-    { icon: '📊', label: 'Avg Pass Rate', value: calcPassRate(data.classStats) + '%', iconClass: 'gold', noAnim: true }
+    { icon: '📝', label: 'Tests Conducted', value: data.totalTests || 0, iconClass: 'gold' }
   ];
   
   document.getElementById('stats-grid').innerHTML = stats.map(s => `
@@ -165,14 +239,21 @@ function renderActivityLog(activities) {
     return;
   }
   
-  body.innerHTML = activities.map(a => `
-    <div class="activity-item">
-      <div class="activity-dot ${getActivityDotClass(a.action)}"></div>
-      <div>
-        <div class="activity-text">${a.description}</div>
-        <div class="activity-time">${Format.timeAgo(a.created_at)}</div>
-      </div>
-    </div>`).join('');
+  body.innerHTML = activities.map(a => {
+    let desc = a.description || 'System update';
+    // Sanitize any accidental leakage of "undefined" or "null" strings
+    desc = desc.replace(/\bundefined\b/gi, '').replace(/\bnull\b/gi, '').trim();
+    if (!desc) desc = 'System update';
+
+    return `
+      <div class="activity-item">
+        <div class="activity-dot ${getActivityDotClass(a.action)}"></div>
+        <div>
+          <div class="activity-text">${desc}</div>
+          <div class="activity-time">${a.created_at ? Format.timeAgo(a.created_at) : 'recently'}</div>
+        </div>
+      </div>`;
+  }).join('');
 }
 
 window.renderDashboard = renderDashboard;

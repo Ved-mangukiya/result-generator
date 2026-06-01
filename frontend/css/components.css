@@ -762,7 +762,7 @@ td.td-primary {
 }
 
 .color-swatch:hover { transform: scale(1.15); }
-.color-swatch.selected { border-color: white; box-shadow: 0 0 0 2px rgba(255,255,255,0.4); }
+.color-swatch.selected { border-color: var(--text-primary); box-shadow: 0 0 0 2px var(--bg-surface), 0 0 10px rgba(0, 0, 0, 0.15); }
 
 /* ═══════════════════════════════════════════════
    ACTIVITY LOG

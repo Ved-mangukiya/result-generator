@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;700&family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+  
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #fdfbf7;
+    color: #292019;
+    padding: 0;
+    margin: 0;
+  }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    background: #fdfbf7;
+    position: relative;
+    padding: 15mm;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Double border frame */
+  .outer-frame {
+    border: 3px solid {{PRIMARY_COLOR}};
+    padding: 5mm;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .inner-frame {
+    border: 1.5px solid #d4af37;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 10mm;
+    overflow: hidden;
+  }
+
+  /* Header */
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 6mm;
+    border-bottom: 2px solid #d4af37;
+    padding-bottom: 6mm;
+    margin-bottom: 8mm;
+  }
+
+  .coaching-logo { width: 80px; height: 80px; object-fit: contain; flex-shrink: 0; }
+  .logo-placeholder { width: 80px; height: 80px; background: rgba(212,175,55,0.1); border: 2px solid #d4af37; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0; }
+
+  .header-center { flex: 1; text-align: center; }
+  .header-center .inst-name { font-family: 'Cinzel', serif; font-size: 22pt; font-weight: 700; color: {{PRIMARY_COLOR}}; letter-spacing: 0.05em; line-height: 1.2; }
+  .header-center .inst-tagline { font-size: 10pt; color: #d4af37; margin-top: 2px; letter-spacing: 0.08em; }
+  .header-center .inst-contact { font-size: 8.5pt; color: #5c4e43; margin-top: 6px; }
+
+  /* Notice Title */
+  .notice-banner {
+    background: linear-gradient(135deg, {{PRIMARY_COLOR}}, #4d3c1a);
+    text-align: center;
+    padding: 4mm;
+    border-radius: 6px;
+    color: #fdfbf7;
+    margin-bottom: 8mm;
+    box-shadow: 0 4px 6px rgba(30, 23, 18, 0.08);
+  }
+  .notice-banner h2 { font-family: 'Cinzel', serif; font-size: 14pt; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+
+  /* Body Content */
+  .notice-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6mm;
+  }
+
+  .notice-message {
+    font-size: 11pt;
+    line-height: 1.8;
+    color: #292019;
+    white-space: pre-wrap;
+    text-align: justify;
+  }
+
+  /* Table details */
+  .details-container {
+    margin-top: 4mm;
+    margin-bottom: 6mm;
+  }
+
+  .details-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9.5pt;
+    box-shadow: 0 2px 4px rgba(30, 23, 18, 0.03);
+  }
+
+  .details-table th {
+    background: {{PRIMARY_COLOR}};
+    color: white;
+    padding: 3mm;
+    text-align: left;
+    border: 1px solid rgba(212,175,55,0.3);
+    font-weight: 600;
+  }
+
+  .details-table td {
+    padding: 3mm;
+    border: 1px solid #eadecc;
+    color: #5c4e43;
+  }
+
+  .details-table tr:nth-child(even) {
+    background: rgba(212,175,55,0.03);
+  }
+
+  .details-table tr:hover {
+    background: rgba(212,175,55,0.06);
+  }
+
+  /* Notice signoff */
+  .signoff-section {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10mm;
+  }
+
+  .sign-box {
+    text-align: center;
+  }
+
+  .sign-line {
+    width: 150px;
+    border-top: 1px solid #292019;
+    margin: 12mm auto 2mm;
+  }
+
+  .sign-label {
+    font-size: 9pt;
+    font-weight: 600;
+    color: {{PRIMARY_COLOR}};
+  }
+
+  /* Footer */
+  .card-footer {
+    border-top: 1px solid #d4af37;
+    padding-top: 4mm;
+    margin-top: 8mm;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 8pt;
+    color: #8d7d6f;
+  }
+
+  .watermark {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .watermark-text {
+    font-family: 'Cinzel', serif;
+    font-size: 40pt;
+    font-weight: 700;
+    color: rgba(212,175,55,0.04);
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    transform: rotate(-30deg);
+    text-align: center;
+    line-height: 1;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="outer-frame">
+    <div class="watermark"><div class="watermark-text">ANNOUNCEMENT</div></div>
+    
+    <div class="inner-frame">
+      <!-- Header -->
+      <div class="card-header">
+        {{COACHING_LOGO}}
+        <div class="header-center">
+          <div class="inst-name">{{COACHING_NAME}}</div>
+          <div class="inst-tagline">{{COACHING_TAGLINE}}</div>
+          <div class="inst-contact">{{COACHING_ADDRESS}} | {{COACHING_PHONE}} | {{COACHING_WEBSITE}}</div>
+        </div>
+      </div>
+
+      <!-- Title Banner -->
+      <div class="notice-banner">
+        <h2>{{TYPE_EMOJI}} {{TITLE}}</h2>
+      </div>
+
+      <!-- Notice Body -->
+      <div class="notice-body">
+        <div class="notice-message">{{MESSAGE}}</div>
+
+        <!-- Dynamic Details Table -->
+        <div class="details-container">
+          {{DETAILS_TABLE}}
+        </div>
+        
+        <!-- Signoff -->
+        <div class="signoff-section">
+          <div class="sign-box">
+            <div class="sign-line"></div>
+            <div class="sign-label">Authorized Signatory</div>
+            <div style="font-size: 7.5pt; color: #8d7d6f; margin-top: 1mm;">{{COACHING_NAME}}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="card-footer">
+        <div>Academic Year: {{ACADEMIC_YEAR}}</div>
+        <div>Date of Issue: <span id="issue-date"></span></div>
+        <div>Apex Tuition ERP</div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  // Set current date
+  const d = new Date();
+  document.getElementById('issue-date').textContent = d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear();
+</script>
+</body>
+</html>

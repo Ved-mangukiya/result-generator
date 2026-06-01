@@ -10,17 +10,29 @@ router.get('/', (req, res) => {
 
 // PUT /api/coaching
 router.put('/', (req, res) => {
-  const { name, tagline, address, phone, website, primary_color, onboarding_complete } = req.body;
+  const { name, tagline, address, phone, website, primary_color, onboarding_complete, weekly_tests_count, has_midsem, has_final, signatory_name } = req.body;
   const existing = db.prepare('SELECT id FROM coaching_profile').get();
+
+  const w_count = weekly_tests_count !== undefined ? parseInt(weekly_tests_count) : 40;
+  const midsem = has_midsem !== undefined ? parseInt(has_midsem) : 1;
+  const final = has_final !== undefined ? parseInt(has_final) : 1;
 
   if (existing) {
     db.prepare(`UPDATE coaching_profile SET 
       name = ?, tagline = ?, address = ?, phone = ?, website = ?, primary_color = ?,
-      onboarding_complete = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?`).run(name, tagline, address, phone, website, primary_color, onboarding_complete ? 1 : 0, existing.id);
+      onboarding_complete = ?, weekly_tests_count = ?, has_midsem = ?, has_final = ?,
+      signatory_name = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?`).run(
+        name, tagline, address, phone, website, primary_color, 
+        onboarding_complete ? 1 : 0, w_count, midsem, final,
+        signatory_name || '', existing.id
+      );
   } else {
-    db.prepare(`INSERT INTO coaching_profile (name, tagline, address, phone, website, primary_color, onboarding_complete)
-      VALUES (?, ?, ?, ?, ?, ?, ?)`).run(name, tagline, address, phone, website, primary_color, onboarding_complete ? 1 : 0);
+    db.prepare(`INSERT INTO coaching_profile (name, tagline, address, phone, website, primary_color, onboarding_complete, weekly_tests_count, has_midsem, has_final, signatory_name)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+        name, tagline, address, phone, website, primary_color, 
+        onboarding_complete ? 1 : 0, w_count, midsem, final, signatory_name || ''
+      );
   }
   logActivity('PROFILE_UPDATE', `Coaching profile updated: ${name}`);
   res.json({ success: true });

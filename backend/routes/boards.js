@@ -67,7 +67,8 @@ router.put('/:id/grades', (req, res) => {
     grades.forEach((g, i) => insertNew.run(req.params.id, g.label, g.min_pct, g.max_pct, g.color || '#4caf69', g.result_status || 'Pass', i));
   });
   update();
-  logActivity('GRADE_UPDATE', `Grade scale updated for board ID ${req.params.id}`);
+  const board = db.prepare('SELECT name FROM boards WHERE id = ?').get(req.params.id);
+  logActivity('GRADE_UPDATE', `Updated grade scale for board: ${board ? board.name : 'Unknown'}`);
   res.json({ success: true });
 });
 

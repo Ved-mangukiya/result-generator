@@ -44,6 +44,18 @@ const importStorage = multer.diskStorage({
   }
 });
 
+const signatureStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(UPLOADS_DIR, 'signatures');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `signature_${Date.now()}${ext}`);
+  }
+});
+
 const fileFilter = (req, file, cb) => {
   const allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
   const ext = path.extname(file.originalname).toLowerCase();
@@ -61,6 +73,7 @@ const importFilter = (req, file, cb) => {
 const uploadLogo = multer({ storage: logoStorage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
 const uploadPhoto = multer({ storage: photoStorage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
 const uploadImport = multer({ storage: importStorage, fileFilter: importFilter, limits: { fileSize: 20 * 1024 * 1024 } });
+const uploadSignature = multer({ storage: signatureStorage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
 
 // POST /api/upload/logo
 router.post('/logo', uploadLogo.single('logo'), (req, res) => {
@@ -90,4 +103,12 @@ router.post('/import', uploadImport.single('file'), (req, res) => {
   }
 });
 
-module.exports = { router, uploadLogo, uploadPhoto, uploadImport };
+// POST /api/upload/signature — upload signatory signature image
+router.post('/signature', uploadSignature.single('signature'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+  const relativePath = `uploads/signatures/${req.file.filename}`;
+  db.prepare('UPDATE coaching_profile SET signature_path = ? WHERE id = 1').run(relativePath);
+  res.json({ success: true, path: relativePath, url: `/uploads/signatures/${req.file.filename}` });
+});
+
+module.exports = { router, uploadLogo, uploadPhoto, uploadImport, uploadSignature };

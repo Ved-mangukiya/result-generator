@@ -68,6 +68,10 @@ async function buildResultCardHTML(studentId, templatePath) {
   // Build marks table rows
   let marksRows2 = '';
   for (const sr of result.subjectResults) {
+    // Skip optional subjects with no marks recorded (e.g. GSEB SPCC/Computer electives)
+    if (!sr.is_compulsory && sr.obtained === null && !sr.is_absent) {
+      continue;
+    }
     marksRows2 += `<tr>
       <td>${sr.subject_name}${sr.is_compulsory ? '' : ' <span class="optional-tag">Opt</span>'}</td>
       <td>${sr.max_marks}</td>
@@ -90,14 +94,14 @@ async function buildResultCardHTML(studentId, templatePath) {
     COACHING_PHONE: coaching.phone || '',
     COACHING_WEBSITE: coaching.website || '',
     COACHING_LOGO: logoSrc ? `<img src="${logoSrc}" alt="Logo" class="coaching-logo" />` : '<div class="logo-placeholder"></div>',
-    STUDENT_NAME: student.name,
-    STUDENT_ROLL: student.roll_number,
-    STUDENT_DOB: settings.show_dob !== 0 ? (student.dob || '-') : '',
-    FATHER_NAME: settings.show_parent_names !== 0 ? (student.father_name || '-') : '',
-    MOTHER_NAME: settings.show_parent_names !== 0 ? (student.mother_name || '-') : '',
-    BOARD_NAME: standard.board_name,
-    BOARD_SHORT: standard.board_short,
-    STANDARD_DISPLAY: standard.display_name,
+    STUDENT_NAME: student.name || '',
+    STUDENT_ROLL: student.roll_number || '',
+    STUDENT_DOB: settings.show_dob !== 0 ? (student.dob || '—') : '',
+    FATHER_NAME: settings.show_parent_names !== 0 ? (student.father_name || '—') : '',
+    MOTHER_NAME: settings.show_parent_names !== 0 ? (student.mother_name || '—') : '',
+    BOARD_NAME: standard?.board_name || '',
+    BOARD_SHORT: standard?.board_short || '',
+    STANDARD_DISPLAY: standard?.display_name || '',
     STUDENT_PHOTO: photoSrc
       ? `<img src="${photoSrc}" alt="Photo" class="student-photo" />`
       : '<div class="photo-placeholder"><span>Photo</span></div>',
@@ -105,24 +109,28 @@ async function buildResultCardHTML(studentId, templatePath) {
     SHOW_SPLIT_HEADER: (settings.show_split_marks !== 0) ? 'table-cell' : 'none',
     SHOW_GRADE_COL: (settings.show_grade !== 0) ? 'table-cell' : 'none',
     SHOW_PF_COL: (settings.show_pass_fail !== 0) ? 'table-cell' : 'none',
-    TOTAL_OBTAINED: result.totalObtained,
-    TOTAL_MAX: result.totalMaxMarks,
-    OVERALL_PCT: result.overallPct !== null ? result.overallPct.toFixed(2) + '%' : '-',
-    OVERALL_GRADE: result.overallGrade,
-    OVERALL_GRADE_COLOR: result.overallGradeColor,
-    FINAL_STATUS: result.finalStatus,
+    TOTAL_OBTAINED: result.totalObtained ?? '—',
+    TOTAL_MAX: result.totalMaxMarks ?? '—',
+    OVERALL_PCT: (result.overallPct !== null && result.overallPct !== undefined) ? result.overallPct.toFixed(2) + '%' : '—',
+    OVERALL_GRADE: result.overallGrade || '—',
+    OVERALL_GRADE_COLOR: result.overallGradeColor || '#1a1a1a',
+    FINAL_STATUS: result.finalStatus || '—',
     RANK: settings.show_rank !== 0 ? rank : '',
     TOTAL_STUDENTS: allStudents.length,
     REMARKS: settings.show_remarks !== 0 ? (student.remarks || '') : '',
-    ATTENDANCE: settings.show_attendance !== 0 ? (student.attendance_pct !== null ? student.attendance_pct + '%' : '-') : '',
-    PRIMARY_COLOR: settings.primary_color || coaching.primary_color || '#1a3a6b',
+    ATTENDANCE: settings.show_attendance !== 0 ? (student.attendance_pct !== null && student.attendance_pct !== undefined ? student.attendance_pct + '%' : '—') : '',
+    PRIMARY_COLOR: settings.primary_color || coaching.primary_color || '#7a6130',
     ACCENT_COLOR: settings.accent_color || '#d4af37',
     ACADEMIC_YEAR: new Date().getFullYear() + '-' + (new Date().getFullYear() + 1),
   };
 
-  // Replace all placeholders
+  // Replace all placeholders with strict guards against undefined/null values/strings
   for (const [key, value] of Object.entries(data)) {
-    templateHTML = templateHTML.split(`{{${key}}}`).join(value ?? '');
+    let cleanVal = value;
+    if (cleanVal === null || cleanVal === undefined || cleanVal === 'undefined' || cleanVal === 'null') {
+      cleanVal = '';
+    }
+    templateHTML = templateHTML.split(`{{${key}}}`).join(cleanVal);
   }
 
   // Inject dynamic CSS variables and display classes for valid HTML
@@ -139,6 +147,8 @@ async function buildResultCardHTML(studentId, templatePath) {
   </head>`;
   
   templateHTML = templateHTML.replace('</head>', dynamicStyles);
+  const paperSizeClass = settings.paper_size === 'A5 Portrait' ? 'size-a5' : 'size-a4';
+  templateHTML = templateHTML.replace('class="page"', `class="page ${paperSizeClass}"`);
 
   return templateHTML;
 }
@@ -146,11 +156,14 @@ async function buildResultCardHTML(studentId, templatePath) {
 /**
  * Generate PDF for a single student
  */
-async function generateSinglePDF(studentId, templateId = 1) {
-  const templatePath = path.join(__dirname, `../../templates/template${templateId}.html`);
+async function generateSinglePDF(studentId, templatePath) {
+  const student = db.prepare('SELECT * FROM students WHERE id = ?').get(studentId);
+  if (!student) throw new Error('Student not found');
+  const settings = db.prepare('SELECT * FROM result_card_settings WHERE standard_id = ?').get(student.standard_id) || {};
+  const paperFormat = settings.paper_size === 'A5 Portrait' ? 'A5' : 'A4';
+
   const html = await buildResultCardHTML(studentId, templatePath);
 
-  const student = db.prepare('SELECT name, roll_number FROM students WHERE id = ?').get(studentId);
   const standard = db.prepare(`SELECT s.display_name, b.short_name FROM standards s JOIN boards b ON s.board_id = b.id 
     JOIN students st ON st.standard_id = s.id WHERE st.id = ?`).get(studentId);
   const coaching = db.prepare('SELECT name FROM coaching_profile').get();
@@ -167,7 +180,7 @@ async function generateSinglePDF(studentId, templateId = 1) {
     await page.setContent(html, { waitUntil: 'networkidle0' });
     await page.pdf({
       path: outputPath,
-      format: 'A4',
+      format: paperFormat,
       printBackground: true,
       margin: { top: '10mm', bottom: '10mm', left: '10mm', right: '10mm' }
     });
@@ -182,11 +195,14 @@ async function generateSinglePDF(studentId, templateId = 1) {
  * Generate bulk PDF for all students in a standard (one page per student + cover page)
  */
 async function generateBulkPDF(standardId, templateId = 1) {
+  const settings = db.prepare('SELECT * FROM result_card_settings WHERE standard_id = ?').get(standardId) || {};
+  const paperFormat = settings.paper_size === 'A5 Portrait' ? 'A5' : 'A4';
+
   const standard = db.prepare(`
     SELECT s.*, b.name as board_name, b.short_name as board_short
     FROM standards s JOIN boards b ON s.board_id = b.id WHERE s.id = ?
   `).get(standardId);
-  const students = db.prepare('SELECT id FROM students WHERE standard_id = ? ORDER BY roll_number').all(standardId);
+  const students = db.prepare('SELECT id FROM students WHERE standard_id = ? ORDER BY CAST(roll_number AS INTEGER) ASC, roll_number ASC').all(standardId);
   const coaching = db.prepare('SELECT * FROM coaching_profile').get() || {};
   const templatePath = path.join(__dirname, `../../templates/template${templateId}.html`);
 
@@ -224,7 +240,7 @@ async function generateBulkPDF(standardId, templateId = 1) {
 
     // Cover page
     await page.setContent(coverHTML, { waitUntil: 'networkidle0' });
-    const coverBuffer = await page.pdf({ format: 'A4', printBackground: true });
+    const coverBuffer = await page.pdf({ format: paperFormat, printBackground: true });
     allPages.push(coverBuffer);
 
     // Each student
@@ -270,6 +286,88 @@ async function generateBulkPDF(standardId, templateId = 1) {
     await page.setContent(combinedHTML, { waitUntil: 'networkidle0' });
     await page.pdf({
       path: outputPath,
+      format: paperFormat,
+      printBackground: true,
+      margin: { top: '10mm', bottom: '10mm', left: '10mm', right: '10mm' }
+    });
+  } finally {
+    await browser.close();
+  }
+
+  return { filename, outputPath };
+}
+
+/**
+ * Generate PDF for a notice/reminder
+ */
+async function generateReminderPDF(payload) {
+  const { type, title, message, columns, rows } = payload;
+  const coaching = db.prepare('SELECT * FROM coaching_profile').get() || {};
+
+  const templatePath = path.join(__dirname, '../../templates/reminder_template.html');
+  let templateHTML = fs.readFileSync(templatePath, 'utf8');
+
+  // Build logo src
+  let logoSrc = '';
+  if (coaching.logo_path && fs.existsSync(path.join(__dirname, '../../', coaching.logo_path))) {
+    const logoData = fs.readFileSync(path.join(__dirname, '../../', coaching.logo_path));
+    const ext = path.extname(coaching.logo_path).slice(1).toLowerCase();
+    logoSrc = `data:image/${ext === 'jpg' ? 'jpeg' : ext};base64,${logoData.toString('base64')}`;
+  }
+
+  // Determine Type Emoji
+  let emoji = '📢';
+  if (type === 'vacation') emoji = '🌴';
+  else if (type === 'exam_schedule') emoji = '📅';
+  else if (type === 'starting_date') emoji = '🚀';
+
+  // Build Details Table HTML
+  let detailsTableHTML = '';
+  if (columns && Array.isArray(columns) && columns.length > 0 && rows && Array.isArray(rows) && rows.length > 0) {
+    detailsTableHTML = `<table class="details-table"><thead><tr>`;
+    columns.forEach(col => {
+      detailsTableHTML += `<th>${col}</th>`;
+    });
+    detailsTableHTML += `</tr></thead><tbody>`;
+    rows.forEach(row => {
+      detailsTableHTML += `<tr>`;
+      row.forEach(val => {
+        detailsTableHTML += `<td>${val}</td>`;
+      });
+      detailsTableHTML += `</tr>`;
+    });
+    detailsTableHTML += `</tbody></table>`;
+  }
+
+  const data = {
+    COACHING_NAME: coaching.name || 'Coaching Institute',
+    COACHING_TAGLINE: coaching.tagline || '',
+    COACHING_ADDRESS: coaching.address || '',
+    COACHING_PHONE: coaching.phone || '',
+    COACHING_WEBSITE: coaching.website || '',
+    COACHING_LOGO: logoSrc ? `<img src="${logoSrc}" alt="Logo" class="coaching-logo" />` : '<div class="logo-placeholder"></div>',
+    TITLE: title || 'Notice',
+    TYPE_EMOJI: emoji,
+    MESSAGE: message || '',
+    DETAILS_TABLE: detailsTableHTML,
+    PRIMARY_COLOR: coaching.primary_color || '#7a6130',
+    ACADEMIC_YEAR: new Date().getFullYear() + '-' + (new Date().getFullYear() + 1),
+  };
+
+  // Replace placeholders
+  for (const [key, value] of Object.entries(data)) {
+    templateHTML = templateHTML.split(`{{${key}}}`).join(value ?? '');
+  }
+
+  const filename = `Notice_${Date.now()}.pdf`;
+  const outputPath = path.join(EXPORTS_DIR, filename);
+
+  const browser = await getBrowser();
+  try {
+    const page = await browser.newPage();
+    await page.setContent(templateHTML, { waitUntil: 'networkidle0' });
+    await page.pdf({
+      path: outputPath,
       format: 'A4',
       printBackground: true,
       margin: { top: '10mm', bottom: '10mm', left: '10mm', right: '10mm' }
@@ -281,4 +379,4 @@ async function generateBulkPDF(standardId, templateId = 1) {
   return { filename, outputPath };
 }
 
-module.exports = { generateSinglePDF, generateBulkPDF, buildResultCardHTML };
+module.exports = { generateSinglePDF, generateBulkPDF, buildResultCardHTML, generateReminderPDF };

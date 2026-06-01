@@ -19,7 +19,7 @@ async function seed() {
   const existingProfile = db.prepare('SELECT id FROM coaching_profile').get();
   if (!existingProfile) {
     db.prepare(`INSERT INTO coaching_profile (name, tagline, address, phone, website, primary_color, onboarding_complete)
-                VALUES (?, ?, ?, ?, ?, ?, 0)`).run('', '', '', '', '', '#1a3a6b');
+                VALUES (?, ?, ?, ?, ?, ?, 0)`).run('', '', '', '', '', '#7a6130');
     console.log('✅ Coaching profile placeholder created');
   }
 
