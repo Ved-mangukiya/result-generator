@@ -304,7 +304,15 @@ async function generateReminderPDF(payload) {
   const { type, title, message, columns, rows } = payload;
   const coaching = db.prepare('SELECT * FROM coaching_profile').get() || {};
 
-  const templatePath = path.join(__dirname, '../../templates/reminder_template.html');
+  // Choose template based on notice type
+  const templateMap = {
+    vacation:       'reminder_vacation.html',
+    exam_schedule:  'reminder_exam.html',
+    starting_date:  'reminder_batch.html',
+    general:        'reminder_general.html',
+  };
+  const templateFile = templateMap[type] || 'reminder_template.html';
+  const templatePath = path.join(__dirname, '../../templates/', templateFile);
   let templateHTML = fs.readFileSync(templatePath, 'utf8');
 
   // Build logo src
@@ -313,6 +321,14 @@ async function generateReminderPDF(payload) {
     const logoData = fs.readFileSync(path.join(__dirname, '../../', coaching.logo_path));
     const ext = path.extname(coaching.logo_path).slice(1).toLowerCase();
     logoSrc = `data:image/${ext === 'jpg' ? 'jpeg' : ext};base64,${logoData.toString('base64')}`;
+  }
+
+  // Build signature src
+  let signatureSrc = '';
+  if (coaching.signature_path && fs.existsSync(path.join(__dirname, '../../', coaching.signature_path))) {
+    const sigData = fs.readFileSync(path.join(__dirname, '../../', coaching.signature_path));
+    const ext = path.extname(coaching.signature_path).slice(1).toLowerCase();
+    signatureSrc = `data:image/${ext === 'jpg' ? 'jpeg' : ext};base64,${sigData.toString('base64')}`;
   }
 
   // Determine Type Emoji
@@ -350,6 +366,10 @@ async function generateReminderPDF(payload) {
     TYPE_EMOJI: emoji,
     MESSAGE: message || '',
     DETAILS_TABLE: detailsTableHTML,
+    SIGNATURE_IMG: signatureSrc
+      ? `<img src="${signatureSrc}" alt="Signature" class="signature-img" />`
+      : '<div class="sig-line-blank"></div>',
+    SIGNATORY_NAME: coaching.signatory_name || coaching.name || 'Authorized Signatory',
     PRIMARY_COLOR: coaching.primary_color || '#7a6130',
     ACADEMIC_YEAR: new Date().getFullYear() + '-' + (new Date().getFullYear() + 1),
   };

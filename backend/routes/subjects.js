@@ -57,6 +57,16 @@ router.get('/default', (req, res) => {
   }
 });
 
+// GET /api/subjects/all-names — All unique subject names in the DB (for autocomplete)
+router.get('/all-names', (req, res) => {
+  try {
+    const rows = db.prepare('SELECT DISTINCT name FROM subjects ORDER BY name ASC').all();
+    res.json(rows.map(r => r.name));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/subjects?standard_id=X
 router.get('/', (req, res) => {
   const { standard_id } = req.query;

@@ -81,7 +81,7 @@ const API = {
     saveSettings:   (id, data)  => API.put(`/api/standards/${id}/result-settings`, data),
   },
 
-  // ─── Subjects ──────────────────────────────────
+  // ─── Subjects ──────────────────────────────────────
   subjects: {
     list:       (standardId)       => API.get(`/api/subjects?standard_id=${standardId}`),
     add:        (data)             => API.post('/api/subjects', data),
@@ -89,6 +89,7 @@ const API = {
     delete:     (id)               => API.delete(`/api/subjects/${id}`),
     reorder:    (order)            => API.put('/api/subjects/reorder', { order }),
     predefined: ()                 => API.get('/api/subjects/predefined'),
+    allNames:   ()                 => API.get('/api/subjects/all-names'),
     getDefault: (stdNum, stream, boardId) => API.get(`/api/subjects/default?standard_number=${stdNum}&stream=${encodeURIComponent(stream)}&board_id=${boardId}`),
   },
 
@@ -133,12 +134,18 @@ const API = {
     deletePayment: (paymentId)       => API.delete(`/api/fees/payments/${paymentId}`),
   },
 
-  // ─── Test Cycles ───────────────────────────────
+  // ─── Test Cycles ─────────────────────────────────────
   testCycles: {
-    list:   (standardId) => API.get(`/api/test-cycles?standard_id=${standardId}`),
-    get:    (id)         => API.get(`/api/test-cycles/${id}`),
-    create: (data)       => API.post('/api/test-cycles', data),
-    delete: (id)         => API.delete(`/api/test-cycles/${id}`),
+    list:    (standardId) => API.get(`/api/test-cycles?standard_id=${standardId}`),
+    get:     (id)         => API.get(`/api/test-cycles/${id}`),
+    results: (id)         => API.get(`/api/test-cycles/${id}/results`),
+    create:  (data)       => API.post('/api/test-cycles', data),
+    delete:  (id)         => API.delete(`/api/test-cycles/${id}`),
+  },
+
+  // ─── Reset ──────────────────────────────────────────
+  reset: {
+    execute: (categories) => API.post('/api/reset', { categories }),
   },
 
   // ─── Import ────────────────────────────────────
@@ -154,7 +161,7 @@ const API = {
     signature: (formData)         => API.uploadFile('/api/upload/signature', formData),
   },
 
-  // ─── Export ────────────────────────────────────
+  // ─── Export ──────────────────────────────────────
   export: {
     results:        (standardId)              => API.get(`/api/export/results/${standardId}`),
     previewStudent: (studentId, templateId)   => {
@@ -167,6 +174,7 @@ const API = {
     pdfBulk:        (standardId, templateId)  => `/api/export/pdf/bulk/${standardId}/download${templateId ? `?template_id=${templateId}` : ''}`,
     excel:          (standardId)              => `/api/export/excel/${standardId}/download`,
     reminderPDF:    (data)                    => API.post('/api/export/reminder-pdf', data),
+    noticeboardPDF: (data)                    => API.post('/api/export/noticeboard-pdf', data),
   }
 };
 

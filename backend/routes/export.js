@@ -141,7 +141,6 @@ router.post('/reminder-pdf', async (req, res) => {
     
     res.download(outputPath, filename, (err) => {
       if (err) console.error('Download error:', err);
-      // Clean up after download
       try { fs.unlinkSync(outputPath); } catch(e) {}
     });
   } catch (err) {
@@ -150,4 +149,20 @@ router.post('/reminder-pdf', async (req, res) => {
   }
 });
 
+// POST /api/export/noticeboard-pdf — Generate a noticeboard bulletin result sheet
+router.post('/noticeboard-pdf', async (req, res) => {
+  try {
+    const { generateNoticeboardPDF } = require('../services/pdfService');
+    const { filename, outputPath } = await generateNoticeboardPDF(req.body);
+    res.download(outputPath, filename, (err) => {
+      if (err) console.error('Noticeboard download error:', err);
+      try { fs.unlinkSync(outputPath); } catch(e) {}
+    });
+  } catch (err) {
+    console.error('Noticeboard PDF error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
+

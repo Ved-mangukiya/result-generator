@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Source+Sans+3:wght@400;500;600;700&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Source Sans 3',sans-serif; background:#f0f4f8; color:#1a2333; }
+  .page { width:210mm; min-height:297mm; background:#ffffff; padding:12mm; display:flex; flex-direction:column; }
+
+  /* Professional navy exam schedule template */
+  .top-bar { background:#1a2e50; height:8px; width:100%; margin-bottom:0; }
+  .accent-bar { background:#c8a940; height:3px; width:100%; margin-bottom:8mm; }
+
+  .card-header { display:flex; align-items:center; gap:6mm; padding-bottom:5mm; margin-bottom:6mm; border-bottom:2px solid #1a2e50; }
+  .coaching-logo { width:75px; height:75px; object-fit:contain; flex-shrink:0; }
+  .logo-placeholder { width:75px; height:75px; background:rgba(26,46,80,0.08); border:2px solid #1a2e50; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:2rem; flex-shrink:0; }
+  .header-center { flex:1; }
+  .inst-name { font-family:'Merriweather',serif; font-size:18pt; font-weight:700; color:#1a2e50; }
+  .inst-tagline { font-size:9pt; color:#c8a940; margin-top:2px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; }
+  .inst-contact { font-size:8pt; color:#4a5568; margin-top:4px; }
+  .header-right { text-align:right; min-width:80px; }
+  .header-right .year-badge { background:#1a2e50; color:#c8a940; padding:4px 10px; border-radius:4px; font-size:8.5pt; font-weight:700; letter-spacing:0.08em; }
+
+  .notice-banner {
+    background:#1a2e50; color:#fff; text-align:center; padding:5mm 6mm;
+    margin-bottom:6mm; position:relative; overflow:hidden;
+  }
+  .notice-banner::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:#c8a940; }
+  .notice-banner::after { content:''; position:absolute; bottom:0; left:0; right:0; height:3px; background:#c8a940; }
+  .notice-banner h2 { font-family:'Merriweather',serif; font-size:14pt; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; }
+  .notice-banner .sub { font-size:9pt; opacity:0.8; margin-top:2px; }
+
+  .notice-body { flex:1; display:flex; flex-direction:column; gap:5mm; }
+  .notice-message { font-size:10pt; line-height:1.85; color:#2d3748; white-space:pre-wrap; text-align:justify; }
+
+  /* Exam schedule table — striped professional */
+  .details-container { margin-top:3mm; }
+  .details-table { width:100%; border-collapse:collapse; font-size:9pt; }
+  .details-table thead tr { background:#1a2e50; }
+  .details-table th { color:#fff; padding:3mm 3.5mm; text-align:left; font-weight:600; letter-spacing:0.04em; font-size:8.5pt; border:1px solid #2c4a7a; }
+  .details-table td { padding:2.8mm 3.5mm; border:1px solid #e2e8f0; color:#2d3748; vertical-align:middle; }
+  .details-table tr:nth-child(even) td { background:#f7faff; }
+  .details-table tr:hover td { background:#edf2f7; }
+  /* First column (date) accent */
+  .details-table td:first-child { font-weight:600; color:#1a2e50; border-left:4px solid #c8a940; }
+
+  .guidelines-box {
+    background:#f0f4f8; border-left:4px solid #c8a940;
+    padding:3mm 4mm; border-radius:0 4px 4px 0; margin-top:3mm;
+    font-size:8.5pt; color:#4a5568; line-height:1.7;
+  }
+  .guidelines-box strong { color:#1a2e50; }
+
+  .signoff-section { display:flex; justify-content:space-between; align-items:flex-end; margin-top:8mm; }
+  .sign-box { text-align:center; min-width:160px; }
+  .signature-img { width:150px; height:55px; object-fit:contain; display:block; margin:0 auto 1mm; }
+  .sig-line-blank { width:150px; height:1px; border-top:1.5px solid #1a2e50; margin:12mm auto 2mm; }
+  .sign-name { font-size:9pt; font-weight:700; color:#1a2e50; margin-top:1mm; }
+  .sign-title { font-size:7.5pt; color:#8d9db0; margin-top:0.5mm; }
+  .seal-placeholder { width:70px; height:70px; border:2px dashed #c8a940; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:8pt; color:#c8a940; text-align:center; font-weight:600; }
+
+  .card-footer { border-top:2px solid #1a2e50; padding-top:3mm; margin-top:5mm; display:flex; justify-content:space-between; font-size:7.5pt; color:#718096; }
+  .bottom-bar { background:#c8a940; height:5px; margin-top:4mm; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="top-bar"></div>
+  <div class="accent-bar"></div>
+
+  <div class="card-header">
+    {{COACHING_LOGO}}
+    <div class="header-center">
+      <div class="inst-name">{{COACHING_NAME}}</div>
+      <div class="inst-tagline">{{COACHING_TAGLINE}}</div>
+      <div class="inst-contact">{{COACHING_ADDRESS}} | {{COACHING_PHONE}} | {{COACHING_WEBSITE}}</div>
+    </div>
+    <div class="header-right">
+      <div class="year-badge">{{ACADEMIC_YEAR}}</div>
+    </div>
+  </div>
+
+  <div class="notice-banner">
+    <h2>📅 {{TITLE}}</h2>
+    <div class="sub">Official Examination Timetable — Students must carry valid ID</div>
+  </div>
+
+  <div class="notice-body">
+    <div class="notice-message">{{MESSAGE}}</div>
+    <div class="details-container">{{DETAILS_TABLE}}</div>
+    <div class="guidelines-box">
+      <strong>📌 Important Instructions:</strong> Students must report 10 minutes before the exam. Mobile phones strictly prohibited. Carry admit card / ID proof. Late entry may not be permitted.
+    </div>
+    <div class="signoff-section">
+      <div class="seal-placeholder">OFFICIAL<br>SEAL</div>
+      <div class="sign-box">
+        {{SIGNATURE_IMG}}
+        <div class="sign-name">{{SIGNATORY_NAME}}</div>
+        <div class="sign-title">{{COACHING_NAME}}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-footer">
+    <div>Academic Year: {{ACADEMIC_YEAR}}</div>
+    <div>Date of Issue: <span id="issue-date"></span></div>
+    <div>Apex Tuition ERP</div>
+  </div>
+  <div class="bottom-bar"></div>
+</div>
+<script>
+  const d = new Date();
+  document.getElementById('issue-date').textContent = d.getDate() + '/' + (d.getMonth()+1) + '/' + d.getFullYear();
+</script>
+</body>
+</html>

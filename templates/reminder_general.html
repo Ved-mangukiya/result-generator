@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Inter',sans-serif; background:#f7f7f7; color:#1a1a2e; }
+  .page { width:210mm; min-height:297mm; background:#fff; padding:13mm; display:flex; flex-direction:column; }
+  .coaching-logo { width:55px; height:55px; object-fit:contain; }
+  .logo-placeholder { width:55px; height:55px; background:rgba(255,255,255,0.15); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:1.5rem; }
+
+  /* General notice — clean slate/ivory professional */
+  .header-strip { background:#1a1a2e; padding:4mm 6mm; margin-bottom:0; display:flex; justify-content:space-between; align-items:center; }
+  .header-strip .hs-left { color:#fff; }
+  .header-strip .hs-name { font-family:'Libre Baskerville',serif; font-size:14pt; font-weight:700; }
+  .header-strip .hs-tagline { font-size:8pt; opacity:0.75; margin-top:1px; }
+  .header-strip .hs-right { text-align:right; }
+  .logo-strip { width:55px; height:55px; object-fit:contain; }
+  .logo-strip-placeholder { width:55px; height:55px; background:rgba(255,255,255,0.15); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:1.5rem; }
+
+  .gold-bar { background: linear-gradient(90deg, #c8a940, #e8c94a, #c8a940); height:5px; margin-bottom:6mm; }
+
+  .sub-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:6mm; padding-bottom:4mm; border-bottom:1px solid #e5e7eb; }
+  .sh-contact { font-size:8pt; color:#6b7280; }
+  .sh-badge { background:#1a1a2e; color:#c8a940; padding:3px 10px; border-radius:20px; font-size:8pt; font-weight:700; letter-spacing:0.06em; }
+
+  .notice-banner {
+    background: #1a1a2e; color:#fff;
+    text-align:center; padding:5mm 6mm; margin-bottom:6mm;
+    border-left:6px solid #c8a940; border-right:6px solid #c8a940;
+  }
+  .notice-banner h2 { font-family:'Libre Baskerville',serif; font-size:14pt; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; }
+  .notice-banner .sub { font-size:8.5pt; color:#c8a940; margin-top:2px; }
+
+  .notice-body { flex:1; display:flex; flex-direction:column; gap:5mm; }
+  .notice-message { font-size:10.5pt; line-height:1.9; color:#374151; white-space:pre-wrap; text-align:justify; }
+
+  .details-container { margin-top:2mm; }
+  .details-table { width:100%; border-collapse:collapse; font-size:9.5pt; }
+  .details-table th { background:#1a1a2e; color:#fff; padding:3mm; text-align:left; font-weight:600; }
+  .details-table td { padding:3mm; border:1px solid #e5e7eb; color:#374151; }
+  .details-table tr:nth-child(even) td { background:#f9f9f9; }
+  .details-table td:first-child { border-left:3px solid #c8a940; }
+
+  .ref-box {
+    background:#f9f9f9; border:1px solid #e5e7eb; border-radius:4px;
+    padding:3mm 4mm; font-size:8pt; color:#6b7280; text-align:center;
+    font-style:italic; margin-top:2mm;
+  }
+
+  .signoff-section { display:flex; justify-content:space-between; align-items:flex-end; margin-top:8mm; }
+  .sign-box { text-align:center; min-width:160px; }
+  .signature-img { width:150px; height:55px; object-fit:contain; display:block; margin:0 auto 1mm; }
+  .sig-line-blank { width:150px; height:1px; border-top:1.5px solid #1a1a2e; margin:12mm auto 2mm; }
+  .sign-name { font-size:9pt; font-weight:700; color:#1a1a2e; margin-top:1mm; }
+  .sign-title { font-size:7.5pt; color:#8d9db0; margin-top:0.5mm; }
+  .notice-ref { font-size:8pt; color:#9ca3af; }
+  .notice-ref span { font-weight:600; color:#4b5563; }
+
+  .card-footer { border-top:1px solid #e5e7eb; padding-top:3mm; margin-top:5mm; display:flex; justify-content:space-between; font-size:7.5pt; color:#9ca3af; }
+  .footer-bar { background:#c8a940; height:4px; margin-top:4mm; }
+</style>
+</head>
+<body>
+<div class="page">
+  <!-- Header strip with logo -->
+  <div class="header-strip">
+    <div class="hs-left">
+      <div class="hs-name">{{COACHING_NAME}}</div>
+      <div class="hs-tagline">{{COACHING_TAGLINE}}</div>
+    </div>
+    <div class="hs-right">
+      {{COACHING_LOGO}}
+    </div>
+  </div>
+  <div class="gold-bar"></div>
+
+  <div class="sub-header">
+    <div class="sh-contact">{{COACHING_ADDRESS}} | {{COACHING_PHONE}} | {{COACHING_WEBSITE}}</div>
+    <div class="sh-badge">{{ACADEMIC_YEAR}}</div>
+  </div>
+
+  <div class="notice-banner">
+    <h2>📢 {{TITLE}}</h2>
+    <div class="sub">Official Communication — {{COACHING_NAME}}</div>
+  </div>
+
+  <div class="notice-body">
+    <div class="notice-message">{{MESSAGE}}</div>
+    <div class="details-container">{{DETAILS_TABLE}}</div>
+    <div class="ref-box">This is an official communication from {{COACHING_NAME}}. For queries, contact us at {{COACHING_PHONE}}.</div>
+    <div class="signoff-section">
+      <div class="notice-ref">Ref No: <span id="ref-no"></span><br>Date: <span id="issue-date"></span></div>
+      <div class="sign-box">
+        {{SIGNATURE_IMG}}
+        <div class="sign-name">{{SIGNATORY_NAME}}</div>
+        <div class="sign-title">{{COACHING_NAME}}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-footer">
+    <div>Academic Year: {{ACADEMIC_YEAR}}</div>
+    <div>Issued on: <span id="footer-date"></span></div>
+    <div>Apex Tuition ERP</div>
+  </div>
+  <div class="footer-bar"></div>
+</div>
+<script>
+  const d = new Date();
+  const dateStr = d.getDate() + '/' + (d.getMonth()+1) + '/' + d.getFullYear();
+  document.getElementById('issue-date').textContent = dateStr;
+  document.getElementById('footer-date').textContent = dateStr;
+  document.getElementById('ref-no').textContent = 'GEN-' + d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + String(Math.floor(Math.random()*900)+100);
+</script>
+</body>
+</html>

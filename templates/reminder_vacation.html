@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Inter',sans-serif; background:#f5f0e8; color:#2d2010; }
+  .page { width:210mm; min-height:297mm; background:#fefcf7; padding:14mm; display:flex; flex-direction:column; position:relative; }
+
+  /* Warm sand border with leaf motif corners */
+  .outer-frame {
+    border: 4px solid #b8860b;
+    flex:1; display:flex; flex-direction:column;
+    position:relative;
+    background: linear-gradient(135deg, rgba(255,248,220,0.6) 0%, rgba(255,255,255,0.9) 50%, rgba(255,248,220,0.6) 100%);
+  }
+  .corner { position:absolute; width:28px; height:28px; }
+  .corner.tl { top:-2px; left:-2px; border-top:6px solid #d4af37; border-left:6px solid #d4af37; }
+  .corner.tr { top:-2px; right:-2px; border-top:6px solid #d4af37; border-right:6px solid #d4af37; }
+  .corner.bl { bottom:-2px; left:-2px; border-bottom:6px solid #d4af37; border-left:6px solid #d4af37; }
+  .corner.br { bottom:-2px; right:-2px; border-bottom:6px solid #d4af37; border-right:6px solid #d4af37; }
+
+  .inner-pad { padding:9mm; flex:1; display:flex; flex-direction:column; }
+
+  .card-header { display:flex; align-items:center; gap:6mm; border-bottom:2px solid #b8860b; padding-bottom:5mm; margin-bottom:7mm; }
+  .coaching-logo { width:75px; height:75px; object-fit:contain; flex-shrink:0; }
+  .logo-placeholder { width:75px; height:75px; background:rgba(212,175,55,0.15); border:2px solid #d4af37; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; flex-shrink:0; }
+  .header-center { flex:1; text-align:center; }
+  .inst-name { font-family:'Playfair Display',serif; font-size:20pt; font-weight:700; color:#7a4f1e; letter-spacing:0.03em; }
+  .inst-tagline { font-size:9.5pt; color:#b8860b; margin-top:2px; font-style:italic; }
+  .inst-contact { font-size:8pt; color:#6b5c42; margin-top:5px; }
+
+  /* Vacation specific banner — warm gradient */
+  .notice-banner {
+    background: linear-gradient(135deg, #7a4f1e 0%, #b8860b 60%, #d4a017 100%);
+    text-align:center; padding:5mm 6mm; border-radius:4px;
+    color:#fff8dc; margin-bottom:7mm;
+    box-shadow: 0 3px 12px rgba(122,79,30,0.25);
+  }
+  .notice-banner h2 { font-family:'Playfair Display',serif; font-size:15pt; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; }
+  .notice-banner .sub { font-size:9pt; opacity:0.85; margin-top:2px; letter-spacing:0.05em; }
+
+  /* Palm tree decorative strip */
+  .deco-strip { 
+    display:flex; justify-content:center; gap:16px; margin-bottom:6mm;
+    font-size:20pt; letter-spacing:6px; opacity:0.6;
+  }
+
+  .notice-body { flex:1; display:flex; flex-direction:column; gap:5mm; }
+  .notice-message { font-size:10.5pt; line-height:1.9; color:#2d2010; white-space:pre-wrap; text-align:justify; }
+  
+  .details-container { margin-top:3mm; }
+  .details-table { width:100%; border-collapse:collapse; font-size:9.5pt; }
+  .details-table th { background:#7a4f1e; color:#fff8dc; padding:3mm; text-align:center; font-weight:600; letter-spacing:0.06em; }
+  .details-table td { padding:3mm; border:1px solid #e8d9b0; color:#4a3420; text-align:center; background:#fffdf5; }
+  .details-table tr:nth-child(even) td { background:#fef9e7; }
+
+  .signoff-section { display:flex; justify-content:flex-end; margin-top:8mm; }
+  .sign-box { text-align:center; min-width:160px; }
+  .signature-img { width:150px; height:55px; object-fit:contain; display:block; margin:0 auto 1mm; }
+  .sig-line-blank { width:150px; height:1px; border-top:1.5px solid #2d2010; margin:12mm auto 2mm; }
+  .sign-name { font-size:9pt; font-weight:700; color:#7a4f1e; margin-top:1mm; }
+  .sign-title { font-size:7.5pt; color:#8d7d6f; margin-top:0.5mm; }
+
+  .card-footer { border-top:1.5px solid #b8860b; padding-top:3mm; margin-top:5mm; display:flex; justify-content:space-between; font-size:7.5pt; color:#8d7d6f; }
+
+  .watermark { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; z-index:0; }
+  .watermark-text { font-family:'Playfair Display',serif; font-size:45pt; font-weight:700; color:rgba(212,175,55,0.04); text-transform:uppercase; transform:rotate(-30deg); letter-spacing:0.2em; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="outer-frame">
+    <div class="corner tl"></div><div class="corner tr"></div>
+    <div class="corner bl"></div><div class="corner br"></div>
+    <div class="watermark"><div class="watermark-text">VACATION</div></div>
+    
+    <div class="inner-pad">
+      <div class="card-header">
+        {{COACHING_LOGO}}
+        <div class="header-center">
+          <div class="inst-name">{{COACHING_NAME}}</div>
+          <div class="inst-tagline">{{COACHING_TAGLINE}}</div>
+          <div class="inst-contact">{{COACHING_ADDRESS}} | {{COACHING_PHONE}}</div>
+        </div>
+      </div>
+
+      <div class="notice-banner">
+        <h2>🌴 {{TITLE}}</h2>
+        <div class="sub">Holiday Announcement — {{ACADEMIC_YEAR}}</div>
+      </div>
+
+      <div class="deco-strip">🌺 ☀️ 🌴 ☀️ 🌺</div>
+
+      <div class="notice-body">
+        <div class="notice-message">{{MESSAGE}}</div>
+        <div class="details-container">{{DETAILS_TABLE}}</div>
+        <div class="signoff-section">
+          <div class="sign-box">
+            {{SIGNATURE_IMG}}
+            <div class="sign-name">{{SIGNATORY_NAME}}</div>
+            <div class="sign-title">{{COACHING_NAME}}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <div>Academic Year: {{ACADEMIC_YEAR}}</div>
+        <div>Issued: <span id="issue-date"></span></div>
+        <div>Apex Tuition ERP</div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  const d = new Date();
+  document.getElementById('issue-date').textContent = d.getDate() + '/' + (d.getMonth()+1) + '/' + d.getFullYear();
+</script>
+</body>
+</html>

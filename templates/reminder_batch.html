@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Lora:wght@400;500;600&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Montserrat',sans-serif; background:#f8f4ff; color:#1a0a3d; }
+  .page { width:210mm; min-height:297mm; background:#fff; padding:12mm; display:flex; flex-direction:column; position:relative; overflow:hidden; }
+
+  /* Batch Start — fresh green/teal professional theme */
+  .bg-accent-circle { 
+    position:absolute; top:-40mm; right:-30mm; width:120mm; height:120mm;
+    border-radius:50%; background:rgba(16,122,86,0.06); pointer-events:none;
+  }
+  .bg-accent-circle2 { 
+    position:absolute; bottom:-30mm; left:-20mm; width:80mm; height:80mm;
+    border-radius:50%; background:rgba(16,122,86,0.04); pointer-events:none;
+  }
+
+  .card-header { display:flex; align-items:center; gap:6mm; padding-bottom:5mm; margin-bottom:6mm; border-bottom:3px solid #107a56; }
+  .coaching-logo { width:75px; height:75px; object-fit:contain; flex-shrink:0; }
+  .logo-placeholder { width:75px; height:75px; background:rgba(16,122,86,0.1); border:2px solid #107a56; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:2rem; flex-shrink:0; }
+  .header-center { flex:1; }
+  .inst-name { font-family:'Lora',serif; font-size:18pt; font-weight:700; color:#107a56; }
+  .inst-tagline { font-size:9pt; color:#28a074; margin-top:2px; font-weight:600; }
+  .inst-contact { font-size:8pt; color:#4a5568; margin-top:4px; }
+
+  /* Rocket/Launch banner */
+  .notice-banner {
+    background: linear-gradient(135deg, #0d6644 0%, #107a56 50%, #14a06d 100%);
+    color:#fff; text-align:center; padding:6mm; margin-bottom:7mm;
+    border-radius:8px; box-shadow:0 5px 15px rgba(16,122,86,0.2);
+    position:relative; overflow:hidden;
+  }
+  .notice-banner::before { content:'🚀'; position:absolute; left:10mm; top:50%; transform:translateY(-50%); font-size:24pt; opacity:0.3; }
+  .notice-banner::after { content:'🌟'; position:absolute; right:10mm; top:50%; transform:translateY(-50%); font-size:24pt; opacity:0.3; }
+  .notice-banner h2 { font-size:15pt; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; }
+  .notice-banner .sub { font-size:9pt; opacity:0.9; margin-top:3px; }
+
+  /* Info cards */
+  .info-cards { display:flex; gap:4mm; margin-bottom:6mm; }
+  .info-card { flex:1; background:#f0fdf7; border:1px solid #d1fae5; border-radius:6px; padding:3mm 4mm; text-align:center; }
+  .info-card .ic-label { font-size:7.5pt; color:#107a56; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; }
+  .info-card .ic-value { font-size:11pt; font-weight:700; color:#0d6644; margin-top:1mm; }
+
+  .notice-body { flex:1; display:flex; flex-direction:column; gap:5mm; }
+  .notice-message { font-size:10.5pt; line-height:1.85; color:#2d3748; white-space:pre-wrap; text-align:justify; }
+
+  .details-container { margin-top:2mm; }
+  .details-table { width:100%; border-collapse:collapse; font-size:9.5pt; border-radius:6px; overflow:hidden; }
+  .details-table th { background:#107a56; color:#fff; padding:3mm 4mm; text-align:left; font-weight:600; }
+  .details-table td { padding:3mm 4mm; border:1px solid #d1fae5; color:#2d4a3e; }
+  .details-table tr:nth-child(even) td { background:#f0fdf7; }
+
+  .welcome-strip { 
+    background:linear-gradient(90deg, #f0fdf7, #dcfce7, #f0fdf7); 
+    border:1px solid #86efac; border-radius:6px; padding:3mm 4mm;
+    font-size:9pt; color:#166534; text-align:center; font-weight:500;
+    margin-top:2mm;
+  }
+
+  .signoff-section { display:flex; justify-content:flex-end; margin-top:8mm; }
+  .sign-box { text-align:center; min-width:160px; }
+  .signature-img { width:150px; height:55px; object-fit:contain; display:block; margin:0 auto 1mm; }
+  .sig-line-blank { width:150px; height:1px; border-top:1.5px solid #107a56; margin:12mm auto 2mm; }
+  .sign-name { font-size:9pt; font-weight:700; color:#107a56; margin-top:1mm; }
+  .sign-title { font-size:7.5pt; color:#8d9db0; margin-top:0.5mm; }
+
+  .card-footer { border-top:2px solid #107a56; padding-top:3mm; margin-top:5mm; display:flex; justify-content:space-between; font-size:7.5pt; color:#718096; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="bg-accent-circle"></div>
+  <div class="bg-accent-circle2"></div>
+
+  <div class="card-header">
+    {{COACHING_LOGO}}
+    <div class="header-center">
+      <div class="inst-name">{{COACHING_NAME}}</div>
+      <div class="inst-tagline">{{COACHING_TAGLINE}}</div>
+      <div class="inst-contact">{{COACHING_ADDRESS}} | {{COACHING_PHONE}} | {{COACHING_WEBSITE}}</div>
+    </div>
+  </div>
+
+  <div class="notice-banner">
+    <h2>{{TITLE}}</h2>
+    <div class="sub">New Academic Year | Fresh Beginnings | {{ACADEMIC_YEAR}}</div>
+  </div>
+
+  <div class="notice-body">
+    <div class="notice-message">{{MESSAGE}}</div>
+    <div class="details-container">{{DETAILS_TABLE}}</div>
+    <div class="welcome-strip">🎓 Wishing all new and returning students a successful and productive academic year!</div>
+    <div class="signoff-section">
+      <div class="sign-box">
+        {{SIGNATURE_IMG}}
+        <div class="sign-name">{{SIGNATORY_NAME}}</div>
+        <div class="sign-title">{{COACHING_NAME}}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-footer">
+    <div>Academic Year: {{ACADEMIC_YEAR}}</div>
+    <div>Date of Issue: <span id="issue-date"></span></div>
+    <div>Apex Tuition ERP</div>
+  </div>
+</div>
+<script>
+  const d = new Date();
+  document.getElementById('issue-date').textContent = d.getDate() + '/' + (d.getMonth()+1) + '/' + d.getFullYear();
+</script>
+</body>
+</html>

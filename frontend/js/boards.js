@@ -323,10 +323,31 @@ function showAddStandardModal(boardId) {
       <label class="form-label">Display Name (auto-generated)</label>
       <input type="text" class="form-control" id="std-display" placeholder="e.g. 10th Standard">
     </div>
+
     <div id="std-subjects-section" style="margin-top:var(--space-4)">
-      <label class="form-label" style="font-weight:600">Select Subjects to Include:</label>
-      <div id="std-subjects-checklist" style="max-height:180px; overflow-y:auto; border:1px solid var(--border); border-radius:var(--radius); padding:10px; background:var(--bg-card); display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <label class="form-label" style="font-weight:600;margin:0">Subjects to Include:</label>
+        <div class="flex gap-2">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="stdSelectAll(true)">✓ All</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="stdSelectAll(false)">✗ None</button>
+        </div>
+      </div>
+      <div id="std-subjects-checklist" style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);padding:10px;background:var(--bg-surface);display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <span class="text-muted text-xs">Loading subjects...</span>
+      </div>
+
+      <!-- Inline custom subject adder -->
+      <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
+        <label class="form-label" style="font-size:0.75rem;margin-bottom:4px">➕ Add a custom subject to this class:</label>
+        <div style="display:flex;gap:8px;position:relative">
+          <div style="flex:1;position:relative">
+            <input type="text" id="std-custom-subj-name" class="form-control" placeholder="Subject name (type or pick suggestion)" autocomplete="off"
+              oninput="showSubjSuggestions(this.value, 'std-subj-suggestions')" onblur="setTimeout(()=>hideSubjSuggestions('std-subj-suggestions'),200)">
+            <div id="std-subj-suggestions" style="position:absolute;top:100%;left:0;right:0;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);z-index:100;max-height:140px;overflow-y:auto;display:none;box-shadow:var(--shadow-lg)"></div>
+          </div>
+          <input type="number" id="std-custom-subj-max" class="form-control" placeholder="Max" value="100" style="width:80px">
+          <button type="button" class="btn btn-outline btn-sm" onclick="addCustomSubjectToChecklist()">Add</button>
+        </div>
       </div>
     </div>`,
     `<button class="btn btn-outline" onclick="closeModal('add-std-modal')">Cancel</button>
@@ -334,12 +355,10 @@ function showAddStandardModal(boardId) {
     'modal-md'
   );
   
-  // Auto-update display name
   const updateDisplay = () => {
     const n = document.getElementById('std-number').value;
     const s = document.getElementById('std-stream').value;
-    const display = `${Format.ordinal(n)} Standard${s !== 'General' ? ' — ' + s : ''}`;
-    document.getElementById('std-display').value = display;
+    document.getElementById('std-display').value = `${Format.ordinal(n)} Standard${s !== 'General' ? ' — ' + s : ''}`;
   };
 
   const loadDefaultSubjects = async () => {
@@ -347,41 +366,51 @@ function showAddStandardModal(boardId) {
     const s = document.getElementById('std-stream').value;
     const checklist = document.getElementById('std-subjects-checklist');
     if (!checklist) return;
-    
     checklist.innerHTML = `<span class="text-muted text-xs">Loading subjects...</span>`;
     try {
-      _standardDefaultSubjects = await API.subjects.getDefault(n, s, boardId);
-      if (_standardDefaultSubjects.length === 0) {
-        checklist.innerHTML = `<span class="text-muted text-xs">No template subjects found. You can add them manually later.</span>`;
-        return;
+      // Get ALL subjects from subjects.json that are relevant, AND the board-specific defaults
+      const defaultSubjects = await API.subjects.getDefault(n, s, boardId);
+      const defaultNames = new Set(defaultSubjects.map(d => d.name));
+
+      // Build full list: all COMMON_SUBJECT_TEMPLATES merged with board-specific defaults
+      const allSubjects = [...COMMON_SUBJECT_TEMPLATES];
+      // Add default subjects not already in template
+      for (const d of defaultSubjects) {
+        if (!allSubjects.find(t => t.name === d.name)) {
+          allSubjects.unshift(d);
+        }
       }
-      
-      checklist.innerHTML = _standardDefaultSubjects.map((sub, i) => `
-        <label class="checkbox-container" style="display:flex;align-items:center;gap:6px;font-size:0.8rem;margin-bottom:0;cursor:pointer;">
-          <input type="checkbox" data-index="${i}" checked style="cursor:pointer;">
-          <span>${sub.name} <span class="text-muted" style="font-size:0.7rem">(${sub.is_compulsory ? 'Compulsory' : 'Optional'})</span></span>
+
+      _standardDefaultSubjects = allSubjects;
+      checklist.innerHTML = allSubjects.map((sub, i) => `
+        <label class="checkbox-container" style="display:flex;align-items:center;gap:6px;font-size:0.8rem;margin-bottom:0;cursor:pointer">
+          <input type="checkbox" data-index="${i}" ${defaultNames.has(sub.name) ? 'checked' : ''} style="cursor:pointer">
+          <span>
+            ${sub.name}
+            <span class="text-muted" style="font-size:0.68rem">(${sub.max_marks}m · ${sub.is_compulsory ? 'Compulsory' : 'Optional'})</span>
+          </span>
         </label>
       `).join('');
     } catch (err) {
-      checklist.innerHTML = `<span class="text-danger text-xs">Error loading template: ${err.message}</span>`;
+      checklist.innerHTML = `<span class="text-danger text-xs">Error: ${err.message}</span>`;
     }
   };
 
   const onConfigChange = () => {
     const n = parseInt(document.getElementById('std-number').value);
     const streamSel = document.getElementById('std-stream');
-    if (n <= 10 && streamSel.value !== 'General') {
-      streamSel.value = 'General';
-    }
+    if (n <= 10 && streamSel.value !== 'General') streamSel.value = 'General';
     updateDisplay();
     loadDefaultSubjects();
   };
 
   updateDisplay();
   loadDefaultSubjects();
-  
   document.getElementById('std-number').addEventListener('change', onConfigChange);
   document.getElementById('std-stream').addEventListener('change', onConfigChange);
+
+  // Pre-load subject name suggestions
+  API.subjects.allNames().then(names => { window._allSubjectNames = names || []; }).catch(() => {});
 }
 
 async function addStandard(boardId) {
@@ -410,7 +439,7 @@ async function addStandard(boardId) {
       subjects: selectedSubjects
     });
     closeModal('add-std-modal');
-    Toast.success('Class Added', `${display_name} created with selected subjects.`);
+    Toast.success('Class Added', `${display_name} created with ${selectedSubjects.length} subject(s).`);
     await loadStandards(boardId);
   } catch (err) {
     Toast.error('Add Failed', err.message);
@@ -465,18 +494,12 @@ async function showSubjectsPanel(standardId) {
 }
 
 function showAddSubjectModal(standardId) {
-  const tOptions = COMMON_SUBJECT_TEMPLATES.map((t, i) => `<option value="${i}">${t.name} (Max: ${t.max_marks}${t.is_compulsory ? ', Compulsory' : ', Optional'})</option>`).join('');
   createModal('add-subject-modal', '➕ Add Subject',
-    `<div class="form-group mb-4">
-      <label class="form-label">Predefined Subjects (Autofills form)</label>
-      <select class="form-control" id="subj-template-select" onchange="onSubjectTemplateChange(this.value)">
-        <option value="custom">— Custom Subject (Type below) —</option>
-        ${tOptions}
-      </select>
-    </div>
-    <div class="form-group mb-4">
+    `<div class="form-group mb-4" style="position:relative">
       <label class="form-label">Subject Name <span class="required">*</span></label>
-      <input type="text" class="form-control" id="subj-name" placeholder="e.g. Mathematics, Physics">
+      <input type="text" class="form-control" id="subj-name" placeholder="e.g. Mathematics, Physics" autocomplete="off"
+        oninput="showSubjSuggestions(this.value, 'subj-name-suggestions')" onblur="setTimeout(()=>hideSubjSuggestions('subj-name-suggestions'),200)">
+      <div id="subj-name-suggestions" style="position:absolute;top:100%;left:0;right:0;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);z-index:100;max-height:140px;overflow-y:auto;display:none;box-shadow:var(--shadow-lg)"></div>
     </div>
     <div class="form-grid mb-4">
       <div class="form-group">
@@ -505,13 +528,15 @@ function showAddSubjectModal(standardId) {
       <label class="toggle-group"><span class="toggle-label">Compulsory</span><label class="toggle"><input type="checkbox" id="subj-compulsory" checked><span class="toggle-slider"></span></label></label>
       <label class="toggle-group"><span class="toggle-label">Language Subject</span><label class="toggle"><input type="checkbox" id="subj-language"><span class="toggle-slider"></span></label></label>
     </div>
-    <p class="form-hint mt-2 text-xs" style="color:var(--text-secondary); background:rgba(212,175,55,0.05); padding:10px; border-radius:var(--radius); border:1px solid rgba(212,175,55,0.2)">
-      💡 **Elective Subject Tip:** For subjects like SPCC and Computer where students choose one, mark both as **Optional (Compulsory = No)**. When entering marks, leave the other completely blank for students who did not take it. The system will automatically exclude it from their final result calculations.
+    <p class="form-hint mt-2 text-xs" style="color:var(--text-secondary);background:rgba(212,175,55,0.05);padding:10px;border-radius:var(--radius);border:1px solid rgba(212,175,55,0.2)">
+      💡 For elective subjects (like SPCC vs Computer), mark both as <strong>Optional</strong>. Leave blank for students who didn't take it — the system excludes it from their result.
     </p>`,
     `<button class="btn btn-outline" onclick="closeModal('add-subject-modal')">Cancel</button>
      <button class="btn btn-primary" onclick="addSubject(${standardId})">Add Subject</button>`,
     'modal-sm'
   );
+  // Pre-load subject name suggestions
+  API.subjects.allNames().then(names => { window._allSubjectNames = names || []; }).catch(() => {});
 }
 
 function toggleSplitFields() {

@@ -251,4 +251,18 @@ async function uploadSignatureImg(input) {
   form.append('signature', file);
   
   try {
-    const result = await API.u
+    const result = await API.upload.signature(form);
+    const wrap = document.getElementById('sig-preview-wrap');
+    wrap.innerHTML = `<img src="${result.url}?t=${Date.now()}" style="width:100%;height:100%;object-fit:contain;padding:4px" id="sig-img">`;
+    Toast.success('Signature Uploaded', 'Signature image saved. It will appear on all notice PDFs.');
+  } catch (err) {
+    Toast.error('Upload Failed', err.message);
+  }
+}
+
+window.renderSettings = renderSettings;
+window.setProfileColor = setProfileColor;
+window.uploadLogo = uploadLogo;
+window.uploadSignatureImg = uploadSignatureImg;
+window.saveCoachingProfile = saveCoachingProfile;
+window.changePassword = changePassword;

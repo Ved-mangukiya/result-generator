@@ -18,6 +18,7 @@ const { router: uploadRoutes } = require('./routes/upload');
 const testsRoutes = require('./routes/tests');
 const feesRoutes = require('./routes/fees');
 const testCyclesRoutes = require('./routes/testCycles');
+const resetRoutes = require('./routes/reset');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -72,6 +73,7 @@ app.use('/api/upload', requireAuth, uploadRoutes);
 app.use('/api/tests', requireAuth, testsRoutes);
 app.use('/api/fees', requireAuth, feesRoutes);
 app.use('/api/test-cycles', requireAuth, testCyclesRoutes);
+app.use('/api/reset', requireAuth, resetRoutes);
 
 // Dashboard stats
 app.get('/api/dashboard', requireAuth, (req, res) => {
@@ -82,7 +84,36 @@ app.get('/api/dashboard', requireAuth, (req, res) => {
   const totalStudents = db.prepare('SELECT COUNT(*) as count FROM students').get().count;
   const totalStandards = db.prepare('SELECT COUNT(*) as count FROM standards').get().count;
   const totalTests = db.prepare('SELECT COUNT(*) as count FROM tests').get().count;
+  const totalCycles = db.prepare('SELECT COUNT(*) as count FROM test_cycles').get().count;
   const recentActivity = db.prepare('SELECT * FROM activity_log ORDER BY created_at DESC LIMIT 15').all();
+
+  // Upcoming tests (tests with a future/today date that have no marks yet)
+  const today = new Date().toISOString().slice(0, 10);
+  const upcomingTests = db.prepare(`
+    SELECT t.*, s.name as subject_name, std.display_name as class_name,
+           (SELECT COUNT(*) FROM test_marks tm WHERE tm.test_id = t.id) as marks_entered
+    FROM tests t
+    JOIN subjects s ON t.subject_id = s.id
+    JOIN standards std ON t.standard_id = std.id
+    WHERE t.test_date >= ? 
+    ORDER BY t.test_date ASC
+    LIMIT 10
+  `).all(today);
+
+  // Pending marks: tests with 0 marks entered
+  const pendingMarks = db.prepare(`
+    SELECT COUNT(*) as count FROM tests t
+    WHERE (SELECT COUNT(*) FROM test_marks tm WHERE tm.test_id = t.id) = 0
+    AND (t.test_date IS NULL OR t.test_date <= ?)
+  `).get(today).count;
+
+  // Fee collection summary
+  const feesSummary = db.prepare(`
+    SELECT 
+      COALESCE(SUM(s.total_fees), 0) as total_expected,
+      COALESCE((SELECT SUM(amount) FROM fee_payments), 0) as total_collected
+    FROM students s
+  `).get() || { total_expected: 0, total_collected: 0 };
 
   // Class-level pass/fail/distinction stats
   const standards = db.prepare('SELECT s.*, b.id as board_id_val FROM standards s JOIN boards b ON s.board_id = b.id').all();
@@ -108,7 +139,7 @@ app.get('/api/dashboard', requireAuth, (req, res) => {
     classStats.push({ standard_id: std.id, standard_name: std.display_name, total: students.length, pass, fail, distinction });
   }
 
-  res.json({ totalBoards, totalStudents, totalStandards, totalTests, recentActivity, classStats });
+  res.json({ totalBoards, totalStudents, totalStandards, totalTests, totalCycles, recentActivity, classStats, upcomingTests, pendingMarks, feesSummary });
 });
 
 // SPA fallback — serve index.html for all non-API routes
