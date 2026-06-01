@@ -35,8 +35,7 @@
     opacity: 0.15;
   }
 
-  .header-logo-wrap { width: 65px; height: 65px; background: white; border-radius: 8px; padding: 4px; overflow: hidden; flex-shrink: 0; }
-  .header-logo-wrap img { width: 100%; height: 100%; object-fit: contain; }
+  .coaching-logo { width: 65px; height: 65px; background: white; border-radius: 8px; padding: 4px; object-fit: contain; flex-shrink: 0; }
   .logo-placeholder { width: 65px; height: 65px; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.5); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0; }
 
   .header-text { flex: 1; }
@@ -197,12 +196,12 @@
         <tr>
           <th style="width:36%">Subject</th>
           <th>Max</th>
-          <th style="display:{{SHOW_SPLIT_HEADER}}">Int.</th>
-          <th style="display:{{SHOW_SPLIT_HEADER}}">Ext.</th>
+          <th class="split-col">Int.</th>
+          <th class="split-col">Ext.</th>
           <th>Obtained</th>
           <th>%</th>
-          <th style="display:{{SHOW_GRADE_COL}}">Grade</th>
-          <th style="display:{{SHOW_PF_COL}}">P/F</th>
+          <th class="grade-col">Grade</th>
+          <th class="pf-col">P/F</th>
         </tr>
       </thead>
       <tbody>{{MARKS_TABLE_ROWS}}</tbody>
@@ -231,7 +230,7 @@
     </div>
     <div class="result-pill">
       <div class="rp-label">Result</div>
-      <div class="rp-value" style="color:{{OVERALL_GRADE_COLOR}}">{{FINAL_STATUS}}</div>
+      <div class="rp-value" style="color: var(--overall-grade-color);">{{FINAL_STATUS}}</div>
     </div>
   </div>
 

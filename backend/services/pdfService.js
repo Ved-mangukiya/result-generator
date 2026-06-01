@@ -48,6 +48,7 @@ async function buildResultCardHTML(studentId, templatePath) {
   const settings = db.prepare('SELECT * FROM result_card_settings WHERE standard_id = ?').get(student.standard_id) || {};
 
   let templateHTML = fs.readFileSync(templatePath, 'utf8');
+  const hasPctCol = templateHTML.includes('<th>%</th>');
 
   // Build photo src
   let photoSrc = '';
@@ -76,6 +77,7 @@ async function buildResultCardHTML(studentId, templatePath) {
           : `<td>—</td><td>—</td>`)
         : ''}
       <td>${sr.is_absent ? 'ABSENT' : (sr.obtained ?? '-')}</td>
+      ${hasPctCol ? `<td>${sr.is_absent ? '—' : (sr.percentage !== null ? Math.round(sr.percentage) + '%' : '—')}</td>` : ''}
       ${settings.show_grade !== 0 ? `<td style="color:${sr.grade_color}">${sr.grade}</td>` : ''}
       ${settings.show_pass_fail !== 0 ? `<td class="pf-cell ${sr.pass_fail?.toLowerCase()}">${sr.pass_fail ?? '-'}</td>` : ''}
     </tr>`;
@@ -122,6 +124,21 @@ async function buildResultCardHTML(studentId, templatePath) {
   for (const [key, value] of Object.entries(data)) {
     templateHTML = templateHTML.split(`{{${key}}}`).join(value ?? '');
   }
+
+  // Inject dynamic CSS variables and display classes for valid HTML
+  const dynamicStyles = `
+  <style>
+    :root {
+      --primary-color: ${data.PRIMARY_COLOR || '#1a365d'};
+      --overall-grade-color: ${data.OVERALL_GRADE_COLOR || '#1a1a1a'};
+    }
+    .split-col { display: ${data.SHOW_SPLIT_HEADER} !important; }
+    .grade-col { display: ${data.SHOW_GRADE_COL} !important; }
+    .pf-col { display: ${data.SHOW_PF_COL} !important; }
+  </style>
+  </head>`;
+  
+  templateHTML = templateHTML.replace('</head>', dynamicStyles);
 
   return templateHTML;
 }

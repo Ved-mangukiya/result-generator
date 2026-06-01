@@ -11,21 +11,20 @@
   .page { width: 210mm; min-height: 297mm; background: white; display: flex; flex-direction: column; position: relative; overflow: hidden; }
 
   /* Green left border accent */
-  .page::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5mm; background: linear-gradient(to bottom, {{PRIMARY_COLOR}}, #1a6b2e); }
+  .page::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5mm; background: linear-gradient(to bottom, var(--primary-color), #1a6b2e); }
 
   .content { margin-left: 5mm; flex: 1; display: flex; flex-direction: column; }
 
   /* Header */
   .card-header { 
-    background: {{PRIMARY_COLOR}};
+    background: var(--primary-color);
     padding: 5mm 6mm;
     display: flex;
     align-items: center;
     gap: 5mm;
   }
 
-  .header-logo-box { width: 60px; height: 60px; background: white; border-radius: 6px; padding: 4px; overflow: hidden; flex-shrink: 0; }
-  .header-logo-box img { width: 100%; height: 100%; object-fit: contain; }
+  .coaching-logo { width: 60px; height: 60px; background: white; border-radius: 6px; padding: 4px; object-fit: contain; flex-shrink: 0; }
   .logo-placeholder { width: 60px; height: 60px; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.4); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; flex-shrink: 0; }
 
   .header-info { flex: 1; }
@@ -38,8 +37,8 @@
   .photo-placeholder { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.6); font-size: 6pt; text-align: center; }
 
   /* Title bar */
-  .title-bar { background: #e8f5e9; border-bottom: 2px solid {{PRIMARY_COLOR}}; padding: 2.5mm 6mm; display: flex; align-items: center; justify-content: space-between; }
-  .title-bar h2 { font-size: 10pt; font-weight: 700; color: {{PRIMARY_COLOR}}; letter-spacing: 0.05em; }
+  .title-bar { background: #e8f5e9; border-bottom: 2px solid var(--primary-color); padding: 2.5mm 6mm; display: flex; align-items: center; justify-content: space-between; }
+  .title-bar h2 { font-size: 10pt; font-weight: 700; color: var(--primary-color); letter-spacing: 0.05em; }
   .title-bar .acad-year { font-size: 8.5pt; color: #4a8a56; font-weight: 500; }
 
   /* Info grid — clean modern layout */
@@ -60,7 +59,7 @@
   /* Marks table */
   .marks-wrap { padding: 3mm 6mm; flex: 1; }
   .marks-table { width: 100%; border-collapse: collapse; font-size: 8pt; }
-  .marks-table th { background: {{PRIMARY_COLOR}}; color: white; padding: 2.5mm 2mm; text-align: center; font-weight: 700; font-size: 7.5pt; border-bottom: 2px solid #1a6b2e; }
+  .marks-table th { background: var(--primary-color); color: white; padding: 2.5mm 2mm; text-align: center; font-weight: 700; font-size: 7.5pt; border-bottom: 2px solid #1a6b2e; }
   .marks-table th:first-child { text-align: left; padding-left: 3mm; }
   .marks-table td { padding: 2mm 2mm; border-bottom: 1px solid #e8f5e9; text-align: center; }
   .marks-table td:first-child { text-align: left; padding-left: 3mm; }
@@ -72,30 +71,30 @@
   .pf-cell.absent { color: #e67e22; }
 
   /* Summary cards */
-  .summary-row { display: flex; gap: 3mm; padding: 3mm 6mm; border-top: 2px solid {{PRIMARY_COLOR}}; background: #f4f9f4; }
+  .summary-row { display: flex; gap: 3mm; padding: 3mm 6mm; border-top: 2px solid var(--primary-color); background: #f4f9f4; }
   .sum-card { flex: 1; background: white; border: 1px solid #c8e6c9; border-radius: 6px; padding: 2.5mm; text-align: center; }
-  .sum-card .sc-label { font-size: 6.5pt; font-weight: 700; color: {{PRIMARY_COLOR}}; text-transform: uppercase; letter-spacing: 0.07em; }
+  .sum-card .sc-label { font-size: 6.5pt; font-weight: 700; color: var(--primary-color); text-transform: uppercase; letter-spacing: 0.07em; }
   .sum-card .sc-value { font-size: 14pt; font-weight: 700; color: #1a1a1a; margin: 1mm 0; }
   .sum-card .sc-sub { font-size: 7pt; color: #888; }
 
-  .result-card { flex: 1.4; background: {{PRIMARY_COLOR}}; border-radius: 6px; padding: 2.5mm; text-align: center; color: white; }
+  .result-card { flex: 1.4; background: var(--primary-color); border-radius: 6px; padding: 2.5mm; text-align: center; color: white; }
   .result-card .rc-label { font-size: 6.5pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; opacity: 0.8; }
   .result-card .rc-value { font-size: 16pt; font-weight: 800; margin: 1mm 0; }
 
   /* Remarks */
   .remarks-row { padding: 2.5mm 6mm; border-top: 1px solid #e8f5e9; display: flex; gap: 2mm; font-size: 8pt; background: #fafffe; }
-  .rr-label { font-weight: 700; color: {{PRIMARY_COLOR}}; white-space: nowrap; }
+  .rr-label { font-weight: 700; color: var(--primary-color); white-space: nowrap; }
   .rr-text { color: #444; font-style: italic; }
 
   /* Footer */
-  .card-footer { padding: 3mm 6mm; border-top: 2px solid {{PRIMARY_COLOR}}; display: flex; justify-content: space-between; align-items: flex-end; }
+  .card-footer { padding: 3mm 6mm; border-top: 2px solid var(--primary-color); display: flex; justify-content: space-between; align-items: flex-end; }
   .sign-block { text-align: center; }
   .sign-line { width: 90px; border-top: 1px solid #333; margin: 10mm auto 1mm; }
   .sign-label { font-size: 7pt; color: #4a8a56; }
   .footer-center { text-align: center; font-size: 7pt; color: #aaa; }
 
   /* Decorative leaf watermark */
-  .watermark { position: absolute; bottom: 20mm; right: 8mm; font-size: 80pt; opacity: 0.04; pointer-events: none; z-index: 0; color: {{PRIMARY_COLOR}}; }
+  .watermark { position: absolute; bottom: 20mm; right: 8mm; font-size: 80pt; opacity: 0.04; pointer-events: none; z-index: 0; color: var(--primary-color); }
 </style>
 </head>
 <body>
@@ -136,12 +135,12 @@
           <tr>
             <th style="width:35%">Subject</th>
             <th>Max</th>
-            <th style="display:{{SHOW_SPLIT_HEADER}}">Int.</th>
-            <th style="display:{{SHOW_SPLIT_HEADER}}">Ext.</th>
+            <th class="split-col">Int.</th>
+            <th class="split-col">Ext.</th>
             <th>Marks</th>
             <th>%</th>
-            <th style="display:{{SHOW_GRADE_COL}}">Grade</th>
-            <th style="display:{{SHOW_PF_COL}}">Result</th>
+            <th class="grade-col">Grade</th>
+            <th class="pf-col">Result</th>
           </tr>
         </thead>
         <tbody>{{MARKS_TABLE_ROWS}}</tbody>
@@ -151,7 +150,7 @@
     <div class="summary-row">
       <div class="sum-card"><div class="sc-label">Total</div><div class="sc-value">{{TOTAL_OBTAINED}}</div><div class="sc-sub">of {{TOTAL_MAX}}</div></div>
       <div class="sum-card"><div class="sc-label">Percentage</div><div class="sc-value">{{OVERALL_PCT}}</div></div>
-      <div class="sum-card"><div class="sc-label">Grade</div><div class="sc-value" style="color:{{OVERALL_GRADE_COLOR}}">{{OVERALL_GRADE}}</div></div>
+      <div class="sum-card"><div class="sc-label">Grade</div><div class="sc-value" style="color: var(--overall-grade-color);">{{OVERALL_GRADE}}</div></div>
       <div class="sum-card"><div class="sc-label">Rank</div><div class="sc-value">#{{RANK}}</div><div class="sc-sub">of {{TOTAL_STUDENTS}}</div></div>
       <div class="result-card"><div class="rc-label">Final Result</div><div class="rc-value">{{FINAL_STATUS}}</div></div>
     </div>

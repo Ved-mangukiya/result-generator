@@ -27,7 +27,7 @@
 
   /* Double border frame */
   .outer-frame {
-    border: 3px solid {{PRIMARY_COLOR}};
+    border: 3px solid var(--primary-color);
     padding: 4mm;
     flex: 1;
     display: flex;
@@ -52,7 +52,7 @@
 
   /* Header */
   .card-header {
-    background: {{PRIMARY_COLOR}};
+    background: var(--primary-color);
     color: white;
     padding: 6mm 8mm;
     display: flex;
@@ -61,7 +61,7 @@
     border-bottom: 3px solid #d4af37;
   }
 
-  .header-logo { width: 70px; height: 70px; object-fit: contain; flex-shrink: 0; }
+  .coaching-logo { width: 70px; height: 70px; object-fit: contain; flex-shrink: 0; }
   .logo-placeholder { width: 70px; height: 70px; background: rgba(212,175,55,0.2); border: 2px solid #d4af37; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0; }
 
   .header-center { flex: 1; text-align: center; }
@@ -101,7 +101,7 @@
 
   .marks-table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
   .marks-table th {
-    background: {{PRIMARY_COLOR}};
+    background: var(--primary-color);
     color: white;
     padding: 2.5mm 2mm;
     text-align: center;
@@ -145,7 +145,7 @@
   }
 
   .summary-box .s-label { font-size: 7pt; color: #6b5a1e; text-transform: uppercase; letter-spacing: 0.08em; }
-  .summary-box .s-value { font-size: 13pt; font-weight: 700; color: {{PRIMARY_COLOR}}; margin: 1mm 0; }
+  .summary-box .s-value { font-size: 13pt; font-weight: 700; color: var(--primary-color); margin: 1mm 0; }
   .summary-box .s-grade { font-size: 8pt; color: #6b5a1e; }
 
   .result-status-box {
@@ -173,7 +173,7 @@
 
   /* Footer */
   .card-footer {
-    border-top: 2px solid {{PRIMARY_COLOR}};
+    border-top: 2px solid var(--primary-color);
     padding: 3mm 6mm;
     display: flex;
     justify-content: space-between;
@@ -257,11 +257,11 @@
             <tr>
               <th style="width:35%">Subject</th>
               <th>Max Marks</th>
-              <th style="display:{{SHOW_SPLIT_HEADER}}">Internal</th>
-              <th style="display:{{SHOW_SPLIT_HEADER}}">External</th>
+              <th class="split-col">Internal</th>
+              <th class="split-col">External</th>
               <th>Obtained</th>
-              <th style="display:{{SHOW_GRADE_COL}}">Grade</th>
-              <th style="display:{{SHOW_PF_COL}}">P/F</th>
+              <th class="grade-col">Grade</th>
+              <th class="pf-col">P/F</th>
             </tr>
           </thead>
           <tbody>
@@ -282,13 +282,13 @@
         </div>
         <div class="summary-box">
           <div class="s-label">Grade</div>
-          <div class="s-value" style="color:{{OVERALL_GRADE_COLOR}}">{{OVERALL_GRADE}}</div>
+          <div class="s-value" style="color: var(--overall-grade-color);">{{OVERALL_GRADE}}</div>
         </div>
         <div class="summary-box">
           <div class="s-label">Rank</div>
           <div class="s-value">#{{RANK}} / {{TOTAL_STUDENTS}}</div>
         </div>
-        <div class="result-status-box" style="border-color:{{OVERALL_GRADE_COLOR}};color:{{OVERALL_GRADE_COLOR}}">
+        <div class="result-status-box" style="border-color: var(--overall-grade-color); color: var(--overall-grade-color);">
           <div class="rs-label">Final Result</div>
           <div class="rs-value">{{FINAL_STATUS}}</div>
         </div>

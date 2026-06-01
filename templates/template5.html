@@ -11,11 +11,11 @@
   .page { width: 210mm; min-height: 297mm; background: #fdf8f0; display: flex; flex-direction: column; padding: 8mm; position: relative; }
 
   /* Ornate border */
-  .outer-border { border: 4px double {{PRIMARY_COLOR}}; padding: 4mm; flex: 1; display: flex; flex-direction: column; position: relative; background: #fdf8f0; }
+  .outer-border { border: 4px double var(--primary-color); padding: 4mm; flex: 1; display: flex; flex-direction: column; position: relative; background: #fdf8f0; }
   .inner-border { border: 1px solid #c4956a; flex: 1; display: flex; flex-direction: column; }
 
   /* Corner ornaments */
-  .ornament { position: absolute; font-size: 22pt; color: {{PRIMARY_COLOR}}; opacity: 0.6; line-height: 1; }
+  .ornament { position: absolute; font-size: 22pt; color: var(--primary-color); opacity: 0.6; line-height: 1; }
   .orn-tl { top: 2px; left: 2px; }
   .orn-tr { top: 2px; right: 2px; }
   .orn-bl { bottom: 2px; left: 2px; }
@@ -23,7 +23,7 @@
 
   /* Header */
   .card-header {
-    background: {{PRIMARY_COLOR}};
+    background: var(--primary-color);
     padding: 5mm 6mm;
     display: flex;
     align-items: center;
@@ -31,8 +31,7 @@
     border-bottom: 3px solid #c4956a;
   }
 
-  .logo-box { width: 65px; height: 65px; background: #fdf8f0; border: 2px solid #c4956a; border-radius: 4px; padding: 4px; overflow: hidden; flex-shrink: 0; }
-  .logo-box img { width: 100%; height: 100%; object-fit: contain; }
+  .coaching-logo { width: 65px; height: 65px; background: #fdf8f0; border: 2px solid #c4956a; border-radius: 4px; padding: 4px; object-fit: contain; flex-shrink: 0; }
   .logo-placeholder { width: 65px; height: 65px; background: rgba(196,149,106,0.2); border: 2px solid #c4956a; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; flex-shrink: 0; }
 
   .header-center { flex: 1; text-align: center; }
@@ -68,16 +67,16 @@
   }
 
   .detail-row { padding: 1.3mm 0; font-size: 8.5pt; display: flex; gap: 2mm; }
-  .dl { font-weight: 700; color: {{PRIMARY_COLOR}}; min-width: 90px; font-family: 'Lora', serif; }
+  .dl { font-weight: 700; color: var(--primary-color); min-width: 90px; font-family: 'Lora', serif; }
   .dv { color: #2a1a0a; }
 
   /* Ornate section header */
-  .section-header { text-align: center; padding: 2mm 0; color: {{PRIMARY_COLOR}}; font-family: 'Lora', serif; font-size: 8.5pt; letter-spacing: 0.1em; }
+  .section-header { text-align: center; padding: 2mm 0; color: var(--primary-color); font-family: 'Lora', serif; font-size: 8.5pt; letter-spacing: 0.1em; }
 
   /* Marks table */
   .marks-area { flex: 1; padding: 2mm 5mm; }
   .marks-table { width: 100%; border-collapse: collapse; font-size: 8pt; }
-  .marks-table th { background: {{PRIMARY_COLOR}}; color: #fdf8f0; padding: 2.5mm 1.5mm; text-align: center; font-family: 'Lora', serif; font-size: 7.5pt; border: 1px solid rgba(196,149,106,0.5); }
+  .marks-table th { background: var(--primary-color); color: #fdf8f0; padding: 2.5mm 1.5mm; text-align: center; font-family: 'Lora', serif; font-size: 7.5pt; border: 1px solid rgba(196,149,106,0.5); }
   .marks-table th:first-child { text-align: left; padding-left: 3mm; }
   .marks-table td { padding: 2mm 1.5mm; border: 1px solid #e0cdb0; text-align: center; }
   .marks-table td:first-child { text-align: left; padding-left: 3mm; font-style: italic; }
@@ -90,7 +89,7 @@
 
   /* Summary */
   .summary-area {
-    border-top: 2px solid {{PRIMARY_COLOR}};
+    border-top: 2px solid var(--primary-color);
     padding: 3mm 5mm;
     display: flex;
     gap: 3mm;
@@ -98,22 +97,22 @@
   }
 
   .sa-box { flex: 1; border: 1px solid #c4956a; border-radius: 3px; padding: 2.5mm; text-align: center; background: #fdf8f0; }
-  .sa-box .sb-label { font-size: 6.5pt; color: {{PRIMARY_COLOR}}; text-transform: uppercase; letter-spacing: 0.08em; font-family: 'Lora', serif; }
-  .sa-box .sb-value { font-size: 13pt; font-weight: 700; color: {{PRIMARY_COLOR}}; margin: 1mm 0; }
+  .sa-box .sb-label { font-size: 6.5pt; color: var(--primary-color); text-transform: uppercase; letter-spacing: 0.08em; font-family: 'Lora', serif; }
+  .sa-box .sb-value { font-size: 13pt; font-weight: 700; color: var(--primary-color); margin: 1mm 0; }
 
-  .sa-result { flex: 1.5; background: {{PRIMARY_COLOR}}; border-radius: 3px; padding: 2.5mm; text-align: center; color: #fdf8f0; }
+  .sa-result { flex: 1.5; background: var(--primary-color); border-radius: 3px; padding: 2.5mm; text-align: center; color: #fdf8f0; }
   .sa-result .sr-l { font-size: 6.5pt; opacity: 0.75; font-family: 'Lora', serif; letter-spacing: 0.08em; text-transform: uppercase; }
   .sa-result .sr-v { font-size: 15pt; font-weight: 700; font-family: 'Lora', serif; margin: 1mm 0; }
 
   /* Remarks */
   .remarks-area { padding: 2.5mm 5mm; border-top: 1px solid #c4956a; display: flex; gap: 2mm; font-size: 8pt; background: #fdf8f0; }
-  .ra-label { font-weight: 700; color: {{PRIMARY_COLOR}}; font-family: 'Lora', serif; white-space: nowrap; }
+  .ra-label { font-weight: 700; color: var(--primary-color); font-family: 'Lora', serif; white-space: nowrap; }
 
   /* Footer */
-  .card-footer { border-top: 3px double {{PRIMARY_COLOR}}; padding: 3mm 5mm; display: flex; justify-content: space-between; align-items: flex-end; background: rgba(196,149,106,0.05); }
+  .card-footer { border-top: 3px double var(--primary-color); padding: 3mm 5mm; display: flex; justify-content: space-between; align-items: flex-end; background: rgba(196,149,106,0.05); }
   .sign-block { text-align: center; }
-  .sign-line { width: 90px; border-top: 1px solid {{PRIMARY_COLOR}}; margin: 10mm auto 1mm; }
-  .sign-label { font-size: 7pt; color: {{PRIMARY_COLOR}}; font-family: 'Lora', serif; font-style: italic; }
+  .sign-line { width: 90px; border-top: 1px solid var(--primary-color); margin: 10mm auto 1mm; }
+  .sign-label { font-size: 7pt; color: var(--primary-color); font-family: 'Lora', serif; font-style: italic; }
   .footer-center { text-align: center; font-size: 7pt; color: #c4956a; }
 </style>
 </head>
@@ -160,12 +159,12 @@
             <tr>
               <th style="width:36%">Subject</th>
               <th>Max</th>
-              <th style="display:{{SHOW_SPLIT_HEADER}}">Int.</th>
-              <th style="display:{{SHOW_SPLIT_HEADER}}">Ext.</th>
+              <th class="split-col">Int.</th>
+              <th class="split-col">Ext.</th>
               <th>Obtained</th>
               <th>%</th>
-              <th style="display:{{SHOW_GRADE_COL}}">Grade</th>
-              <th style="display:{{SHOW_PF_COL}}">P/F</th>
+              <th class="grade-col">Grade</th>
+              <th class="pf-col">P/F</th>
             </tr>
           </thead>
           <tbody>{{MARKS_TABLE_ROWS}}</tbody>
@@ -175,7 +174,7 @@
       <div class="summary-area">
         <div class="sa-box"><div class="sb-label">Total Marks</div><div class="sb-value">{{TOTAL_OBTAINED}}/{{TOTAL_MAX}}</div></div>
         <div class="sa-box"><div class="sb-label">Percentage</div><div class="sb-value">{{OVERALL_PCT}}</div></div>
-        <div class="sa-box"><div class="sb-label">Grade</div><div class="sb-value" style="color:{{OVERALL_GRADE_COLOR}}">{{OVERALL_GRADE}}</div></div>
+        <div class="sa-box"><div class="sb-label">Grade</div><div class="sb-value" style="color: var(--overall-grade-color);">{{OVERALL_GRADE}}</div></div>
         <div class="sa-box"><div class="sb-label">Rank</div><div class="sb-value">#{{RANK}}/{{TOTAL_STUDENTS}}</div></div>
         <div class="sa-result"><div class="sr-l">Final Result</div><div class="sr-v">{{FINAL_STATUS}}</div></div>
       </div>

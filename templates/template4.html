@@ -13,7 +13,7 @@
   /* Left sidebar */
   .sidebar {
     width: 28mm;
-    background: {{PRIMARY_COLOR}};
+    background: var(--primary-color);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -21,9 +21,8 @@
     flex-shrink: 0;
   }
 
-  .sidebar-logo { width: 50px; height: 50px; background: white; border-radius: 6px; padding: 4px; overflow: hidden; margin-bottom: 6mm; }
-  .sidebar-logo img { width: 100%; height: 100%; object-fit: contain; }
-  .logo-placeholder { width: 50px; height: 50px; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.4); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; }
+  .coaching-logo { width: 50px; height: 50px; background: white; border-radius: 6px; padding: 4px; object-fit: contain; margin-bottom: 6mm; flex-shrink: 0; }
+  .logo-placeholder { width: 50px; height: 50px; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.4); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 6mm; }
 
   .sidebar-accent {
     width: 4px;
@@ -51,23 +50,23 @@
   /* Header */
   .main-header {
     padding: 5mm 6mm 4mm;
-    border-bottom: 3px solid {{PRIMARY_COLOR}};
+    border-bottom: 3px solid var(--primary-color);
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
   }
 
-  .inst-block .inst-name { font-size: 17pt; font-weight: 700; color: {{PRIMARY_COLOR}}; line-height: 1.1; }
+  .inst-block .inst-name { font-size: 17pt; font-weight: 700; color: var(--primary-color); line-height: 1.1; }
   .inst-block .inst-tagline { font-size: 8.5pt; color: #555; margin-top: 1.5mm; }
   .inst-block .inst-contact { font-size: 7pt; color: #888; margin-top: 2mm; }
 
-  .header-photo-right { width: 60px; height: 75px; border: 2px solid {{PRIMARY_COLOR}}; overflow: hidden; flex-shrink: 0; }
+  .header-photo-right { width: 60px; height: 75px; border: 2px solid var(--primary-color); overflow: hidden; flex-shrink: 0; }
   .header-photo-right img { width: 100%; height: 100%; object-fit: cover; }
   .photo-placeholder { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f5f5f5; color: #aaa; font-size: 6pt; text-align: center; border: 2px dashed #ccc; }
 
   /* Report title */
   .report-title {
-    background: {{PRIMARY_COLOR}};
+    background: var(--primary-color);
     color: white;
     padding: 2mm 6mm;
     font-size: 9pt;
@@ -93,7 +92,7 @@
   /* Marks */
   .marks-zone { flex: 1; padding: 3mm 6mm; }
   .marks-table { width: 100%; border-collapse: collapse; font-size: 7.5pt; }
-  .marks-table th { background: {{PRIMARY_COLOR}}; color: white; padding: 2mm 1.5mm; text-align: center; font-weight: 600; font-size: 7pt; letter-spacing: 0.05em; border-right: 1px solid rgba(255,255,255,0.15); }
+  .marks-table th { background: var(--primary-color); color: white; padding: 2mm 1.5mm; text-align: center; font-weight: 600; font-size: 7pt; letter-spacing: 0.05em; border-right: 1px solid rgba(255,255,255,0.15); }
   .marks-table th:first-child { text-align: left; padding-left: 2.5mm; }
   .marks-table td { padding: 1.8mm 1.5mm; border-bottom: 1px solid #e8e8e8; text-align: center; color: #333; }
   .marks-table td:first-child { text-align: left; padding-left: 2.5mm; font-weight: 500; color: #1a1a1a; }
@@ -106,7 +105,7 @@
 
   /* Summary footer */
   .summary-zone {
-    border-top: 2px solid {{PRIMARY_COLOR}};
+    border-top: 2px solid var(--primary-color);
     padding: 3mm 6mm;
     display: flex;
     gap: 2mm;
@@ -115,17 +114,17 @@
 
   .sz-box { flex: 1; border: 1px solid #e0e0e0; border-radius: 4px; padding: 2mm; text-align: center; background: white; }
   .sz-box .szb-label { font-size: 6pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #888; }
-  .sz-box .szb-value { font-size: 13pt; font-weight: 700; color: {{PRIMARY_COLOR}}; margin: 0.5mm 0; }
+  .sz-box .szb-value { font-size: 13pt; font-weight: 700; color: var(--primary-color); margin: 0.5mm 0; }
   .sz-box .szb-sub { font-size: 6.5pt; color: #aaa; }
 
-  .sz-result { flex: 1.5; background: {{PRIMARY_COLOR}}; border-radius: 4px; padding: 2mm; text-align: center; color: white; }
+  .sz-result { flex: 1.5; background: var(--primary-color); border-radius: 4px; padding: 2mm; text-align: center; color: white; }
   .sz-result .sr-label { font-size: 6pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.7; }
   .sz-result .sr-value { font-size: 15pt; font-weight: 800; margin: 0.5mm 0; }
 
   .remarks-line { padding: 2mm 6mm; font-size: 7.5pt; display: flex; gap: 2mm; border-top: 1px solid #eee; background: #fafafa; }
-  .rl-label { font-weight: 700; color: {{PRIMARY_COLOR}}; white-space: nowrap; }
+  .rl-label { font-weight: 700; color: var(--primary-color); white-space: nowrap; }
 
-  .card-footer { padding: 2.5mm 6mm; border-top: 2px solid {{PRIMARY_COLOR}}; display: flex; justify-content: space-between; align-items: flex-end; }
+  .card-footer { padding: 2.5mm 6mm; border-top: 2px solid var(--primary-color); display: flex; justify-content: space-between; align-items: flex-end; }
   .sign-block { text-align: center; }
   .sign-line { width: 80px; border-top: 1px solid #555; margin: 8mm auto 1mm; }
   .sign-label { font-size: 6.5pt; color: #777; }
@@ -136,7 +135,7 @@
 <div class="page">
   <!-- Left Sidebar -->
   <div class="sidebar">
-    <div class="sidebar-logo">{{COACHING_LOGO}}</div>
+    {{COACHING_LOGO}}
     <div class="sidebar-accent"></div>
     <div class="sidebar-year">{{ACADEMIC_YEAR}}</div>
   </div>
@@ -175,12 +174,12 @@
           <tr>
             <th style="width:36%">Subject</th>
             <th>Max</th>
-            <th style="display:{{SHOW_SPLIT_HEADER}}">Int</th>
-            <th style="display:{{SHOW_SPLIT_HEADER}}">Ext</th>
+            <th class="split-col">Int</th>
+            <th class="split-col">Ext</th>
             <th>Marks</th>
             <th>%</th>
-            <th style="display:{{SHOW_GRADE_COL}}">Grade</th>
-            <th style="display:{{SHOW_PF_COL}}">P/F</th>
+            <th class="grade-col">Grade</th>
+            <th class="pf-col">P/F</th>
           </tr>
         </thead>
         <tbody>{{MARKS_TABLE_ROWS}}</tbody>
@@ -190,7 +189,7 @@
     <div class="summary-zone">
       <div class="sz-box"><div class="szb-label">Total</div><div class="szb-value">{{TOTAL_OBTAINED}}</div><div class="szb-sub">/ {{TOTAL_MAX}}</div></div>
       <div class="sz-box"><div class="szb-label">Percentage</div><div class="szb-value">{{OVERALL_PCT}}</div></div>
-      <div class="sz-box"><div class="szb-label">Grade</div><div class="szb-value" style="color:{{OVERALL_GRADE_COLOR}}">{{OVERALL_GRADE}}</div></div>
+      <div class="sz-box"><div class="szb-label">Grade</div><div class="szb-value" style="color: var(--overall-grade-color);">{{OVERALL_GRADE}}</div></div>
       <div class="sz-box"><div class="szb-label">Rank</div><div class="szb-value">#{{RANK}}</div><div class="szb-sub">of {{TOTAL_STUDENTS}}</div></div>
       <div class="sz-result"><div class="sr-label">Result</div><div class="sr-value">{{FINAL_STATUS}}</div></div>
     </div>
