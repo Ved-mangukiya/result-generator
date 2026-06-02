@@ -680,7 +680,7 @@ async function showGradeEditor(boardId, boardName) {
       <td style="padding:var(--space-2) var(--space-3)"><input type="number" class="form-control marks-input" value="${g.max_pct}" data-field="max_pct"></td>
       <td style="padding:var(--space-2) var(--space-3)">
         <select class="form-control" data-field="result_status" style="width:140px">
-          ${['Distinction','First Class','Second Class','Pass','Fail'].map(s => `<option ${g.result_status === s ? 'selected' : ''}>${s}</option>`).join('')}
+          ${['A1','A2','B1','B2','C1','C2','D','Fail','Distinction','First Class','Second Class','Pass'].map(s => `<option ${g.result_status === s ? 'selected' : ''}>${s}</option>`).join('')}
         </select>
       </td>
       <td style="padding:var(--space-2) var(--space-3)">
@@ -731,7 +731,7 @@ async function copyGradeScaleFromBoard() {
           <td style="padding:var(--space-2) var(--space-3)"><input type="number" class="form-control marks-input" value="${g.max_pct}" data-field="max_pct"></td>
           <td style="padding:var(--space-2) var(--space-3)">
             <select class="form-control" data-field="result_status" style="width:140px">
-              ${['Distinction','First Class','Second Class','Pass','Fail'].map(s => `<option ${g.result_status === s ? 'selected' : ''}>${s}</option>`).join('')}
+              ${['A1','A2','B1','B2','C1','C2','D','Fail','Distinction','First Class','Second Class','Pass'].map(s => `<option ${g.result_status === s ? 'selected' : ''}>${s}</option>`).join('')}
             </select>
           </td>
           <td style="padding:var(--space-2) var(--space-3)">
@@ -757,7 +757,7 @@ function addGradeRow() {
     <td style="padding:var(--space-2) var(--space-3)"><input type="number" class="form-control marks-input" value="100" data-field="max_pct"></td>
     <td style="padding:var(--space-2) var(--space-3)">
       <select class="form-control" data-field="result_status" style="width:140px">
-        ${['Distinction','First Class','Second Class','Pass','Fail'].map(s => `<option>${s}</option>`).join('')}
+        ${['A1','A2','B1','B2','C1','C2','D','Fail','Distinction','First Class','Second Class','Pass'].map(s => `<option>${s}</option>`).join('')}
       </select>
     </td>
     <td style="padding:var(--space-2) var(--space-3)">
@@ -797,6 +797,105 @@ window.confirmDeleteBoard = confirmDeleteBoard;
 window.showAddStandardModal = showAddStandardModal;
 window.addStandard = addStandard;
 window.confirmDeleteStandard = confirmDeleteStandard;
+function stdSelectAll(check) {
+  const checkboxes = document.querySelectorAll('#std-subjects-checklist input[type="checkbox"]');
+  checkboxes.forEach(cb => { cb.checked = check; });
+}
+
+function addCustomSubjectToChecklist() {
+  const nameInput = document.getElementById('std-custom-subj-name');
+  const maxInput = document.getElementById('std-custom-subj-max');
+  if (!nameInput || !maxInput) return;
+  
+  const name = nameInput.value.trim();
+  const max = parseInt(maxInput.value) || 100;
+  
+  if (!name) {
+    Toast.error('Invalid Subject', 'Please enter a custom subject name.');
+    return;
+  }
+  
+  // Check if already in checklist
+  const exists = _standardDefaultSubjects.some(sub => sub.name.toLowerCase() === name.toLowerCase());
+  if (exists) {
+    Toast.warning('Exists', 'This subject is already in the list.');
+    return;
+  }
+  
+  const newSub = { name, max_marks: max, marks_type: 'total', is_compulsory: false, is_language: false };
+  _standardDefaultSubjects.push(newSub);
+  
+  // Rerender checklist
+  const checklist = document.getElementById('std-subjects-checklist');
+  if (checklist) {
+    const i = _standardDefaultSubjects.length - 1;
+    const child = document.createElement('label');
+    child.className = 'checkbox-container';
+    child.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:0.8rem;margin-bottom:0;cursor:pointer';
+    child.innerHTML = `
+      <input type="checkbox" data-index="${i}" checked style="cursor:pointer">
+      <span>
+        ${name}
+        <span class="text-muted" style="font-size:0.68rem">(${max}m · Optional)</span>
+      </span>`;
+    checklist.appendChild(child);
+  }
+  
+  // Clear inputs
+  nameInput.value = '';
+  maxInput.value = '100';
+  Toast.success('Subject Added', `Added custom subject: ${name}`);
+}
+
+function showSubjSuggestions(val, containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  
+  if (!val || val.trim().length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+  
+  const query = val.toLowerCase().trim();
+  const suggestions = (window._allSubjectNames || []).filter(name => 
+    name.toLowerCase().includes(query)
+  ).slice(0, 15); // Show top 15 matches
+  
+  if (suggestions.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+  
+  const inputId = containerId === 'std-subj-suggestions' ? 'std-custom-subj-name' : 'subj-name';
+  
+  container.innerHTML = suggestions.map(name => `
+    <div class="suggestion-item" 
+         style="padding: 8px 12px; cursor: pointer; transition: background 0.15s; border-bottom: 1px solid var(--border);" 
+         onmousedown="selectSubjSuggestion('${name.replace(/'/g, "\\'")}', '${inputId}', '${containerId}')"
+         onmouseover="this.style.background='var(--bg-elevated)'"
+         onmouseout="this.style.background=''">
+      ${name}
+    </div>
+  `).join('');
+  
+  container.style.display = 'block';
+}
+
+function selectSubjSuggestion(name, inputId, containerId) {
+  const input = document.getElementById(inputId);
+  if (input) {
+    input.value = name;
+  }
+  hideSubjSuggestions(containerId);
+}
+
+function hideSubjSuggestions(containerId) {
+  const container = document.getElementById(containerId);
+  if (container) {
+    container.style.display = 'none';
+  }
+}
+
 window.showSubjectsPanel = showSubjectsPanel;
 window.showAddSubjectModal = showAddSubjectModal;
 window.toggleSplitFields = toggleSplitFields;
@@ -809,3 +908,8 @@ window.showGradeEditor = showGradeEditor;
 window.copyGradeScaleFromBoard = copyGradeScaleFromBoard;
 window.addGradeRow = addGradeRow;
 window.saveGrades = saveGrades;
+window.stdSelectAll = stdSelectAll;
+window.addCustomSubjectToChecklist = addCustomSubjectToChecklist;
+window.showSubjSuggestions = showSubjSuggestions;
+window.selectSubjSuggestion = selectSubjSuggestion;
+window.hideSubjSuggestions = hideSubjSuggestions;

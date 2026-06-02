@@ -221,10 +221,10 @@
 <div class="page">
   <div class="outer-border">
     <div class="inner-border">
-      <div class="rangoli-corner rc-tl">🪔</div>
-      <div class="rangoli-corner rc-tr">🪔</div>
-      <div class="rangoli-corner rc-bl">🪔</div>
-      <div class="rangoli-corner rc-br">🪔</div>
+      <div class="rangoli-corner rc-tl">✨</div>
+      <div class="rangoli-corner rc-tr">✨</div>
+      <div class="rangoli-corner rc-bl">✨</div>
+      <div class="rangoli-corner rc-br">✨</div>
       
       <!-- Header -->
       <div class="header">
@@ -239,7 +239,7 @@
 
       <!-- Title Area -->
       <div class="title-area">
-        <h2>प्रगति पत्रक (Academic Progress Report) — {{ACADEMIC_YEAR}}</h2>
+        <h2>Academic Progress Report — {{ACADEMIC_YEAR}}</h2>
       </div>
 
       <!-- Student details -->
@@ -309,12 +309,14 @@
           <div class="sign-label">Class Teacher</div>
         </div>
         <div class="footer-center">
-          <div class="diya">🪔</div>
+          <div class="diya">✨</div>
           <div>{{COACHING_WEBSITE}}</div>
         </div>
         <div class="sign-col">
-          <div class="sign-line"></div>
-          <div class="sign-label">Director</div>
+          <div style="height: 34px; display: flex; align-items: center; justify-content: center; margin-bottom: 2px;">{{SIGNATURE_IMG}}</div>
+          <div class="sign-line" style="margin: 0 auto 2px; height: 1px; border: none; border-top: 1px solid currentColor;"></div>
+          <div style="font-size: 7.5pt; font-weight: 700; color: inherit; line-height: 1.1;">{{SIGNATORY_NAME}}</div>
+          <div class="sign-label" style="margin-top: 1px; font-size: 6.5pt; line-height: 1.0; text-transform: none; letter-spacing: 0;">{{SIGNATORY_TITLE}}</div>
         </div>
       </div>
 

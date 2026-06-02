@@ -105,7 +105,7 @@ router.get('/:id/result-settings', (req, res) => {
       show_rank: 1, show_percentile: 0, show_attendance: 1, show_remarks: 1,
       show_photo: 1, show_parent_names: 1, show_dob: 1, show_split_marks: 1,
       show_grade: 1, show_pass_fail: 1, paper_size: 'A4 Portrait',
-      result_categories: '["Distinction","First Class","Second Class","Pass","Fail"]'
+      result_categories: '["A1","A2","B1","B2","C1","C2","D","Fail"]'
     };
   }
   res.json(settings);

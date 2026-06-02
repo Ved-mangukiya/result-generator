@@ -200,27 +200,45 @@ async function loadStudents() {
             </tr>
           </thead>
           <tbody>
-            ${_studentsList.map(s => `
-              <tr>
-                <td>
-                  <div class="student-avatar" style="width:36px;height:42px;border-radius:var(--radius-sm)">
-                    ${s.photo_path ? `<img src="/${s.photo_path}" alt="${s.name}">` : s.name[0].toUpperCase()}
-                  </div>
-                </td>
-                <td><span class="badge badge-gray">${s.roll_number}</span></td>
-                <td class="td-primary">${s.name}</td>
-                <td>${s.father_name || '—'}</td>
-                <td class="text-sm">${s.standard_name || '—'}</td>
-                <td><span class="badge badge-primary">${s.board_short || '—'}</span></td>
-                <td>${s.attendance_pct !== null ? s.attendance_pct + '%' : '—'}</td>
-                <td>
-                  <div class="td-actions">
-                    <button class="btn btn-outline btn-sm" onclick="showMarksEntry(${s.id})">📝 Marks</button>
-                    <button class="btn btn-ghost btn-icon-sm" onclick="showEditStudentModal(${s.id})" title="Edit">✏</button>
-                    <button class="btn btn-ghost btn-icon-sm" onclick="confirmDeleteStudent(${s.id}, '${s.name}')" title="Delete">🗑</button>
-                  </div>
-                </td>
-              </tr>`).join('')}
+             ${_studentsList.map(s => {
+                let electivesHTML = '';
+                if (s.elective_subjects) {
+                  try {
+                    const parsed = typeof s.elective_subjects === 'string'
+                      ? JSON.parse(s.elective_subjects)
+                      : s.elective_subjects;
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                      electivesHTML = `<div style="margin-top:4px; display:flex; gap:3px; flex-wrap:wrap">` + 
+                        parsed.map(el => `<span class="badge badge-gold" style="font-size:0.6rem; padding:1px 5px; text-transform:none">${el.name}</span>`).join('') + 
+                        `</div>`;
+                    }
+                  } catch(e) {}
+                }
+                return `
+                <tr>
+                  <td>
+                    <div class="student-avatar" style="width:36px;height:42px;border-radius:var(--radius-sm)">
+                      ${s.photo_path ? `<img src="/${s.photo_path}" alt="${s.name}">` : s.name[0].toUpperCase()}
+                    </div>
+                  </td>
+                  <td><span class="badge badge-gray">${s.roll_number}</span></td>
+                  <td class="td-primary">${s.name}</td>
+                  <td>${s.father_name || '—'}</td>
+                  <td class="text-sm">
+                    <div>${s.standard_name || '—'}</div>
+                    ${electivesHTML}
+                  </td>
+                  <td><span class="badge badge-primary">${s.board_short || '—'}</span></td>
+                  <td>${s.attendance_pct !== null ? s.attendance_pct + '%' : '—'}</td>
+                  <td>
+                    <div class="td-actions">
+                      <button class="btn btn-outline btn-sm" onclick="showMarksEntry(${s.id})">📝 Marks</button>
+                      <button class="btn btn-ghost btn-icon-sm" onclick="showEditStudentModal(${s.id})" title="Edit">✏</button>
+                      <button class="btn btn-ghost btn-icon-sm" onclick="confirmDeleteStudent(${s.id}, '${s.name}')" title="Delete">🗑</button>
+                    </div>
+                  </td>
+                </tr>`;
+              }).join('')}
           </tbody>
         </table>
       </div>`;
@@ -287,6 +305,22 @@ function buildStudentForm(s) {
             <input type="text" class="form-control" id="st-roll" value="${s?.roll_number || ''}" placeholder="e.g. 2024001">
           </div>
         </div>
+        ${!s ? `
+        <div class="form-group mb-4" id="st-roll-option-wrap">
+          <label class="form-label" style="font-weight:600">Roll Number Assignment Option</label>
+          <div style="display:flex; gap:16px; align-items:center; margin-top:6px">
+            <label style="display:flex; align-items:center; gap:6px; font-size:0.875rem; cursor:pointer">
+              <input type="radio" name="st-roll-mode" value="append" checked onclick="toggleStudentRollMode('append')"> 
+              <span>Append Sequential (Add after last student)</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:6px; font-size:0.875rem; cursor:pointer">
+              <input type="radio" name="st-roll-mode" value="resequence" onclick="toggleStudentRollMode('resequence')"> 
+              <span>Resequence Alphabetically (Changes all roll numbers in class)</span>
+            </label>
+          </div>
+          <span class="form-hint mt-1" id="st-roll-hint">Adds the student with the next sequential roll number without changing others.</span>
+        </div>
+        ` : ''}
         <div class="form-grid mb-4">
           <div class="form-group">
             <label class="form-label">Father's Name</label>
@@ -311,9 +345,16 @@ function buildStudentForm(s) {
         <p class="form-section-title">Class Assignment</p>
         <div class="form-group mb-4">
           <label class="form-label">Board & Class <span class="required">*</span></label>
-          <select class="form-control" id="st-standard" onchange="autoFillNextRoll(this.value)">
+          <select class="form-control" id="st-standard" onchange="onStudentStandardChange(this.value)">
             <option value="">— Select Class —</option>
           </select>
+        </div>
+
+        <div id="st-electives-section" style="margin-top:15px; display:none; margin-bottom: 1.5rem">
+          <label class="form-label" style="font-weight:600">Optional / Elective Subjects Selection</label>
+          <div id="st-electives-list" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; border:1px solid var(--border); border-radius:var(--radius); padding:10px; background:var(--bg-surface);">
+          </div>
+          <span class="form-hint mt-1" style="font-size:0.72rem">💡 Elective subjects left unchecked will be grayed out in marks entry and excluded from percentage calculation.</span>
         </div>
         
         <p class="form-section-title">Tuition ERP & Admission Details</p>
@@ -344,6 +385,69 @@ function buildStudentForm(s) {
     </div>`;
 }
 
+async function onStudentStandardChange(standardId, student = null) {
+  if (!standardId) {
+    const section = document.getElementById('st-electives-section');
+    if (section) section.style.display = 'none';
+    return;
+  }
+  await autoFillNextRoll(standardId);
+  await renderElectiveSubjectsChecklist(standardId, student);
+}
+
+async function renderElectiveSubjectsChecklist(standardId, student) {
+  const listContainer = document.getElementById('st-electives-list');
+  const section = document.getElementById('st-electives-section');
+  if (!listContainer || !section) return;
+
+  try {
+    const subjects = await API.subjects.list(standardId);
+
+    if (subjects.length === 0) {
+      section.style.display = 'none';
+      listContainer.innerHTML = '';
+      return;
+    }
+
+    let chosenElectiveIds = [];
+    if (student && student.elective_subjects) {
+      try {
+        const parsed = typeof student.elective_subjects === 'string'
+          ? JSON.parse(student.elective_subjects)
+          : student.elective_subjects;
+        if (Array.isArray(parsed)) {
+          chosenElectiveIds = parsed.map(el => typeof el === 'object' ? el.id : el);
+        }
+      } catch (e) {
+        console.error('Error parsing student electives:', e);
+      }
+    }
+
+    listContainer.innerHTML = subjects.map(sub => {
+      const isCompulsory = sub.is_compulsory !== 0;
+      if (isCompulsory) {
+        return `
+          <label class="checkbox-container" style="display:flex; align-items:center; gap:6px; font-size:0.8rem; cursor:not-allowed; margin-bottom:0; opacity:0.75">
+            <input type="checkbox" checked disabled style="cursor:not-allowed">
+            <span>${sub.name} <span class="text-muted" style="font-size:0.7rem">(Compulsory · ${sub.max_marks}m)</span></span>
+          </label>`;
+      } else {
+        const isChecked = student ? chosenElectiveIds.includes(sub.id) : true;
+        return `
+          <label class="checkbox-container" style="display:flex; align-items:center; gap:6px; font-size:0.8rem; cursor:pointer; margin-bottom:0">
+            <input type="checkbox" value="${sub.id}" data-name="${sub.name}" class="st-elective-cb" ${isChecked ? 'checked' : ''} style="cursor:pointer">
+            <span>${sub.name} <span class="text-gold" style="font-weight:600; font-size:0.7rem">(Elective · ${sub.max_marks}m)</span></span>
+          </label>`;
+      }
+    }).join('');
+
+    section.style.display = 'block';
+  } catch (err) {
+    console.error('Failed to load standard subjects for electives:', err);
+    section.style.display = 'none';
+  }
+}
+
 async function initStudentForm(s) {
   // Load standards into dropdown
   const sel = document.getElementById('st-standard');
@@ -365,9 +469,11 @@ async function initStudentForm(s) {
       }
     }
     
-    if (!s && _studentsStandardId) {
+    if (s) {
+      await renderElectiveSubjectsChecklist(s.standard_id, s);
+    } else if (_studentsStandardId) {
       sel.value = _studentsStandardId;
-      autoFillNextRoll(_studentsStandardId);
+      await onStudentStandardChange(_studentsStandardId, null);
     }
   } catch {}
 }
@@ -396,16 +502,53 @@ function previewPhoto(input) {
   reader.readAsDataURL(file);
 }
 
+function toggleStudentRollMode(mode) {
+  const rollInput = document.getElementById('st-roll');
+  const hintEl = document.getElementById('st-roll-hint');
+  const standardId = document.getElementById('st-standard').value;
+  
+  if (mode === 'resequence') {
+    rollInput.value = 'Auto-Resequence';
+    rollInput.disabled = true;
+    if (hintEl) hintEl.innerHTML = '⚠️ Saving will automatically sort all students in this class alphabetically by name and resequence their roll numbers.';
+  } else {
+    rollInput.disabled = false;
+    if (hintEl) hintEl.innerHTML = 'Adds the student with the next sequential roll number without changing others.';
+    if (standardId) {
+      autoFillNextRoll(standardId);
+    } else {
+      rollInput.value = '';
+    }
+  }
+}
+
 async function saveStudent(studentId) {
   const name = getVal('st-name');
-  const roll = getVal('st-roll');
+  let roll = getVal('st-roll');
   const standardId = getVal('st-standard');
+  const rollMode = document.querySelector('input[name="st-roll-mode"]:checked')?.value || 'append';
+  
+  if (!studentId && rollMode === 'resequence') {
+    roll = 'TEMP_' + Date.now();
+  }
   
   if (!name || !roll || !standardId) {
     Toast.error('Required Fields', 'Name, roll number, and class are required.');
     return;
   }
   
+  // Collect elective subject checkboxes
+  const electiveCBs = $$('.st-elective-cb');
+  const elective_subjects = [];
+  electiveCBs.forEach(cb => {
+    if (cb.checked) {
+      elective_subjects.push({
+        id: parseInt(cb.value),
+        name: cb.dataset.name
+      });
+    }
+  });
+
   const data = {
     name, roll_number: roll,
     father_name: getVal('st-father'),
@@ -416,7 +559,8 @@ async function saveStudent(studentId) {
     standard_id: parseInt(standardId),
     admission_date: getVal('st-admission-date'),
     status: getVal('st-status') || 'Active',
-    total_fees: parseFloat(getVal('st-total-fees')) || 0
+    total_fees: parseFloat(getVal('st-total-fees')) || 0,
+    elective_subjects
   };
   
   try {
@@ -426,6 +570,11 @@ async function saveStudent(studentId) {
     } else {
       const res = await API.students.add(data);
       id = res.id;
+      
+      // Resequence if requested
+      if (rollMode === 'resequence') {
+        await API.students.resequence(parseInt(standardId));
+      }
     }
     
     // Upload photo if selected
@@ -462,6 +611,18 @@ async function showMarksEntry(studentId) {
   const subjects = await API.subjects.list(student.standard_id);
   const marksData = await API.students.getMarks(studentId);
   
+  const electiveIds = [];
+  if (student.elective_subjects) {
+    try {
+      const parsed = typeof student.elective_subjects === 'string'
+        ? JSON.parse(student.elective_subjects)
+        : student.elective_subjects;
+      if (Array.isArray(parsed)) {
+        electiveIds.push(...parsed.map(el => typeof el === 'object' ? el.id : el));
+      }
+    } catch(e) {}
+  }
+
   const marksMap = {};
   marksData.forEach(m => { marksMap[m.subject_id] = m; });
   
@@ -484,30 +645,43 @@ async function showMarksEntry(studentId) {
         <tbody id="marks-table-body">
           ${subjects.map(sub => {
             const m = marksMap[sub.id] || {};
+            const isOptional = sub.is_compulsory === 0;
+            const isSelected = !isOptional || electiveIds.includes(sub.id);
             const isAbsent = m.is_absent === 1;
             const intVal = m.internal_marks ?? '';
             const extVal = m.external_marks ?? '';
             const totalVal = m.total_marks ?? '';
-            return `<tr data-subject-id="${sub.id}" data-marks-type="${sub.marks_type}" data-max="${sub.max_marks}" data-int-max="${sub.internal_max || 0}" data-ext-max="${sub.external_max || sub.max_marks}">
+            
+            const rowStyle = !isSelected ? 'style="background: var(--bg-elevated); opacity: 0.55;"' : '';
+            const electiveBadge = isOptional 
+              ? (isSelected 
+                  ? `<span class="badge badge-success" style="font-size:0.65rem; text-transform:none">Chosen Elective</span>` 
+                  : `<span class="badge badge-gray" style="font-size:0.65rem; text-transform:none">Not Chosen</span>`)
+              : '';
+
+            return `<tr data-subject-id="${sub.id}" data-marks-type="${sub.marks_type}" data-max="${sub.max_marks}" data-int-max="${sub.internal_max || 0}" data-ext-max="${sub.external_max || sub.max_marks}" data-is-selected="${isSelected}" ${rowStyle}>
               <td style="padding:var(--space-2) var(--space-3)">
-                <div style="font-weight:600;color:var(--text-primary);font-size:0.8125rem">${sub.name}</div>
+                <div style="display:flex; align-items:center; gap:8px">
+                  <div style="font-weight:600;color:var(--text-primary);font-size:0.8125rem">${sub.name}</div>
+                  ${electiveBadge}
+                </div>
                 <div class="text-xs text-muted">${sub.is_compulsory ? 'Compulsory' : 'Optional'} · Max ${sub.max_marks}</div>
               </td>
               <td style="text-align:center;padding:var(--space-2) var(--space-3);color:var(--text-muted)">${sub.max_marks}</td>
               ${hasSplit ? (sub.marks_type === 'split'
-                ? `<td style="padding:var(--space-2) var(--space-3)"><input type="number" class="form-control marks-input" id="int-${sub.id}" value="${intVal}" min="0" max="${sub.internal_max}" placeholder="Int" onchange="calcRowTotal(${sub.id})" ${isAbsent?'disabled':''}></td>
-                   <td style="padding:var(--space-2) var(--space-3)"><input type="number" class="form-control marks-input" id="ext-${sub.id}" value="${extVal}" min="0" max="${sub.external_max}" placeholder="Ext" onchange="calcRowTotal(${sub.id})" ${isAbsent?'disabled':''}></td>`
+                ? `<td style="padding:var(--space-2) var(--space-3)"><input type="number" class="form-control marks-input" id="int-${sub.id}" value="${intVal}" min="0" max="${sub.internal_max}" placeholder="Int" onchange="calcRowTotal(${sub.id})" ${(!isSelected || isAbsent) ? 'disabled' : ''}></td>
+                   <td style="padding:var(--space-2) var(--space-3)"><input type="number" class="form-control marks-input" id="ext-${sub.id}" value="${extVal}" min="0" max="${sub.external_max}" placeholder="Ext" onchange="calcRowTotal(${sub.id})" ${(!isSelected || isAbsent) ? 'disabled' : ''}></td>`
                 : '<td></td><td></td>') : ''}
               <td style="padding:var(--space-2) var(--space-3)">
                 ${sub.marks_type === 'split'
                   ? `<span class="marks-total-cell" id="total-${sub.id}">${(intVal !== '' && extVal !== '') ? (parseFloat(intVal||0) + parseFloat(extVal||0)) : (totalVal !== '' ? totalVal : '—')}</span>`
-                  : `<input type="number" class="form-control marks-input" id="total-${sub.id}" value="${totalVal}" min="0" max="${sub.max_marks}" placeholder="Marks" onchange="calcRowPct(${sub.id})" ${isAbsent?'disabled':''}>`}
+                  : `<input type="number" class="form-control marks-input" id="total-${sub.id}" value="${totalVal}" min="0" max="${sub.max_marks}" placeholder="Marks" onchange="calcRowPct(${sub.id})" ${(!isSelected || isAbsent) ? 'disabled' : ''}>`}
               </td>
               <td style="padding:var(--space-2) var(--space-3);text-align:center">
                 <span class="marks-pct-cell" id="pct-${sub.id}">${calcPct(sub.marks_type === 'split' ? (parseFloat(intVal||0)+parseFloat(extVal||0)) : parseFloat(totalVal), sub.max_marks)}</span>
               </td>
               <td style="padding:var(--space-2) var(--space-3);text-align:center">
-                <label class="toggle"><input type="checkbox" id="absent-${sub.id}" ${isAbsent?'checked':''} onchange="toggleAbsent(${sub.id})"><span class="toggle-slider"></span></label>
+                <label class="toggle"><input type="checkbox" id="absent-${sub.id}" ${isAbsent?'checked':''} onchange="toggleAbsent(${sub.id})" ${!isSelected ? 'disabled' : ''}><span class="toggle-slider"></span></label>
               </td>
             </tr>`;
           }).join('')}
@@ -517,7 +691,7 @@ async function showMarksEntry(studentId) {
     `<button class="btn btn-outline" onclick="closeModal('marks-modal')">Cancel</button>
      <button class="btn btn-success btn-sm" onclick="showMarksPreview(${studentId})">👁 Preview Card</button>
      <button class="btn btn-primary" onclick="saveMarks(${studentId}, ${JSON.stringify(subjects.map(s=>s.id))})">💾 Save Marks</button>`,
-    'modal-xl'
+     'modal-xl'
   );
 }
 
@@ -570,10 +744,11 @@ async function saveMarks(studentId, subjectIds) {
     if (!row) continue;
     
     const type = row.dataset.marksType;
+    const isSelected = row.dataset.isSelected === 'true';
     const isAbsent = document.getElementById(`absent-${subId}`)?.checked || false;
     
     let total = null, internal = null, external = null;
-    if (!isAbsent) {
+    if (isSelected && !isAbsent) {
       if (type === 'split') {
         internal = parseFloat(document.getElementById(`int-${subId}`)?.value) || null;
         external = parseFloat(document.getElementById(`ext-${subId}`)?.value) || null;
@@ -601,14 +776,15 @@ async function showMarksPreview(studentId) {
   try {
     const html = await API.export.previewStudent(studentId);
     Spinner.hide();
-    createModal('preview-modal', '👁 Result Card Preview', 
-      `<div style="background:white;border-radius:var(--radius-lg);overflow:hidden;min-height:600px">
-        <iframe id="preview-iframe" style="width:100%;height:800px;border:none" srcdoc="${html.replace(/"/g, '&quot;')}"></iframe>
-      </div>`,
+    const overlay = createModal('preview-modal', '👁 Result Card Preview', 
+      `<div id="preview-viewport-container" style="display:flex; justify-content:center; align-items:center; background:#0f172a; padding:20px; transition:all 0.3s ease; overflow:auto; max-height:700px; border-radius:var(--radius)">
+         <iframe id="preview-iframe" style="width:210mm; height:297mm; max-height:650px; background:white; border:none; box-shadow:0 10px 25px rgba(0,0,0,0.5); transition:all 0.3s ease" srcdoc="${html.replace(/"/g, '&quot;')}"></iframe>
+       </div>`,
       `<button class="btn btn-outline" onclick="closeModal('preview-modal')">Close</button>
        <a href="${API.export.pdfSingle(studentId)}" class="btn btn-primary" target="_blank">⬇ Download PDF</a>`,
-      'modal-full'
+      'modal-xl'
     );
+    overlay.classList.add('modal-fullscreen-overlay');
   } catch (err) {
     Spinner.hide();
     Toast.error('Preview Failed', err.message);
@@ -669,6 +845,9 @@ window.saveMarks = saveMarks;
 window.showMarksPreview = showMarksPreview;
 window.autoFillNextRoll = autoFillNextRoll;
 window.resequenceRollNumbers = resequenceRollNumbers;
+window.onStudentStandardChange = onStudentStandardChange;
+window.renderElectiveSubjectsChecklist = renderElectiveSubjectsChecklist;
+window.toggleStudentRollMode = toggleStudentRollMode;
 
 // ─── Tuition ERP Page Views ───────────────────────
 async function loadAdmissionsTab(standardId) {

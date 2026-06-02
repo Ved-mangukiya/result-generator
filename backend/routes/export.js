@@ -139,6 +139,11 @@ router.post('/reminder-pdf', async (req, res) => {
     const { generateReminderPDF } = require('../services/pdfService');
     const { filename, outputPath } = await generateReminderPDF(req.body);
     
+    // Auto-update notice generated status for test tracking
+    if (req.body.test_id) {
+      db.prepare('UPDATE tests SET notice_generated = 1 WHERE id = ?').run(req.body.test_id);
+    }
+    
     res.download(outputPath, filename, (err) => {
       if (err) console.error('Download error:', err);
       try { fs.unlinkSync(outputPath); } catch(e) {}

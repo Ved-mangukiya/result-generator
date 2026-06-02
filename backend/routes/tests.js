@@ -8,6 +8,26 @@ const puppeteer = require('puppeteer');
 const { db, logActivity } = require('../db/database');
 const { getPassMark } = require('../services/gradeService');
 
+function findMatchingCycleId(standardId, testName, explicitCycleId = null) {
+  if (explicitCycleId !== undefined && explicitCycleId !== null && explicitCycleId !== '') {
+    return parseInt(explicitCycleId);
+  }
+  try {
+    const cycles = db.prepare('SELECT id, title FROM test_cycles WHERE standard_id = ?').all(standardId);
+    const sortedCycles = cycles.sort((a, b) => b.title.length - a.title.length);
+    const normalizedName = testName.toLowerCase();
+    for (const cycle of sortedCycles) {
+      const normalizedTitle = cycle.title.toLowerCase();
+      if (normalizedName.includes(normalizedTitle) || normalizedTitle.includes(normalizedName)) {
+        return cycle.id;
+      }
+    }
+  } catch (e) {
+    console.error('Error auto-matching cycle:', e);
+  }
+  return null;
+}
+
 // Multer storage for test imports
 const importsDir = path.join(__dirname, '../../uploads/imports');
 if (!fs.existsSync(importsDir)) fs.mkdirSync(importsDir, { recursive: true });
@@ -38,16 +58,28 @@ router.get('/', (req, res) => {
 
 // POST /api/tests — Create a new test
 router.post('/', (req, res) => {
-  const { standard_id, subject_id, name, max_marks, test_date } = req.body;
+  const { standard_id, subject_id, name, max_marks, test_date, syllabus, exam_mode, status, notice_generated, cycle_id } = req.body;
   if (!standard_id || !subject_id || !name || !max_marks) {
     return res.status(400).json({ error: 'standard_id, subject_id, name, and max_marks are required' });
   }
 
   try {
+    const matched_cycle_id = findMatchingCycleId(standard_id, name, cycle_id);
     const result = db.prepare(`
-      INSERT INTO tests (standard_id, subject_id, name, max_marks, test_date) 
-      VALUES (?, ?, ?, ?, ?)
-    `).run(standard_id, subject_id, name, parseFloat(max_marks), test_date || null);
+      INSERT INTO tests (standard_id, subject_id, name, max_marks, test_date, syllabus, exam_mode, status, notice_generated, cycle_id) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      standard_id, 
+      subject_id, 
+      name, 
+      parseFloat(max_marks), 
+      test_date || null,
+      syllabus || '',
+      exam_mode || 'Offline',
+      status || 'Scheduled',
+      notice_generated ? 1 : 0,
+      matched_cycle_id
+    );
 
     const testId = result.lastInsertRowid;
 
@@ -61,19 +93,82 @@ router.post('/', (req, res) => {
   }
 });
 
+// POST /api/tests/bulk — Bulk create tests
+router.post('/bulk', (req, res) => {
+  const { tests } = req.body;
+  if (!Array.isArray(tests) || tests.length === 0) {
+    return res.status(400).json({ error: 'tests array is required and cannot be empty' });
+  }
+
+  try {
+    const insertTest = db.prepare(`
+      INSERT INTO tests (standard_id, subject_id, name, max_marks, test_date, syllabus, exam_mode, status, notice_generated, cycle_id) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const createdIds = [];
+
+    const runTransaction = db.transaction(() => {
+      for (const t of tests) {
+        const { standard_id, subject_id, name, max_marks, test_date, syllabus, exam_mode, status, notice_generated, cycle_id } = t;
+        const matched_cycle_id = findMatchingCycleId(standard_id, name, cycle_id);
+        const result = insertTest.run(
+          standard_id,
+          subject_id,
+          name,
+          parseFloat(max_marks) || 100,
+          test_date || null,
+          syllabus || '',
+          exam_mode || 'Offline',
+          status || 'Scheduled',
+          notice_generated ? 1 : 0,
+          matched_cycle_id
+        );
+        createdIds.push(result.lastInsertRowid);
+      }
+    });
+
+    runTransaction();
+
+    if (tests.length > 0) {
+      const std = db.prepare('SELECT display_name FROM standards WHERE id = ?').get(tests[0].standard_id);
+      logActivity('TEST_BULK_CREATE', `Bulk created ${tests.length} tests for ${std ? std.display_name : 'Class'}`);
+    }
+
+    res.json({ success: true, count: tests.length, ids: createdIds });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // PUT /api/tests/:id — Update a test's metadata
 router.put('/:id', (req, res) => {
-  const { name, max_marks, test_date, subject_id } = req.body;
+  const { name, max_marks, test_date, subject_id, syllabus, exam_mode, status, notice_generated, cycle_id } = req.body;
   if (!name || !max_marks || !subject_id) {
     return res.status(400).json({ error: 'name, max_marks, and subject_id are required' });
   }
 
   try {
+    const currentTest = db.prepare('SELECT standard_id FROM tests WHERE id = ?').get(req.params.id);
+    const standard_id = currentTest ? currentTest.standard_id : null;
+    const matched_cycle_id = standard_id ? findMatchingCycleId(standard_id, name, cycle_id) : null;
+
     db.prepare(`
       UPDATE tests 
-      SET name = ?, max_marks = ?, test_date = ?, subject_id = ?
+      SET name = ?, max_marks = ?, test_date = ?, subject_id = ?, syllabus = ?, exam_mode = ?, status = ?, notice_generated = ?, cycle_id = ?
       WHERE id = ?
-    `).run(name, parseFloat(max_marks), test_date || null, subject_id, req.params.id);
+    `).run(
+      name, 
+      parseFloat(max_marks), 
+      test_date || null, 
+      subject_id, 
+      syllabus || '',
+      exam_mode || 'Offline',
+      status || 'Scheduled',
+      notice_generated ? 1 : 0,
+      matched_cycle_id,
+      req.params.id
+    );
 
     const test = db.prepare('SELECT t.name, s.display_name FROM tests t JOIN standards s ON t.standard_id = s.id WHERE t.id = ?').get(req.params.id);
     logActivity('TEST_UPDATE', `Updated test "${test ? test.name : 'Unknown'}" for ${test ? test.display_name : 'Unknown'}`);
@@ -101,11 +196,16 @@ router.delete('/:id', (req, res) => {
 // GET /api/tests/:id/marks — Get student list & marks for grid entry
 router.get('/:id/marks', (req, res) => {
   try {
-    const test = db.prepare('SELECT * FROM tests WHERE id = ?').get(req.params.id);
+    const test = db.prepare(`
+      SELECT t.*, s.is_compulsory, s.name as subject_name 
+      FROM tests t 
+      JOIN subjects s ON t.subject_id = s.id 
+      WHERE t.id = ?
+    `).get(req.params.id);
     if (!test) return res.status(404).json({ error: 'Test not found' });
 
     const marks = db.prepare(`
-      SELECT s.id as student_id, s.name as student_name, s.roll_number,
+      SELECT s.id as student_id, s.name as student_name, s.roll_number, s.elective_subjects,
              tm.obtained_marks, tm.is_absent, tm.remarks
       FROM students s
       LEFT JOIN test_marks tm ON s.id = tm.student_id AND tm.test_id = ?

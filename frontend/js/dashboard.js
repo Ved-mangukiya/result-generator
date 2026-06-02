@@ -138,8 +138,9 @@ async function renderDashboard() {
 }
 
 function renderChecklist(coaching, data) {
+  const safeCoaching = coaching || {};
   const steps = [
-    { label: 'Set Up Profile', desc: 'Add address & logo', done: !!(coaching.name && coaching.onboarding_complete), page: 'settings', icon: '🏫' },
+    { label: 'Set Up Profile', desc: 'Add address & logo', done: !!(safeCoaching.name && safeCoaching.onboarding_complete), page: 'settings', icon: '🏫' },
     { label: 'Setup Classrooms', desc: 'Setup standards & subjects', done: data.totalStandards > 0, page: 'boards', icon: '🏛' },
     { label: 'Enroll Students', desc: 'Add manually or import Excel', done: data.totalStudents > 0, page: 'students', icon: '👥' },
     { label: 'Test Tracker', desc: 'Record unit exams & test scores', done: data.totalTests > 0, page: 'tests', icon: '📝' }
@@ -203,35 +204,87 @@ function renderUpcomingTests(tests) {
     return;
   }
 
-  body.innerHTML = `<table style="width:100%;border-collapse:collapse">
-    <thead><tr>
-      <th style="padding:10px 14px;font-size:0.7rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border)">Test</th>
-      <th style="padding:10px 14px;font-size:0.7rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border)">Class</th>
-      <th style="padding:10px 14px;font-size:0.7rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);text-align:center;border-bottom:1px solid var(--border)">Date</th>
-      <th style="padding:10px 14px;font-size:0.7rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);text-align:center;border-bottom:1px solid var(--border)">Status</th>
-    </tr></thead>
-    <tbody>
-      ${tests.map(t => {
-        const daysLeft = t.test_date ? Math.ceil((new Date(t.test_date) - new Date()) / 86400000) : null;
-        const isToday = daysLeft === 0;
-        const isTomorrow = daysLeft === 1;
-        const urgency = isToday ? 'badge-danger' : isTomorrow ? 'badge-warning' : 'badge-gray';
-        const dayLabel = isToday ? 'TODAY' : isTomorrow ? 'Tomorrow' : (daysLeft !== null ? `in ${daysLeft}d` : '—');
-        const marksStatus = t.marks_entered > 0 ? `<span class="badge badge-success">Entered</span>` : `<span class="badge badge-warning">Pending</span>`;
-        return `<tr style="border-bottom:1px solid var(--border)">
-          <td style="padding:10px 14px">
-            <div style="font-weight:600;font-size:0.85rem">${t.name}</div>
-            <div class="text-xs text-muted">${t.subject_name}</div>
-          </td>
-          <td style="padding:10px 14px;font-size:0.85rem">${t.class_name}</td>
-          <td style="padding:10px 14px;text-align:center">
-            <span class="badge ${urgency}">${dayLabel}</span>
-          </td>
-          <td style="padding:10px 14px;text-align:center">${marksStatus}</td>
-        </tr>`;
-      }).join('')}
-    </tbody>
-  </table>`;
+  // Group by date
+  const groups = {};
+  tests.forEach(t => {
+    const dStr = t.test_date || 'Undated';
+    if (!groups[dStr]) groups[dStr] = [];
+    groups[dStr].push(t);
+  });
+
+  // Sort dates ascending
+  const sortedDates = Object.keys(groups).sort((a, b) => {
+    if (a === 'Undated') return 1;
+    if (b === 'Undated') return -1;
+    return new Date(a) - new Date(b);
+  });
+
+  let html = `<div style="padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-4)">`;
+
+  sortedDates.forEach(dateStr => {
+    const dayTests = groups[dateStr];
+    const isMultiple = dayTests.length > 1;
+
+    // Calculate days left relative to current date (local time)
+    let dayLabel = '—';
+    let urgencyClass = 'badge-gray';
+    let formattedDate = 'Undated';
+    
+    if (dateStr !== 'Undated') {
+      const testDateObj = new Date(dateStr);
+      testDateObj.setHours(0,0,0,0);
+      const todayObj = new Date();
+      todayObj.setHours(0,0,0,0);
+      
+      const diffTime = testDateObj - todayObj;
+      const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      const isToday = daysLeft === 0;
+      const isTomorrow = daysLeft === 1;
+      
+      urgencyClass = isToday ? 'badge-danger' : isTomorrow ? 'badge-warning' : 'badge-primary';
+      dayLabel = isToday ? 'TODAY' : isTomorrow ? 'Tomorrow' : `in ${daysLeft} days`;
+      formattedDate = testDateObj.toLocaleDateString('en-IN', { weekday: 'long', day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    const dayCardBorder = isMultiple
+      ? 'border: 1px solid rgba(212, 175, 55, 0.4); background: linear-gradient(135deg, rgba(212, 175, 55, 0.03) 0%, var(--bg-card) 100%); box-shadow: var(--shadow-sm), var(--shadow-accent)'
+      : 'border: 1px solid var(--border); background: var(--bg-card)';
+
+    html += `
+      <div class="hover-lift" style="border-radius: var(--radius); padding: var(--space-4); ${dayCardBorder}">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-3)">
+          <div style="display: flex; align-items: center; gap: var(--space-2)">
+            <span style="font-size: 1.1rem">📅</span>
+            <span style="font-weight: 700; color: var(--text-primary); font-size: 0.9rem">${formattedDate}</span>
+            <span class="badge ${urgencyClass}" style="font-size: 0.65rem">${dayLabel}</span>
+          </div>
+          ${isMultiple 
+            ? `<span class="badge badge-gold" style="font-weight: 700; font-size: 0.7rem; letter-spacing: 0.05em">🔥 MULTI-EXAM DAY (${dayTests.length})</span>`
+            : ''}
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: var(--space-2)">
+          ${dayTests.map(t => {
+            const marksStatus = t.marks_entered > 0 
+              ? `<span class="badge badge-success" style="font-size: 0.65rem">Entered</span>` 
+              : `<span class="badge badge-warning" style="font-size: 0.65rem">Pending</span>`;
+            return `
+              <div style="display: grid; grid-template-columns: 1fr 120px 80px; gap: var(--space-3); align-items: center; padding: var(--space-2) var(--space-1); border-bottom: 1px dashed var(--border)">
+                <div>
+                  <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-primary)">${t.name}</div>
+                  <div class="text-xs text-muted" style="margin-top: 2px">${t.subject_name} (Max: ${t.max_marks})</div>
+                </div>
+                <div class="text-xs font-semibold" style="color: var(--text-secondary)">🏛 ${t.class_name}</div>
+                <div style="text-align: right">${marksStatus}</div>
+              </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  });
+
+  html += `</div>`;
+  body.innerHTML = html;
 }
 
 function renderFeesSummary(fees, data) {

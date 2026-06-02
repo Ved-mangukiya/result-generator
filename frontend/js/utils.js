@@ -128,6 +128,11 @@ const Format = {
       return new Date(str).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
     } catch { return str; }
   },
+
+  number(val) {
+    if (val === null || val === undefined || isNaN(val)) return '0';
+    return Number(val).toLocaleString('en-IN');
+  },
   
   pct(val) {
     if (val === null || val === undefined || isNaN(val)) return '—';
@@ -307,3 +312,83 @@ window.staggerAnimateItems = staggerAnimateItems;
 window.downloadFile = downloadFile;
 window.getStatusClass = getStatusClass;
 window.getActivityDotClass = getActivityDotClass;
+
+// Responsive Preview Helper Functions
+function togglePreviewDevice(device) {
+  const iframe = document.getElementById('preview-iframe');
+  const container = document.getElementById('preview-viewport-container');
+  const btnPc = document.getElementById('btn-preview-pc');
+  const btnMobile = document.getElementById('btn-preview-mobile');
+  
+  if (!iframe || !container) return;
+  
+  if (device === 'pc') {
+    iframe.style.width = '210mm';
+    iframe.style.height = '297mm';
+    if (btnPc) btnPc.classList.add('active');
+    if (btnMobile) btnMobile.classList.remove('active');
+  } else if (device === 'mobile') {
+    iframe.style.width = '375px';
+    iframe.style.height = '667px';
+    if (btnPc) btnPc.classList.remove('active');
+    if (btnMobile) btnMobile.classList.add('active');
+  }
+}
+
+function togglePreviewFullscreen() {
+  const modal = document.querySelector('.modal-overlay');
+  if (!modal) return;
+  modal.classList.toggle('modal-fullscreen-overlay');
+}
+
+window.togglePreviewDevice = togglePreviewDevice;
+window.togglePreviewFullscreen = togglePreviewFullscreen;
+
+function makeImageBackgroundless(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        
+        try {
+          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imgData.data;
+          
+          for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i+1];
+            const b = data[i+2];
+            if (r > 215 && g > 215 && b > 215) {
+              data[i+3] = 0;
+            }
+          }
+          ctx.putImageData(imgData, 0, 0);
+        } catch (err) {
+          console.error("Canvas pixel read error:", err);
+          resolve(file);
+          return;
+        }
+        
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".png", { type: "image/png" }));
+          } else {
+            resolve(file);
+          }
+        }, "image/png");
+      };
+      img.onerror = () => resolve(file);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+}
+
+window.makeImageBackgroundless = makeImageBackgroundless;

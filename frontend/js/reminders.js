@@ -4,8 +4,12 @@
 
 let _currentReminderTab = 'vacation';
 
-function renderReminders() {
+function renderReminders(params = {}) {
   setPageTitle('Timetables & Reminders', 'Timetables & Reminders');
+
+  if (params && params.testId) {
+    _currentReminderTab = 'exam_schedule';
+  }
 
   document.getElementById('page-content').innerHTML = `
     <div class="page-header">
@@ -48,10 +52,10 @@ function renderReminders() {
     </div>
   `;
 
-  switchReminderTab(_currentReminderTab);
+  switchReminderTab(_currentReminderTab, params);
 }
 
-function switchReminderTab(tab) {
+function switchReminderTab(tab, params = {}) {
   _currentReminderTab = tab;
 
   const btnVac = document.getElementById('btn-rem-vacation');
@@ -92,8 +96,16 @@ function switchReminderTab(tab) {
       <button class="btn btn-primary" onclick="exportNoticePDF()"><span style="margin-right:6px">⬇</span> Download Notice PDF</button>
     `;
   } else if (tab === 'exam_schedule') {
+    const defaultTitle = params.subjectName ? `📅 Class Test Notice: ${params.subjectName}` : '📅 GSEB Standard 10 - Unit Test Timetable';
+    const defaultMsg = params.subjectName ? `Dear Students and Parents, please find the schedule and syllabus details for the upcoming unit test below. Attendance is strictly compulsory.` : `Dear Students, the upcoming unit tests series will be conducted as per the schedule below. Syllabus topics are detailed alongside each subject. Attendance is compulsory.`;
+    const defaultDate = params.testDate || new Date().toISOString().split('T')[0];
+    const defaultSubj = params.subjectName || 'English';
+    const defaultSyll = params.syllabus || 'Chapters 1 to 3, Grammar Tenses';
+    const defaultTestIdHidden = params.testId ? `<input type="hidden" id="rem-test-id" value="${params.testId}">` : '';
+
     formTitle.textContent = '📅 Compose Exam Timetable Schedule';
     formBody.innerHTML = `
+      ${defaultTestIdHidden}
       <div class="form-grid mb-4">
         <div class="form-group">
           <label class="form-label">Select Class (Standard)</label>
@@ -110,11 +122,11 @@ function switchReminderTab(tab) {
       </div>
       <div class="form-group mb-4">
         <label class="form-label">Notice Title <span class="required">*</span></label>
-        <input type="text" class="form-control" id="rem-title" value="📅 GSEB Standard 10 - Unit Test Timetable">
+        <input type="text" class="form-control" id="rem-title" value="${defaultTitle}">
       </div>
       <div class="form-group mb-4">
         <label class="form-label">Notice Message / Guidelines</label>
-        <textarea class="form-control" id="rem-message" rows="3" placeholder="Syllabus guidelines, rules, etc...">Dear Students, the upcoming unit tests series will be conducted as per the schedule below. Syllabus topics are detailed alongside each subject. Attendance is compulsory.</textarea>
+        <textarea class="form-control" id="rem-message" rows="3" placeholder="Syllabus guidelines, rules, etc...">${defaultMsg}</textarea>
       </div>
       
       <p class="form-section-title">Schedule Table Grid</p>
@@ -132,10 +144,10 @@ function switchReminderTab(tab) {
           <tbody id="exam-timetable-rows">
             <!-- Row 1 -->
             <tr>
-              <td style="padding:4px"><input type="date" class="form-control t-date" value="${new Date().toISOString().split('T')[0]}" style="height:32px;font-size:0.75rem;padding:0 6px"></td>
-              <td style="padding:4px"><input type="text" class="form-control t-subj" value="English" style="height:32px;font-size:0.75rem;padding:0 6px"></td>
+              <td style="padding:4px"><input type="date" class="form-control t-date" value="${defaultDate}" style="height:32px;font-size:0.75rem;padding:0 6px"></td>
+              <td style="padding:4px"><input type="text" class="form-control t-subj" value="${defaultSubj}" style="height:32px;font-size:0.75rem;padding:0 6px"></td>
               <td style="padding:4px"><input type="text" class="form-control t-time" value="09:00 AM" style="height:32px;font-size:0.75rem;padding:0 6px"></td>
-              <td style="padding:4px"><input type="text" class="form-control t-syll" value="Chapters 1 to 3, Grammar Tenses" style="height:32px;font-size:0.75rem;padding:0 6px"></td>
+              <td style="padding:4px"><input type="text" class="form-control t-syll" value="${defaultSyll}" style="height:32px;font-size:0.75rem;padding:0 6px"></td>
               <td style="padding:4px; text-align:center"><button class="btn btn-ghost btn-icon-sm" onclick="this.closest('tr').remove()" style="height:30px;width:30px;min-width:30px">🗑</button></td>
             </tr>
           </tbody>
@@ -145,7 +157,12 @@ function switchReminderTab(tab) {
       <br>
       <button class="btn btn-primary" onclick="exportNoticePDF()"><span style="margin-right:6px">⬇</span> Download Timetable PDF</button>
     `;
-    loadReminderStandards();
+    loadReminderStandards().then(() => {
+      if (params.standardId) {
+        const stdSelect = document.getElementById('rem-std-select');
+        if (stdSelect) stdSelect.value = params.standardId;
+      }
+    });
   } else if (tab === 'starting_date') {
     formTitle.textContent = '🚀 Compose New Batch Start Announcement';
     formBody.innerHTML = `
@@ -223,6 +240,11 @@ async function exportNoticePDF() {
     title,
     message
   };
+
+  const testIdEl = document.getElementById('rem-test-id');
+  if (testIdEl) {
+    payload.test_id = parseInt(testIdEl.value);
+  }
 
   if (_currentReminderTab === 'vacation') {
     const start = getVal('rem-vac-start');

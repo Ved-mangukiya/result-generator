@@ -286,14 +286,14 @@
 }
 
 .nav-item.active {
-  background: var(--bg-base);
-  color: var(--sidebar-bg);
-  font-weight: 700;
-  border: 1px solid rgba(253, 251, 247, 0.15);
+  background: rgba(223, 183, 76, 0.12);
+  color: var(--accent-light);
+  font-weight: 600;
+  border: 1px solid rgba(223, 183, 76, 0.25);
 }
 
 .nav-item.active .nav-icon {
-  color: var(--primary);
+  color: var(--accent);
 }
 
 .nav-item.active::before {

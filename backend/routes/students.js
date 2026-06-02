@@ -85,17 +85,17 @@ router.get('/:id', (req, res) => {
 
 // POST /api/students
 router.post('/', (req, res) => {
-  const { standard_id, name, roll_number, father_name, mother_name, dob, remarks, attendance_pct, admission_date, status, total_fees } = req.body;
+  const { standard_id, name, roll_number, father_name, mother_name, dob, remarks, attendance_pct, admission_date, status, total_fees, elective_subjects } = req.body;
   if (!standard_id || !name || !roll_number) return res.status(400).json({ error: 'standard_id, name, roll_number required' });
 
   // Check duplicate roll in same standard
   const existing = db.prepare('SELECT id FROM students WHERE standard_id = ? AND roll_number = ?').get(standard_id, roll_number);
   if (existing) return res.status(409).json({ error: `Roll number ${roll_number} already exists in this class` });
 
-  const result = db.prepare(`INSERT INTO students (standard_id, name, roll_number, father_name, mother_name, dob, remarks, attendance_pct, admission_date, status, total_fees)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+  const result = db.prepare(`INSERT INTO students (standard_id, name, roll_number, father_name, mother_name, dob, remarks, attendance_pct, admission_date, status, total_fees, elective_subjects)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
       standard_id, name, roll_number, father_name || '', mother_name || '', dob || '', remarks || '', attendance_pct || null,
-      admission_date || '', status || 'Active', parseFloat(total_fees) || 0
+      admission_date || '', status || 'Active', parseFloat(total_fees) || 0, JSON.stringify(elective_subjects || [])
     );
   
   const std = db.prepare('SELECT display_name FROM standards WHERE id = ?').get(standard_id);
@@ -105,16 +105,16 @@ router.post('/', (req, res) => {
 
 // PUT /api/students/:id
 router.put('/:id', (req, res) => {
-  const { name, roll_number, father_name, mother_name, dob, remarks, attendance_pct, standard_id, admission_date, status, total_fees } = req.body;
+  const { name, roll_number, father_name, mother_name, dob, remarks, attendance_pct, standard_id, admission_date, status, total_fees, elective_subjects } = req.body;
   
   // Check roll number conflict (exclude self)
   const existing = db.prepare('SELECT id FROM students WHERE standard_id = ? AND roll_number = ? AND id != ?').get(standard_id, roll_number, req.params.id);
   if (existing) return res.status(409).json({ error: `Roll number ${roll_number} already exists in this class` });
 
-  db.prepare(`UPDATE students SET name=?, roll_number=?, father_name=?, mother_name=?, dob=?, remarks=?, attendance_pct=?, standard_id=?, admission_date=?, status=?, total_fees=?
+  db.prepare(`UPDATE students SET name=?, roll_number=?, father_name=?, mother_name=?, dob=?, remarks=?, attendance_pct=?, standard_id=?, admission_date=?, status=?, total_fees=?, elective_subjects=?
     WHERE id=?`).run(
       name, roll_number, father_name || '', mother_name || '', dob || '', remarks || '', attendance_pct || null, standard_id,
-      admission_date || '', status || 'Active', parseFloat(total_fees) || 0, req.params.id
+      admission_date || '', status || 'Active', parseFloat(total_fees) || 0, JSON.stringify(elective_subjects || []), req.params.id
     );
   
   logActivity('STUDENT_UPDATE', `Student updated: ${name}`);

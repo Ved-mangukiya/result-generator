@@ -6,21 +6,21 @@
 
 :root {
   /* Brand Colors */
-  --primary: #7a6130;
-  --primary-light: #9c7f46;
-  --primary-dark: #4d3c1a;
-  --accent: #d4af37;
-  --accent-light: #f3d060;
-  --accent-dark: #aa861d;
+  --primary: #8a6c38;
+  --primary-light: #ab8b53;
+  --primary-dark: #5e471d;
+  --accent: #dfb74c;
+  --accent-light: #ebd082;
+  --accent-dark: #b8902c;
 
   /* Semantic Colors */
-  --success: #2e7d32;
+  --success: #1b5e20;
   --success-light: #e8f5e9;
-  --warning: #ef6c00;
+  --warning: #e65100;
   --warning-light: #fff3e0;
-  --danger: #d32f2f;
+  --danger: #b71c1c;
   --danger-light: #ffebee;
-  --info: #0288d1;
+  --info: #01579b;
   --info-light: #e1f5fe;
 
   /* Neutrals (Ivory Theme Palette) */
@@ -36,17 +36,17 @@
   --gray-900: #1e1712;
 
   /* Background */
-  --bg-base: #fdfbf7;
+  --bg-base: #faf7f0;
   --bg-surface: #ffffff;
-  --bg-elevated: #faf7f0;
+  --bg-elevated: #f5efe6;
   --bg-card: #ffffff;
-  --bg-overlay: rgba(30, 23, 18, 0.4);
+  --bg-overlay: rgba(12, 15, 22, 0.4);
 
   /* Text */
-  --text-primary: #292019;
-  --text-secondary: #5c4e43;
-  --text-muted: #8d7d6f;
-  --text-inverse: #fdfbf7;
+  --text-primary: #1f1a15;
+  --text-secondary: #52473c;
+  --text-muted: #8c7e70;
+  --text-inverse: #ffffff;
 
   /* Borders */
   --border: rgba(92, 78, 67, 0.08);
@@ -55,7 +55,7 @@
 
   /* Sidebar */
   --sidebar-width: 260px;
-  --sidebar-bg: #211b16;
+  --sidebar-bg: #0c0f16;
 
   /* Spacing */
   --space-1: 0.25rem;

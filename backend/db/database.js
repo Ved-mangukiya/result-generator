@@ -71,7 +71,12 @@ function initializeDatabase() {
       logo_path TEXT DEFAULT '',
       address TEXT DEFAULT '',
       phone TEXT DEFAULT '',
+      alternate_phone TEXT DEFAULT '',
+      email TEXT DEFAULT '',
       website TEXT DEFAULT '',
+      established_year INTEGER DEFAULT NULL,
+      registration_no TEXT DEFAULT '',
+      registration_authority TEXT DEFAULT '',
       primary_color TEXT DEFAULT '#7a6130',
       onboarding_complete INTEGER DEFAULT 0,
       weekly_tests_count INTEGER DEFAULT 40,
@@ -79,6 +84,12 @@ function initializeDatabase() {
       has_final INTEGER DEFAULT 1,
       signature_path TEXT DEFAULT '',
       signatory_name TEXT DEFAULT '',
+      signatory_title TEXT DEFAULT 'Director',
+      exam_mode_default TEXT DEFAULT 'Offline',
+      passing_percentage INTEGER DEFAULT 33,
+      grading_format TEXT DEFAULT 'State Scale',
+      eval_style TEXT DEFAULT 'Manual',
+      notice_lead_days INTEGER DEFAULT 3,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -146,6 +157,7 @@ function initializeDatabase() {
       status TEXT DEFAULT 'Active',
       total_fees REAL DEFAULT 0,
       paid_fees REAL DEFAULT 0,
+      elective_subjects TEXT DEFAULT '',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (standard_id) REFERENCES standards(id) ON DELETE CASCADE
     );
@@ -183,6 +195,10 @@ function initializeDatabase() {
       max_marks REAL NOT NULL,
       test_date TEXT,
       cycle_id INTEGER DEFAULT NULL,
+      syllabus TEXT DEFAULT '',
+      exam_mode TEXT DEFAULT 'Offline',
+      status TEXT DEFAULT 'Scheduled',
+      notice_generated INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (standard_id) REFERENCES standards(id) ON DELETE CASCADE,
       FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
@@ -232,7 +248,7 @@ function initializeDatabase() {
       show_grade INTEGER DEFAULT 1,
       show_pass_fail INTEGER DEFAULT 1,
       paper_size TEXT DEFAULT 'A4 Portrait',
-      result_categories TEXT DEFAULT '["Distinction","First Class","Second Class","Pass","Fail"]',
+      result_categories TEXT DEFAULT '["A1","A2","B1","B2","C1","C2","D","Fail"]',
       FOREIGN KEY (standard_id) REFERENCES standards(id) ON DELETE CASCADE
     );
 
@@ -242,6 +258,18 @@ function initializeDatabase() {
       action TEXT NOT NULL,
       description TEXT NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- School exams timetable
+    CREATE TABLE IF NOT EXISTS school_exams (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      standard_id INTEGER NOT NULL,
+      subject_id INTEGER NOT NULL,
+      exam_name TEXT NOT NULL,
+      exam_date TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (standard_id) REFERENCES standards(id) ON DELETE CASCADE,
+      FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
     );
   `);
 
@@ -259,11 +287,40 @@ function initializeDatabase() {
   runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN has_final INTEGER DEFAULT 1");
   runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN signature_path TEXT DEFAULT ''");
   runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN signatory_name TEXT DEFAULT ''");
+  runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN signatory_title TEXT DEFAULT 'Director'");
+  runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN alternate_phone TEXT DEFAULT ''");
+  runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN email TEXT DEFAULT ''");
+  runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN established_year INTEGER DEFAULT NULL");
+  runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN registration_no TEXT DEFAULT ''");
+  runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN registration_authority TEXT DEFAULT ''");
   runMigrationSafe("ALTER TABLE students ADD COLUMN admission_date TEXT DEFAULT ''");
   runMigrationSafe("ALTER TABLE students ADD COLUMN status TEXT DEFAULT 'Active'");
   runMigrationSafe("ALTER TABLE students ADD COLUMN total_fees REAL DEFAULT 0");
   runMigrationSafe("ALTER TABLE students ADD COLUMN paid_fees REAL DEFAULT 0");
+  runMigrationSafe("ALTER TABLE students ADD COLUMN elective_subjects TEXT DEFAULT ''");
   runMigrationSafe("ALTER TABLE tests ADD COLUMN cycle_id INTEGER DEFAULT NULL");
+  runMigrationSafe("ALTER TABLE tests ADD COLUMN syllabus TEXT DEFAULT ''");
+  runMigrationSafe("ALTER TABLE tests ADD COLUMN status TEXT DEFAULT 'Scheduled'");
+  runMigrationSafe("ALTER TABLE tests ADD COLUMN notice_generated INTEGER DEFAULT 0");
+  runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN exam_mode_default TEXT DEFAULT 'Offline'");
+  runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN passing_percentage INTEGER DEFAULT 33");
+  runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN grading_format TEXT DEFAULT 'State Scale'");
+  runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN eval_style TEXT DEFAULT 'Manual'");
+  runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN notice_lead_days INTEGER DEFAULT 3");
+
+  // Migration to convert old Distinction, First Class labels to letter grades
+  try {
+    db.exec(`
+      UPDATE grade_scales SET label = 'A1', result_status = 'A1' WHERE label = 'Distinction';
+      UPDATE grade_scales SET label = 'B1', result_status = 'B1' WHERE label = 'First Class';
+      UPDATE grade_scales SET label = 'C1', result_status = 'C1' WHERE label = 'Second Class';
+      UPDATE grade_scales SET label = 'D', result_status = 'D' WHERE label = 'Pass Class';
+      UPDATE grade_scales SET label = 'D', result_status = 'D' WHERE label = 'Pass';
+      UPDATE result_card_settings SET result_categories = '["A1","A2","B1","B2","C1","C2","D","Fail"]' WHERE result_categories LIKE '%Distinction%';
+    `);
+  } catch (e) {
+    // ignore
+  }
 
   // Cleanup generic/testing log entries to keep dashboard recent feed beautiful
   try {

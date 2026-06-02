@@ -187,9 +187,9 @@ function exportClassToExcel(standardId, outputPath) {
     if (sub.marks_type === 'split') summaryRow.push('', '', '');
     else summaryRow.push('');
   }
-  const passCount = studentResults.filter(r => r.finalStatus !== 'Fail').length;
+  const passCount = studentResults.filter(r => r.finalStatus !== 'Fail' && r.finalStatus !== 'Pending').length;
   const failCount = studentResults.filter(r => r.finalStatus === 'Fail').length;
-  const distCount = studentResults.filter(r => r.finalStatus === 'Distinction').length;
+  const distCount = studentResults.filter(r => r.finalStatus === 'Distinction' || r.finalStatus === 'A1' || r.finalStatus === 'A2').length;
   const avgPct = studentResults.length > 0
     ? (studentResults.reduce((s, r) => s + (r.overallPct || 0), 0) / studentResults.length).toFixed(2)
     : 0;

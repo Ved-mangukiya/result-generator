@@ -6,7 +6,7 @@ let _testsStandardId = null;
 let _testsList = [];
 let _currentTestMarksData = null;
 
-let _currentTestsTab = 'individual'; // 'individual', 'cycles'
+let _currentTestsTab = 'individual'; // 'individual', 'cycles', 'school'
 
 async function renderTests(params = {}) {
   setPageTitle('Test Scheduler', 'Test Scheduler');
@@ -19,6 +19,7 @@ async function renderTests(params = {}) {
         <p>Record weekly unit tests or schedule complete exam timetables (cycles) across multiple subjects.</p>
       </div>
       <div class="page-header-actions" id="tests-header-actions" style="display:none">
+        <button class="btn btn-outline btn-sm" id="btn-ai-schedule" onclick="showAISchedulerModal()" style="margin-right:8px">🤖 AI Auto-Scheduler</button>
         <button class="btn btn-primary btn-sm" id="btn-create-test" onclick="triggerTestCreationAction()">➕ Create Test</button>
       </div>
     </div>
@@ -41,6 +42,7 @@ async function renderTests(params = {}) {
     <div class="tabs mb-6" id="tests-tabs" style="display:none">
       <button class="btn ${_currentTestsTab === 'individual' ? 'btn-primary' : 'btn-outline'} btn-sm" id="btn-tests-individual" onclick="switchTestsTab('individual')">📑 Individual Tests</button>
       <button class="btn ${_currentTestsTab === 'cycles' ? 'btn-primary' : 'btn-outline'} btn-sm" id="btn-tests-cycles" onclick="switchTestsTab('cycles')">🗓 Grouped Test Cycles</button>
+      <button class="btn ${_currentTestsTab === 'school' ? 'btn-primary' : 'btn-outline'} btn-sm" id="btn-tests-school" onclick="switchTestsTab('school')">🏫 School Exams</button>
     </div>
 
     <!-- Tests List Container -->
@@ -82,8 +84,10 @@ async function loadTestsTabContent(standardId) {
 function triggerTestCreationAction() {
   if (_currentTestsTab === 'individual') {
     showCreateTestModal();
-  } else {
+  } else if (_currentTestsTab === 'cycles') {
     showCreateTestCycleModal();
+  } else {
+    showAddSchoolExamModal();
   }
 }
 
@@ -92,19 +96,36 @@ async function switchTestsTab(tab) {
   
   const btnInd = document.getElementById('btn-tests-individual');
   const btnCyc = document.getElementById('btn-tests-cycles');
+  const btnSch = document.getElementById('btn-tests-school');
   const btnCreate = document.getElementById('btn-create-test');
+  const btnAI = document.getElementById('btn-ai-schedule');
   
   if (btnInd) btnInd.className = `btn ${tab === 'individual' ? 'btn-primary' : 'btn-outline'} btn-sm`;
   if (btnCyc) btnCyc.className = `btn ${tab === 'cycles' ? 'btn-primary' : 'btn-outline'} btn-sm`;
-  if (btnCreate) btnCreate.textContent = tab === 'individual' ? '➕ Create Test' : '➕ Schedule Test Cycle';
+  if (btnSch) btnSch.className = `btn ${tab === 'school' ? 'btn-primary' : 'btn-outline'} btn-sm`;
+  
+  if (btnCreate) {
+    if (tab === 'school') {
+      btnCreate.textContent = '➕ Add School Exam';
+      btnCreate.style.display = 'block';
+    } else {
+      btnCreate.textContent = tab === 'individual' ? '➕ Create Test' : '➕ Schedule Test Cycle';
+      btnCreate.style.display = 'block';
+    }
+  }
+  if (btnAI) {
+    btnAI.style.display = tab === 'school' ? 'none' : 'inline-block';
+  }
   
   const container = document.getElementById('tests-container');
   if (!container) return;
   
   if (tab === 'individual') {
     await loadTestsForClass(_testsStandardId);
-  } else {
+  } else if (tab === 'cycles') {
     await loadTestCyclesForClass(_testsStandardId);
+  } else {
+    await loadSchoolExamsForClass(_testsStandardId);
   }
 }
 
@@ -169,7 +190,14 @@ async function loadTestsForClass(standardId) {
 
     container.innerHTML = `
       <div class="grid grid-auto gap-4">
-        ${_testsList.map(test => `
+        ${_testsList.map(test => {
+          let statusColor = 'var(--text-muted)';
+          if (test.status === 'Scheduled') statusColor = '#93c5fd';
+          else if (test.status === 'Ongoing') statusColor = '#fbbf24';
+          else if (test.status === 'Completed') statusColor = '#4ade80';
+          else if (test.status === 'Cancelled') statusColor = '#f87171';
+
+          return `
           <div class="card hover-lift stagger-item" style="border: 1px solid var(--border-medium); border-left: 4px solid var(--primary-light);">
             <div class="card-body p-4 flex flex-col justify-between" style="height: 100%;">
               <div>
@@ -178,7 +206,18 @@ async function loadTestsForClass(standardId) {
                   <span class="badge badge-gold" style="font-weight: 700;">Max: ${test.max_marks}</span>
                 </div>
                 <h3 style="font-size:1.1rem; font-weight:700; color:var(--text-primary);" class="mb-1">${test.name}</h3>
-                <p class="text-xs text-muted mb-4">📅 Test Date: ${Format.date(test.test_date)}</p>
+                <p class="text-xs text-muted mb-2">📅 Test Date: ${Format.date(test.test_date)}</p>
+                
+                <div class="flex gap-2 flex-wrap mb-3" style="align-items:center">
+                  <span class="badge" style="background:rgba(255,255,255,0.05); border: 1px solid var(--border); font-size:0.65rem">${test.exam_mode || 'Offline'}</span>
+                  <span class="badge" style="background:rgba(255,255,255,0.05); color:${statusColor}; font-size:0.65rem; border: 1px solid ${statusColor}40">${test.status || 'Scheduled'}</span>
+                  
+                  ${test.notice_generated === 1 
+                    ? `<span class="badge" style="background:rgba(34,197,94,0.1); color:#4ade80; font-size:0.65rem">✓ Notice Generated</span>`
+                    : `<span class="badge" style="background:rgba(245,158,11,0.15); color:#fbbf24; font-size:0.65rem; cursor:pointer; border:1px dashed #fbbf24" onclick="navigateToPrefilledReminder(${test.id})" title="Click to prefill & generate Timetable/Notice PDF">⚠️ No Notice Generated</span>`}
+                </div>
+                
+                ${test.syllabus ? `<p class="text-xs text-secondary mb-2" style="background:rgba(0,0,0,0.1); padding:6px; border-radius:var(--radius); font-style:italic">📖 ${test.syllabus}</p>` : ''}
               </div>
               
               <div class="divider" style="margin: var(--space-2) 0;"></div>
@@ -201,13 +240,28 @@ async function loadTestsForClass(standardId) {
               </div>
             </div>
           </div>
-        `).join('')}
+        `;
+        }).join('')}
       </div>`;
     
     staggerAnimateItems(container);
   } catch (err) {
     container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><h3>Error Loading Tests</h3><p>${err.message}</p></div>`;
     Toast.error('Load Failed', err.message);
+  }
+}
+
+function navigateToPrefilledReminder(testId) {
+  const test = _testsList.find(t => t.id === testId);
+  if (!test) return;
+  if (window.Router) {
+    window.Router.navigate('reminders', {
+      testId: test.id,
+      standardId: test.standard_id,
+      testDate: test.test_date,
+      subjectName: test.subject_name,
+      syllabus: test.syllabus || ''
+    });
   }
 }
 
@@ -241,9 +295,32 @@ async function showCreateTestModal() {
           <input type="number" class="form-control" id="test-max-marks" placeholder="e.g. 25, 30, 50, 100" min="1" value="25" required>
         </div>
       </div>
+      <div class="form-grid mb-4">
+        <div class="form-group">
+          <label class="form-label">Test Date</label>
+          <input type="date" class="form-control" id="test-date" value="${new Date().toISOString().split('T')[0]}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Exam Mode</label>
+          <select class="form-control" id="test-exam-mode">
+            <option value="Offline">Offline (Written)</option>
+            <option value="Online">Online (MCQ)</option>
+            <option value="Hybrid">Hybrid</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group mb-4">
+        <label class="form-label">Syllabus / Chapters Covered</label>
+        <textarea class="form-control" id="test-syllabus" rows="2" placeholder="e.g. Ch-1 Electric Charges, Ch-2 Electrostatics"></textarea>
+      </div>
       <div class="form-group">
-        <label class="form-label">Test Date</label>
-        <input type="date" class="form-control" id="test-date" value="${new Date().toISOString().split('T')[0]}">
+        <label class="form-label">Test Status</label>
+        <select class="form-control" id="test-status">
+          <option value="Scheduled">Scheduled</option>
+          <option value="Ongoing">Ongoing</option>
+          <option value="Completed">Completed</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
       </div>
     </form>`,
     `<button class="btn btn-outline" onclick="closeModal('create-test-modal')">Cancel</button>
@@ -279,9 +356,32 @@ async function showEditTestModal(testId) {
           <input type="number" class="form-control" id="edit-test-max-marks" value="${test.max_marks}" min="1" required>
         </div>
       </div>
+      <div class="form-grid mb-4">
+        <div class="form-group">
+          <label class="form-label">Test Date</label>
+          <input type="date" class="form-control" id="edit-test-date" value="${test.test_date || ''}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Exam Mode</label>
+          <select class="form-control" id="edit-test-exam-mode">
+            <option value="Offline" ${test.exam_mode === 'Offline' ? 'selected' : ''}>Offline (Written)</option>
+            <option value="Online" ${test.exam_mode === 'Online' ? 'selected' : ''}>Online (MCQ)</option>
+            <option value="Hybrid" ${test.exam_mode === 'Hybrid' ? 'selected' : ''}>Hybrid</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group mb-4">
+        <label class="form-label">Syllabus / Chapters Covered</label>
+        <textarea class="form-control" id="edit-test-syllabus" rows="2">${test.syllabus || ''}</textarea>
+      </div>
       <div class="form-group">
-        <label class="form-label">Test Date</label>
-        <input type="date" class="form-control" id="edit-test-date" value="${test.test_date || ''}">
+        <label class="form-label">Test Status</label>
+        <select class="form-control" id="edit-test-status">
+          <option value="Scheduled" ${test.status === 'Scheduled' ? 'selected' : ''}>Scheduled</option>
+          <option value="Ongoing" ${test.status === 'Ongoing' ? 'selected' : ''}>Ongoing</option>
+          <option value="Completed" ${test.status === 'Completed' ? 'selected' : ''}>Completed</option>
+          <option value="Cancelled" ${test.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+        </select>
       </div>
     </form>`,
     `<button class="btn btn-outline" onclick="closeModal('edit-test-modal')">Cancel</button>
@@ -298,6 +398,9 @@ async function saveTest(testId = null) {
   const subject_id = getVal(`${prefix}-subject`);
   const max_marks = getVal(`${prefix}-max-marks`);
   const test_date = getVal(`${prefix}-date`);
+  const syllabus = getVal(`${prefix}-syllabus`);
+  const exam_mode = getVal(`${prefix}-exam-mode`);
+  const status = getVal(`${prefix}-status`);
 
   if (!name || !subject_id || !max_marks) {
     Toast.error('Validation Error', 'Please fill all required fields.');
@@ -309,7 +412,11 @@ async function saveTest(testId = null) {
     subject_id: parseInt(subject_id),
     name,
     max_marks: parseFloat(max_marks),
-    test_date
+    test_date,
+    syllabus,
+    exam_mode,
+    status,
+    notice_generated: isEdit ? (_testsList.find(t => t.id === testId)?.notice_generated || 0) : 0
   };
 
   try {
@@ -357,31 +464,60 @@ async function showTestMarksEntry(testId) {
     const tableRows = marks.map((m, idx) => {
       const isAbsent = m.is_absent === 1;
       const val = m.obtained_marks !== null ? m.obtained_marks : '';
+      
+      const isOptional = test.is_compulsory === 0;
+      let chosenElectiveIds = [];
+      if (m.elective_subjects) {
+        try {
+          const parsed = typeof m.elective_subjects === 'string'
+            ? JSON.parse(m.elective_subjects)
+            : m.elective_subjects;
+          if (Array.isArray(parsed)) {
+            chosenElectiveIds = parsed.map(el => typeof el === 'object' ? el.id : el);
+          }
+        } catch(e) {}
+      }
+      const isElected = !isOptional || chosenElectiveIds.includes(test.subject_id);
+
+      const rowStyle = !isElected ? 'style="opacity: 0.55; background: var(--bg-elevated);"' : '';
+      
+      let inputHTML = '';
+      if (isElected) {
+        inputHTML = `
+          <input type="number" 
+                 class="form-control test-marks-input" 
+                 data-idx="${idx}" 
+                 id="tm-input-${m.student_id}" 
+                 value="${val}" 
+                 min="0" 
+                 max="${test.max_marks}" 
+                 step="0.5" 
+                 placeholder="Marks (Max ${test.max_marks})" 
+                 onchange="validateGridMark(${m.student_id}, ${test.max_marks})"
+                 ${isAbsent ? 'disabled' : ''}>`;
+      } else {
+        inputHTML = `
+          <div style="display:flex; align-items:center; gap:8px">
+            <span class="badge badge-gray" style="font-size:0.7rem; text-transform:none">Not Chosen</span>
+            <input type="number" class="form-control test-marks-input" style="display:none" data-idx="${idx}" id="tm-input-${m.student_id}" disabled value="">
+          </div>`;
+      }
+
       return `
-        <tr data-student-id="${m.student_id}">
+        <tr data-student-id="${m.student_id}" data-is-elected="${isElected}" ${rowStyle}>
           <td style="padding:var(--space-2) var(--space-4); text-align:center;"><span class="badge badge-gray">${m.roll_number}</span></td>
           <td style="padding:var(--space-2) var(--space-4); font-weight:600;">${m.student_name}</td>
           <td style="padding:var(--space-2) var(--space-4);">
-            <input type="number" 
-                   class="form-control test-marks-input" 
-                   data-idx="${idx}" 
-                   id="tm-input-${m.student_id}" 
-                   value="${val}" 
-                   min="0" 
-                   max="${test.max_marks}" 
-                   step="0.5" 
-                   placeholder="Marks (Max ${test.max_marks})" 
-                   onchange="validateGridMark(${m.student_id}, ${test.max_marks})"
-                   ${isAbsent ? 'disabled' : ''}>
+            ${inputHTML}
           </td>
           <td style="padding:var(--space-2) var(--space-4); text-align:center;">
             <label class="toggle">
-              <input type="checkbox" id="tm-absent-${m.student_id}" ${isAbsent ? 'checked' : ''} onchange="toggleGridAbsent(${m.student_id})">
+              <input type="checkbox" id="tm-absent-${m.student_id}" ${isAbsent ? 'checked' : ''} onchange="toggleGridAbsent(${m.student_id})" ${!isElected ? 'disabled' : ''}>
               <span class="toggle-slider"></span>
             </label>
           </td>
           <td style="padding:var(--space-2) var(--space-4);">
-            <input type="text" class="form-control test-remarks-input" id="tm-remarks-${m.student_id}" value="${m.remarks || ''}" placeholder="Remarks (optional)">
+            <input type="text" class="form-control test-remarks-input" id="tm-remarks-${m.student_id}" value="${m.remarks || ''}" placeholder="${isElected ? 'Remarks (optional)' : 'Not enrolled'}" ${!isElected ? 'disabled' : ''}>
           </td>
         </tr>`;
     }).join('');
@@ -491,16 +627,26 @@ async function saveGridMarks(testId) {
 
   for (const row of rows) {
     const student_id = parseInt(row.dataset.studentId);
-    const isAbsent = document.getElementById(`tm-absent-${student_id}`).checked;
-    const obtained_marks = document.getElementById(`tm-input-${student_id}`).value;
-    const remarks = document.getElementById(`tm-remarks-${student_id}`).value.trim();
+    const isElected = row.dataset.isElected === 'true';
+    const isAbsent = isElected ? document.getElementById(`tm-absent-${student_id}`).checked : false;
+    const obtained_marks = isElected ? document.getElementById(`tm-input-${student_id}`).value : '';
+    const remarks = isElected ? document.getElementById(`tm-remarks-${student_id}`).value.trim() : '';
 
-    marks.push({
-      student_id,
-      obtained_marks: isAbsent ? null : (obtained_marks !== '' ? parseFloat(obtained_marks) : null),
-      is_absent: isAbsent,
-      remarks
-    });
+    if (!isElected) {
+      marks.push({
+        student_id,
+        obtained_marks: null,
+        is_absent: false,
+        remarks: ''
+      });
+    } else {
+      marks.push({
+        student_id,
+        obtained_marks: isAbsent ? null : (obtained_marks !== '' ? parseFloat(obtained_marks) : null),
+        is_absent: isAbsent,
+        remarks
+      });
+    }
   }
 
   Spinner.show('Saving test marks...');
@@ -940,3 +1086,497 @@ window.showCreateTestCycleModal = showCreateTestCycleModal;
 window.submitTestCycle = submitTestCycle;
 window.viewTestCycleDetails = viewTestCycleDetails;
 window.confirmDeleteTestCycle = confirmDeleteTestCycle;
+window.navigateToPrefilledReminder = navigateToPrefilledReminder;
+
+// ─── School Exams Timetables CRUD ─────────────────
+async function loadSchoolExamsForClass(standardId) {
+  const container = document.getElementById('tests-container');
+  if (!container) return;
+  container.innerHTML = `
+    <div class="empty-state">
+      <div class="animate-pulse" style="font-size:2rem">🏫</div>
+      <p class="text-muted text-sm mt-2">Loading school exams...</p>
+    </div>`;
+
+  try {
+    const exams = await API.schoolExams.list(standardId);
+
+    if (exams.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state" style="height:300px">
+          <div class="empty-state-icon">🏫</div>
+          <h3>No School Exams Logged</h3>
+          <p>Add the upcoming school exam timetable for this class. The AI Auto-Scheduler will use this data to automatically align coaching prep tests before school exams!</p>
+          <button class="btn btn-primary mt-2" onclick="showAddSchoolExamModal()">➕ Add School Exam</button>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="card animate-fade-in">
+        <div class="table-wrap">
+          <table style="width:100%; border-collapse:collapse">
+            <thead>
+              <tr>
+                <th style="text-align:left; padding:12px">Exam/Test Name</th>
+                <th style="text-align:left; padding:12px">Subject</th>
+                <th style="padding:12px">School Exam Date</th>
+                <th style="padding:12px">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${exams.map(e => `
+                <tr class="stagger-item">
+                  <td style="padding:12px; font-weight:600; text-align:left">${e.exam_name}</td>
+                  <td style="padding:12px; text-align:left"><span class="badge badge-primary">${e.subject_name}</span></td>
+                  <td style="padding:12px">${Format.date(e.exam_date)}</td>
+                  <td style="padding:12px">
+                    <button class="btn btn-ghost btn-icon-sm" onclick="confirmDeleteSchoolExam(${e.id}, '${e.exam_name.replace(/'/g, "\\'")}')" title="Delete School Exam">🗑️</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+    
+    staggerAnimateItems(container);
+  } catch (err) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><h3>Error Loading School Exams</h3><p>${err.message}</p></div>`;
+  }
+}
+
+async function showAddSchoolExamModal() {
+  if (!_testsStandardId) return;
+  const subjects = await API.subjects.list(_testsStandardId);
+  if (subjects.length === 0) {
+    Toast.warning('No Subjects', 'Please add subjects to this class first.');
+    return;
+  }
+
+  const subjectsHTML = subjects.map(sub => `<option value="${sub.id}">${sub.name}</option>`).join('');
+
+  createModal('add-school-exam-modal', '🏫 Add School Exam Schedule',
+    `<form id="school-exam-form">
+      <div class="form-group mb-4">
+        <label class="form-label">School Exam Name <span class="required">*</span></label>
+        <input type="text" class="form-control" id="school-exam-name" placeholder="e.g. Unit Test 1, Semester Exam, Board Exam" required>
+      </div>
+      <div class="form-grid mb-4">
+        <div class="form-group">
+          <label class="form-label">Subject <span class="required">*</span></label>
+          <select class="form-control" id="school-exam-subject" required>
+            ${subjectsHTML}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">School Exam Date <span class="required">*</span></label>
+          <input type="date" class="form-control" id="school-exam-date" value="${new Date().toISOString().split('T')[0]}" required>
+        </div>
+      </div>
+    </form>`,
+    `<button class="btn btn-outline" onclick="closeModal('add-school-exam-modal')">Cancel</button>
+     <button class="btn btn-primary" onclick="submitSchoolExam()">💾 Add Exam</button>`,
+    'modal-md'
+  );
+}
+
+async function submitSchoolExam() {
+  const exam_name = getVal('school-exam-name');
+  const subject_id = getVal('school-exam-subject');
+  const exam_date = getVal('school-exam-date');
+
+  if (!exam_name || !subject_id || !exam_date) {
+    Toast.error('Validation Error', 'Please fill all required fields.');
+    return;
+  }
+
+  try {
+    await API.schoolExams.add({
+      standard_id: _testsStandardId,
+      subject_id: parseInt(subject_id),
+      exam_name,
+      exam_date
+    });
+    closeModal('add-school-exam-modal');
+    Toast.success('Exam Added', 'School exam added to timetable.');
+    await loadSchoolExamsForClass(_testsStandardId);
+  } catch (err) {
+    Toast.error('Failed to Add', err.message);
+  }
+}
+
+async function confirmDeleteSchoolExam(id, name) {
+  const ok = await Confirm.show(`Delete school exam: ${name}?`, 'This will remove the school exam date and it will no longer align in the auto-scheduler.', 'Delete Exam');
+  if (!ok) return;
+
+  try {
+    await API.schoolExams.delete(id);
+    Toast.success('Deleted', 'School exam schedule was removed.');
+    await loadSchoolExamsForClass(_testsStandardId);
+  } catch (err) {
+    Toast.error('Failed to Delete', err.message);
+  }
+}
+
+// ─── AI Auto-Scheduler ────────────────────────────
+let _aiSubjects = [];
+let _aiSchoolExams = [];
+let _aiGeneratedTests = [];
+
+async function showAISchedulerModal() {
+  if (!_testsStandardId) return;
+  
+  Spinner.show('Preparing scheduler...');
+  try {
+    const subjects = await API.subjects.list(_testsStandardId);
+    const cycles = await API.testCycles.list(_testsStandardId);
+    const schoolExams = await API.schoolExams.list(_testsStandardId);
+    Spinner.hide();
+
+    if (subjects.length === 0) {
+      Toast.warning('No Subjects', 'Please add subjects to this class first.');
+      return;
+    }
+
+    const subjectsHTML = subjects.map(sub => `
+      <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
+        <input type="checkbox" class="ai-subj-check" data-sub-id="${sub.id}" data-sub-name="${sub.name.replace(/'/g, "\\'")}" checked>
+        <span>${sub.name}</span>
+      </label>
+    `).join('');
+
+    const cyclesHTML = `
+      <option value="">— Individual Tests (No Cycle Group) —</option>
+      ${cycles.map(c => `<option value="${c.id}">${c.title}</option>`).join('')}
+    `;
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const twoWeeksLater = new Date();
+    twoWeeksLater.setDate(twoWeeksLater.getDate() + 14);
+    const twoWeeksLaterStr = twoWeeksLater.toISOString().split('T')[0];
+
+    createModal('ai-scheduler-modal', '🤖 AI Timetable Auto-Scheduler',
+      `<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px" class="mb-4">
+        <div>
+          <p class="form-section-title" style="margin-top:0">1. Setup Parameters</p>
+          <div class="form-grid mb-3">
+            <div class="form-group">
+              <label class="form-label">Start Date</label>
+              <input type="date" class="form-control" id="ai-start-date" value="${todayStr}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">End Date</label>
+              <input type="date" class="form-control" id="ai-end-date" value="${twoWeeksLaterStr}">
+            </div>
+          </div>
+
+          <div class="form-group mb-3">
+            <label class="form-label">Link to Test Cycle (Optional)</label>
+            <select class="form-control" id="ai-cycle-select">
+              ${cyclesHTML}
+            </select>
+            <span class="form-hint">Links created tests under this cycle grouping.</span>
+          </div>
+
+          <div class="form-group mb-3">
+            <label class="form-label">Marks per Test</label>
+            <input type="number" class="form-control" id="ai-max-marks" value="50" min="1">
+          </div>
+
+          <div class="form-group mb-4">
+            <label class="toggle-group">
+              <span class="toggle">
+                <input type="checkbox" id="ai-align-school" checked>
+                <span class="toggle-slider"></span>
+              </span>
+              <span class="toggle-label">⚡ Align with School Exam Schedule</span>
+            </label>
+            <span class="form-hint">If selected, slots subject prep tests 1–2 days before school exam dates.</span>
+          </div>
+        </div>
+
+        <div>
+          <p class="form-section-title" style="margin-top:0">2. Select Subjects</p>
+          <div style="max-height:220px; overflow-y:auto; border:1px solid var(--border); border-radius:var(--radius); padding:10px; display:flex; flex-direction:column; gap:8px">
+            ${subjectsHTML}
+          </div>
+        </div>
+      </div>
+      
+      <div id="ai-preview-section" style="display:none;" class="card bg-surface p-4 mb-4">
+        <h4 style="font-weight:700" class="mb-2">📋 Auto-Generated Schedule Preview</h4>
+        <div style="max-height:250px; overflow-y:auto; border:1px solid var(--border); border-radius:var(--radius)">
+          <table class="marks-table" style="width:100%; border-collapse:collapse">
+            <thead>
+              <tr>
+                <th style="text-align:left; padding:8px">Subject</th>
+                <th style="text-align:left; padding:8px">Test Name</th>
+                <th style="padding:8px">Date</th>
+                <th style="padding:8px; width:100px">Marks</th>
+                <th style="padding:8px; width:60px">Remove</th>
+              </tr>
+            </thead>
+            <tbody id="ai-preview-tbody"></tbody>
+          </table>
+        </div>
+      </div>`,
+      `<button class="btn btn-outline" onclick="closeModal('ai-scheduler-modal')">Cancel</button>
+       <button class="btn btn-primary" id="ai-generate-btn" onclick="generateAISchedulePreview()">⚡ Generate Timetable</button>
+       <button class="btn btn-success animate-fade-in" id="ai-save-btn" onclick="saveAISchedule()" style="display:none">💾 Bulk Save Schedule</button>`,
+      'modal-lg'
+    );
+
+    _aiSubjects = subjects;
+    _aiSchoolExams = schoolExams;
+  } catch (err) {
+    Spinner.hide();
+    Toast.error('Initialization Failed', err.message);
+  }
+}
+
+function generateAISchedulePreview() {
+  const startDateStr = getVal('ai-start-date');
+  const endDateStr = getVal('ai-end-date');
+  const cycleIdVal = document.getElementById('ai-cycle-select').value;
+  const cycleSelect = document.getElementById('ai-cycle-select');
+  const cycleTitle = cycleIdVal ? cycleSelect.options[cycleSelect.selectedIndex].text : '';
+  const alignSchool = document.getElementById('ai-align-school').checked;
+  const maxMarksVal = parseFloat(getVal('ai-max-marks')) || 50;
+
+  if (!startDateStr || !endDateStr) {
+    Toast.error('Date Required', 'Please select both start and end dates.');
+    return;
+  }
+
+  const start = new Date(startDateStr);
+  const end = new Date(endDateStr);
+  if (end < start) {
+    Toast.error('Invalid Range', 'End date cannot be before start date.');
+    return;
+  }
+
+  const selectedSubjects = [];
+  $$('.ai-subj-check').forEach(chk => {
+    if (chk.checked) {
+      selectedSubjects.push({
+        id: parseInt(chk.dataset.subId),
+        name: chk.dataset.subName
+      });
+    }
+  });
+
+  if (selectedSubjects.length === 0) {
+    Toast.warning('No Subjects', 'Please select at least one subject.');
+    return;
+  }
+
+  const availableDates = [];
+  let curr = new Date(start);
+  while (curr <= end) {
+    if (curr.getDay() !== 0) { // skip Sunday
+      availableDates.push(new Date(curr));
+    }
+    curr.setDate(curr.getDate() + 1);
+  }
+
+  if (availableDates.length === 0) {
+    Toast.error('No Days Available', 'The selected range has no available non-Sunday dates.');
+    return;
+  }
+
+  const assignments = [];
+  const occupiedDateStrings = new Set();
+
+  const isSunday = (dStr) => {
+    const d = new Date(dStr);
+    return d.getDay() === 0;
+  };
+
+  const subtractDaysSkippingSundays = (dStr, days) => {
+    let d = new Date(dStr);
+    let count = 0;
+    while (count < days) {
+      d.setDate(d.getDate() - 1);
+      if (d.getDay() !== 0) {
+        count++;
+      }
+    }
+    return d.toISOString().split('T')[0];
+  };
+
+  const remainingSubjects = [...selectedSubjects];
+  
+  if (alignSchool && _aiSchoolExams.length > 0) {
+    const sortedExams = [..._aiSchoolExams].sort((a,b) => new Date(a.exam_date) - new Date(b.exam_date));
+    
+    for (const exam of sortedExams) {
+      const idx = remainingSubjects.findIndex(s => s.id === exam.subject_id);
+      if (idx !== -1) {
+        const sub = remainingSubjects[idx];
+        let targetDateStr = subtractDaysSkippingSundays(exam.exam_date, 1);
+        
+        let targetDate = new Date(targetDateStr);
+        if (targetDate < start) {
+          targetDateStr = startDateStr;
+          targetDate = new Date(targetDateStr);
+        }
+
+        let offset = 0;
+        let finalDateStr = targetDateStr;
+        let finalDate = new Date(finalDateStr);
+        while (occupiedDateStrings.has(finalDateStr) || isSunday(finalDateStr)) {
+          offset++;
+          const multiplier = (offset % 2 === 0) ? 1 : -1;
+          const searchDays = Math.ceil(offset / 2) * multiplier;
+          
+          let testDate = new Date(targetDate);
+          testDate.setDate(testDate.getDate() + searchDays);
+          
+          if (testDate >= start && testDate <= end) {
+            finalDateStr = testDate.toISOString().split('T')[0];
+          }
+          if (offset > 30) {
+            break;
+          }
+        }
+
+        assignments.push({
+          subject_id: sub.id,
+          subject_name: sub.name,
+          date: finalDateStr,
+          reason: `Aligned with school exam on ${Format.date(exam.exam_date)}`
+        });
+        occupiedDateStrings.add(finalDateStr);
+        remainingSubjects.splice(idx, 1);
+      }
+    }
+  }
+
+  const unoccupiedDates = availableDates.filter(d => !occupiedDateStrings.has(d.toISOString().split('T')[0]));
+  
+  if (remainingSubjects.length > 0) {
+    if (unoccupiedDates.length === 0) {
+      remainingSubjects.forEach((sub, i) => {
+        const dateObj = availableDates[i % availableDates.length];
+        const dateStr = dateObj.toISOString().split('T')[0];
+        assignments.push({
+          subject_id: sub.id,
+          subject_name: sub.name,
+          date: dateStr,
+          reason: 'Distributed evenly'
+        });
+      });
+    } else {
+      const spacing = unoccupiedDates.length / remainingSubjects.length;
+      remainingSubjects.forEach((sub, i) => {
+        const dateIdx = Math.floor(i * spacing);
+        const dateObj = unoccupiedDates[dateIdx % unoccupiedDates.length];
+        const dateStr = dateObj.toISOString().split('T')[0];
+        assignments.push({
+          subject_id: sub.id,
+          subject_name: sub.name,
+          date: dateStr,
+          reason: 'Distributed evenly'
+        });
+        occupiedDateStrings.add(dateStr);
+      });
+    }
+  }
+
+  assignments.sort((a,b) => new Date(a.date) - new Date(b.date));
+
+  _aiGeneratedTests = assignments.map(a => {
+    const prefix = cycleTitle ? cycleTitle : 'Topic Test';
+    return {
+      standard_id: _testsStandardId,
+      subject_id: a.subject_id,
+      subject_name: a.subject_name,
+      name: `${prefix} - ${a.subject_name}`,
+      max_marks: maxMarksVal,
+      test_date: a.date,
+      syllabus: '',
+      exam_mode: 'Offline',
+      status: 'Scheduled',
+      cycle_id: cycleIdVal || null,
+      reason: a.reason
+    };
+  });
+
+  renderAISchedulePreviewTable();
+}
+
+function renderAISchedulePreviewTable() {
+  const tbody = document.getElementById('ai-preview-tbody');
+  tbody.innerHTML = '';
+
+  if (_aiGeneratedTests.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No tests generated.</td></tr>';
+    return;
+  }
+
+  _aiGeneratedTests.forEach((t, idx) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="padding:8px; text-align:left">
+        <span class="badge badge-primary">${t.subject_name}</span>
+        <br><span class="text-xs text-muted" style="font-size:0.65rem">${t.reason || ''}</span>
+      </td>
+      <td style="padding:8px; text-align:left">
+        <input type="text" class="form-control form-control-sm" value="${t.name}" oninput="_aiGeneratedTests[${idx}].name = this.value" style="height:30px; font-size:0.8rem">
+      </td>
+      <td style="padding:8px">
+        <input type="date" class="form-control form-control-sm" value="${t.test_date}" onchange="_aiGeneratedTests[${idx}].test_date = this.value" style="height:30px; font-size:0.8rem; width:130px">
+      </td>
+      <td style="padding:8px">
+        <input type="number" class="form-control form-control-sm" value="${t.max_marks}" oninput="_aiGeneratedTests[${idx}].max_marks = parseFloat(this.value) || 0" style="height:30px; font-size:0.8rem; width:80px">
+      </td>
+      <td style="padding:8px">
+        <button class="btn btn-ghost btn-icon-sm" onclick="removeAIGeneratedTest(${idx})" title="Remove from schedule">❌</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  show('ai-preview-section');
+  show('ai-save-btn');
+  document.getElementById('ai-generate-btn').textContent = '⚡ Re-generate';
+}
+
+function removeAIGeneratedTest(idx) {
+  _aiGeneratedTests.splice(idx, 1);
+  renderAISchedulePreviewTable();
+}
+
+async function saveAISchedule() {
+  if (_aiGeneratedTests.length === 0) {
+    Toast.warning('Empty Schedule', 'There are no tests in the preview schedule to save.');
+    return;
+  }
+
+  Spinner.show('Bulk creating tests...');
+  try {
+    const res = await API.tests.bulkAdd(_aiGeneratedTests);
+    Spinner.hide();
+    closeModal('ai-scheduler-modal');
+    Toast.success('Schedule Saved', `Successfully bulk created ${res.count} coaching tests.`);
+    
+    if (_currentTestsTab === 'individual') {
+      await loadTestsForClass(_testsStandardId);
+    } else {
+      await loadTestCyclesForClass(_testsStandardId);
+    }
+  } catch (err) {
+    Spinner.hide();
+    Toast.error('Save Failed', err.message);
+  }
+}
+
+window.loadSchoolExamsForClass = loadSchoolExamsForClass;
+window.showAddSchoolExamModal = showAddSchoolExamModal;
+window.submitSchoolExam = submitSchoolExam;
+window.confirmDeleteSchoolExam = confirmDeleteSchoolExam;
+window.showAISchedulerModal = showAISchedulerModal;
+window.generateAISchedulePreview = generateAISchedulePreview;
+window.removeAIGeneratedTest = removeAIGeneratedTest;
+window.saveAISchedule = saveAISchedule;

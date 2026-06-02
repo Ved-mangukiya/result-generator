@@ -39,6 +39,12 @@ router.post('/', (req, res) => {
         deleted.result_card_settings = db.prepare('DELETE FROM result_card_settings').run().changes;
         deleted.fee_payments = db.prepare('DELETE FROM fee_payments').run().changes;
         deleted.activity_log = db.prepare('DELETE FROM activity_log').run().changes;
+        
+        // Reset coaching profile to un-onboarded state
+        db.prepare('DELETE FROM coaching_profile').run();
+        db.prepare(`INSERT INTO coaching_profile (id, name, tagline, address, phone, website, primary_color, onboarding_complete)
+                    VALUES (1, '', '', '', '', '', '#7a6130', 0)`).run();
+        deleted.coaching_profile = 1;
         return;
       }
 

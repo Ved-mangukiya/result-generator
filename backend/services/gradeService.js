@@ -46,7 +46,23 @@ function calculateStudentResult(student, subjects, marksMap, boardId) {
   let subjectResults = [];
   let marksCount = 0;
 
+  let electiveIds = [];
+  if (student.elective_subjects) {
+    try {
+      const parsed = typeof student.elective_subjects === 'string'
+        ? JSON.parse(student.elective_subjects)
+        : student.elective_subjects;
+      if (Array.isArray(parsed)) {
+        electiveIds = parsed.map(el => typeof el === 'object' ? el.id : el);
+      }
+    } catch(e) {}
+  }
+
   for (const subject of subjects) {
+    const isOptional = subject.is_compulsory === 0;
+    const isSelected = !isOptional || electiveIds.includes(subject.id);
+    if (!isSelected) continue;
+
     const mark = marksMap[subject.id];
     let obtained = null;
     let internal = null;

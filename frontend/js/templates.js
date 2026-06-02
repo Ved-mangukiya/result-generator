@@ -3,26 +3,26 @@
    ═══════════════════════════════════════════════ */
 
 const TEMPLATE_INFO = [
-  { id:1, name:'Imperial',   desc:'Deep navy & gold, serif fonts, government feel', colors:['#1a3a6b','#d4af37'], emoji:'🏛' },
-  { id:2, name:'Saffron',    desc:'Saffron & tricolor strip, patriotic Indian style', colors:['#c17f24','#ffffff'], emoji:'🇮🇳' },
-  { id:3, name:'Emerald',    desc:'Deep green, minimalist, modern coaching look', colors:['#0f4c2e','#e8f5e9'], emoji:'💚' },
-  { id:4, name:'Corporate',  desc:'Charcoal, bold sans-serif, professional boardroom', colors:['#2d2d2d','#1a3a6b'], emoji:'💼' },
-  { id:5, name:'Maroon',     desc:'Maroon & cream, ornate vintage school card look', colors:['#7c1d1d','#f5f0e8'], emoji:'📜' },
-  { id:6, name:'Sky Modern', desc:'Light blue, rounded elements, certificate-like', colors:['#1a6bab','#f0f7ff'], emoji:'🌤' },
-  { id:7, name:'Royal Gold', desc:'Royal Gold & slate, luxury certificate design', colors:['#1e2530','#d4af37'], emoji:'👑' },
-  { id:8, name:'Minimalist', desc:'Space Grotesk, JetBrains Mono, borderless style', colors:['#ffffff','#0f172a'], emoji:'▫️' },
-  { id:9, name:'Vibrant Indigo', desc:'Modern violet-indigo gradient, rounded card styling', colors:['#4f46e5','#7c3aed'], emoji:'👾' },
-  { id:10, name:'Vedic Heritage', desc:'Warm saffron border, traditional Sanskrit heritage feel', colors:['#fdfaf2','#b71c1c'], emoji:'🍁' },
-  { id:11, name:'Vintage Scroll', desc:'Sepia paper scroll theme with double borders', colors:['#f7ede2','#8b5a2b'], emoji:'📜' },
-  { id:12, name:'Midnight Gold', desc:'Luxurious dark charcoal and premium gold text', colors:['#181d24','#d4af37'], emoji:'🌌' },
-  { id:13, name:'Slate Blackboard', desc:'Dark chalkboard style with custom hand writing', colors:['#1e2d27','#a7f3d0'], emoji:'📝' },
-  { id:14, name:'Neon Cyber', desc:'Futuristic tech design with cyan and pink glows', colors:['#0b0f19','#00f2fe'], emoji:'⚙️' },
-  { id:15, name:'Grand Academic', desc:'Traditional university navy/gold certificate look', colors:['#0f1e36','#c5a880'], emoji:'🛡️' },
-  { id:16, name:'Blueprint Grid', desc:'Engineer grid draft with blueprint-blue borders', colors:['#f0f9ff','#0284c7'], emoji:'📐' },
-  { id:17, name:'Rangoli Orange', desc:'Traditional Indian marigold corner rangoli theme', colors:['#fffbeb','#d97706'], emoji:'🪔' },
-  { id:18, name:'Glassmorphism Pastel', desc:'Soft gradient backdrop with a translucent card blur', colors:['#ee9ca7','#a1c4fd'], emoji:'✨' },
-  { id:19, name:'Royal Emerald', desc:'Deep rich executive emerald green and gold trim', colors:['#f4fbf7','#064e3b'], emoji:'🏵️' },
-  { id:20, name:'Editorial Magazine', desc:'High fashion layout with modern italic serif font', colors:['#faf9f6','#1c1c1c'], emoji:'📰' },
+  { id:1, name:'Imperial',   desc:'Deep navy & gold, serif fonts, government feel', colors:['#1a3a6b','#d4af37'], emoji:'🏛', category:'school' },
+  { id:2, name:'Saffron',    desc:'Saffron & tricolor strip, patriotic Indian style', colors:['#c17f24','#ffffff'], emoji:'🇮🇳', category:'school' },
+  { id:3, name:'Emerald',    desc:'Deep green, minimalist, modern coaching look', colors:['#0f4c2e','#e8f5e9'], emoji:'💚', category:'school' },
+  { id:4, name:'Corporate',  desc:'Charcoal, bold sans-serif, professional boardroom', colors:['#2d2d2d','#1a3a6b'], emoji:'💼', category:'commerce' },
+  { id:5, name:'Maroon',     desc:'Maroon & cream, ornate vintage school card look', colors:['#7c1d1d','#f5f0e8'], emoji:'📜', category:'school' },
+  { id:6, name:'Sky Modern', desc:'Light blue, rounded elements, certificate-like', colors:['#1a6bab','#f0f7ff'], emoji:'🌤', category:'school' },
+  { id:7, name:'Royal Gold', desc:'Royal Gold & slate, luxury certificate design', colors:['#1e2530','#d4af37'], emoji:'👑', category:'arts' },
+  { id:8, name:'Minimalist', desc:'Space Grotesk, JetBrains Mono, borderless style', colors:['#ffffff','#0f172a'], emoji:'▫️', category:'arts' },
+  { id:9, name:'Vibrant Indigo', desc:'Modern violet-indigo gradient, rounded card styling', colors:['#4f46e5','#7c3aed'], emoji:'👾', category:'science_pcmb' },
+  { id:10, name:'High-Precision Tech', desc:'Minimalist double border, tech scorecard with grid ornaments', colors:['#334155','#94a3b8'], emoji:'🔬', category:'science_pcm' },
+  { id:11, name:'Vintage Scroll', desc:'Sepia paper scroll theme with double borders', colors:['#f7ede2','#8b5a2b'], emoji:'📜', category:'arts' },
+  { id:12, name:'Midnight Gold', desc:'Luxurious dark charcoal and premium gold text', colors:['#181d24','#d4af37'], emoji:'🌌', category:'science_pcm' },
+  { id:13, name:'Slate Blackboard', desc:'Dark chalkboard style with custom hand writing', colors:['#1e2d27','#a7f3d0'], emoji:'📝', category:'kids' },
+  { id:14, name:'Junior Scholars (Kid\'s Theme)', desc:'Playful pastel orange and green borders with balloons and stars', colors:['#ffcc80','#81c784'], emoji:'🎨', category:'kids' },
+  { id:15, name:'Grand Academic', desc:'Traditional university navy/gold certificate look', colors:['#0f1e36','#c5a880'], emoji:'🛡️', category:'commerce' },
+  { id:16, name:'JEE & PCM Prep Grid', desc:'Blueprint engineering grid design optimized for PCM entrance rankings', colors:['#0284c7','#f0f9ff'], emoji:'📐', category:'science_pcm' },
+  { id:17, name:'Rangoli Orange', desc:'Traditional Indian marigold corner rangoli theme', colors:['#fffbeb','#d97706'], emoji:'🪔', category:'kids' },
+  { id:18, name:'NEET & Medical PCB Prep', desc:'Clean medical division scorecard customized for PCB and NEET exams', colors:['#ee9ca7','#a1c4fd'], emoji:'🩺', category:'science_pcb' },
+  { id:19, name:'Royal Emerald', desc:'Deep rich executive emerald green and gold trim', colors:['#f4fbf7','#064e3b'], emoji:'🏵️', category:'commerce' },
+  { id:20, name:'Editorial Magazine', desc:'High fashion layout with modern italic serif font', colors:['#faf9f6','#1c1c1c'], emoji:'📰', category:'arts' },
 ];
 
 let _previewStudentId = null;
@@ -34,7 +34,7 @@ async function renderTemplates() {
     <div class="page-header">
       <div class="page-header-left">
         <h1>Result Card Templates</h1>
-        <p>20 premium print-ready templates — click to preview</p>
+        <p>20 premium print-ready templates grouped by stream</p>
       </div>
     </div>
 
@@ -53,6 +53,18 @@ async function renderTemplates() {
           </p>
         </div>
       </div>
+    </div>
+
+    <!-- Category Tabs -->
+    <div class="flex gap-2 mb-6 overflow-x-auto pb-2" style="border-bottom: 1px solid var(--border)">
+      <button class="btn btn-outline btn-sm active template-filter-btn" data-cat="all" onclick="filterTemplates('all')">All</button>
+      <button class="btn btn-outline btn-sm template-filter-btn" data-cat="kids" onclick="filterTemplates('kids')">Preschool / Kids</button>
+      <button class="btn btn-outline btn-sm template-filter-btn" data-cat="school" onclick="filterTemplates('school')">Secondary School</button>
+      <button class="btn btn-outline btn-sm template-filter-btn" data-cat="commerce" onclick="filterTemplates('commerce')">Commerce</button>
+      <button class="btn btn-outline btn-sm template-filter-btn" data-cat="arts" onclick="filterTemplates('arts')">Arts</button>
+      <button class="btn btn-outline btn-sm template-filter-btn" data-cat="science_pcm" onclick="filterTemplates('science_pcm')">Science PCM</button>
+      <button class="btn btn-outline btn-sm template-filter-btn" data-cat="science_pcb" onclick="filterTemplates('science_pcb')">Science PCB</button>
+      <button class="btn btn-outline btn-sm template-filter-btn" data-cat="science_pcmb" onclick="filterTemplates('science_pcmb')">NEET / JEE / PCMB</button>
     </div>
 
     <!-- Template Grid -->
@@ -82,6 +94,7 @@ async function renderTemplates() {
   try {
     const students = await API.students.list();
     const sel = document.getElementById('template-preview-student');
+    sel.innerHTML = '<option value="mock">👤 Mock Student (Preview)</option>';
     students.slice(0, 50).forEach(s => {
       const opt = document.createElement('option');
       opt.value = s.id;
@@ -91,34 +104,54 @@ async function renderTemplates() {
     if (students.length > 0) {
       _previewStudentId = students[0].id;
       sel.value = students[0].id;
+    } else {
+      _previewStudentId = 'mock';
+      sel.value = 'mock';
     }
   } catch {}
 }
 
 function updateTemplateStudent(id) {
-  _previewStudentId = id ? parseInt(id) : null;
+  _previewStudentId = id && id !== 'mock' ? parseInt(id) : 'mock';
+}
+
+function filterTemplates(cat) {
+  // Update button active states
+  document.querySelectorAll('.template-filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-cat') === cat);
+  });
+
+  // Filter templates visually
+  TEMPLATE_INFO.forEach(t => {
+    const card = document.getElementById(`template-card-${t.id}`);
+    if (card) {
+      if (cat === 'all' || t.category === cat) {
+        card.style.display = '';
+      } else {
+        card.style.display = 'none';
+      }
+    }
+  });
 }
 
 async function previewTemplate(templateId) {
-  if (!_previewStudentId) {
-    Toast.warning('Select a Student', 'Please select a student to preview the template.');
-    return;
-  }
+  const studentId = _previewStudentId || 'mock';
   
   Spinner.show('Loading template preview...');
   try {
-    const html = await API.export.previewStudent(_previewStudentId, templateId);
+    const html = await API.export.previewStudent(studentId, templateId);
     Spinner.hide();
     
     const tInfo = TEMPLATE_INFO.find(t => t.id === templateId);
-    createModal('template-preview-modal', `👁 Template ${templateId}: ${tInfo?.name}`,
-      `<div style="background:white;border-radius:var(--radius);overflow:hidden">
-        <iframe style="width:100%;height:800px;border:none" srcdoc="${html.replace(/"/g,'&quot;')}"></iframe>
-      </div>`,
+    const overlay = createModal('template-preview-modal', `👁 Template ${templateId}: ${tInfo?.name}`,
+      `<div id="preview-viewport-container" style="display:flex; justify-content:center; align-items:center; background:#0f172a; padding:20px; transition:all 0.3s ease; overflow:auto; max-height:700px; border-radius:var(--radius)">
+         <iframe id="preview-iframe" style="width:210mm; height:297mm; max-height:650px; background:white; border:none; box-shadow:0 10px 25px rgba(0,0,0,0.5); transition:all 0.3s ease" srcdoc="${html.replace(/"/g,'&quot;')}"></iframe>
+       </div>`,
       `<button class="btn btn-outline" onclick="closeModal('template-preview-modal')">Close</button>
        <button class="btn btn-primary" onclick="applyTemplateToAll(${templateId})">✅ Apply to Class</button>`,
-      'modal-full'
+      'modal-xl'
     );
+    overlay.classList.add('modal-fullscreen-overlay');
   } catch (err) {
     Spinner.hide();
     Toast.error('Preview Failed', err.message);
@@ -126,8 +159,10 @@ async function previewTemplate(templateId) {
 }
 
 async function applyTemplateToAll(templateId) {
-  // Apply template to the current student's standard
-  if (!_previewStudentId) return;
+  if (!_previewStudentId || _previewStudentId === 'mock') {
+    Toast.warning('No Class Selected', 'Please select a real student to apply the template to their class.');
+    return;
+  }
   try {
     const student = await API.students.get(_previewStudentId);
     const settings = await API.standards.getSettings(student.standard_id);
@@ -148,6 +183,7 @@ function selectTemplate(id) {
 
 window.renderTemplates = renderTemplates;
 window.updateTemplateStudent = updateTemplateStudent;
+window.filterTemplates = filterTemplates;
 window.previewTemplate = previewTemplate;
 window.applyTemplateToAll = applyTemplateToAll;
 window.selectTemplate = selectTemplate;

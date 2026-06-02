@@ -91,7 +91,7 @@ async function loadResultsForClass(standardId) {
     // Summary bar
     const passCount = students.filter(s => s.finalStatus !== 'Fail' && s.finalStatus !== 'Pending').length;
     const failCount = students.filter(s => s.finalStatus === 'Fail').length;
-    const distCount = students.filter(s => s.finalStatus === 'Distinction').length;
+    const distCount = students.filter(s => s.finalStatus === 'Distinction' || s.finalStatus === 'A1' || s.finalStatus === 'A2').length;
     const avgPct = students.length > 0
       ? (students.reduce((s, r) => s + (r.overallPct || 0), 0) / students.length).toFixed(1)
       : 0;
@@ -103,7 +103,7 @@ async function loadResultsForClass(standardId) {
           { label:'Total Students', value:students.length, icon:'👥', cls:'blue' },
           { label:'Passed', value:passCount, icon:'✅', cls:'green' },
           { label:'Failed', value:failCount, icon:'❌', cls:'red' },
-          { label:'Distinction', value:distCount, icon:'🏆', cls:'gold' },
+          { label:'Distinction / A1-A2', value:distCount, icon:'🏆', cls:'gold' },
         ].map(s => `<div class="stat-card">
           <div class="stat-card-icon ${s.cls}">${s.icon}</div>
           <div class="stat-card-value">${s.value}</div>
@@ -176,14 +176,15 @@ async function previewStudentCard(studentId) {
   try {
     const html = await API.export.previewStudent(studentId);
     Spinner.hide();
-    createModal('card-preview', '👁 Result Card Preview',
-      `<div style="background:white;border-radius:var(--radius);overflow:hidden">
-        <iframe style="width:100%;height:800px;border:none" srcdoc="${html.replace(/"/g,'&quot;')}"></iframe>
-      </div>`,
+    const overlay = createModal('card-preview', '👁 Result Card Preview',
+      `<div id="preview-viewport-container" style="display:flex; justify-content:center; align-items:center; background:#0f172a; padding:20px; transition:all 0.3s ease; overflow:auto; max-height:700px; border-radius:var(--radius)">
+         <iframe id="preview-iframe" style="width:210mm; height:297mm; max-height:650px; background:white; border:none; box-shadow:0 10px 25px rgba(0,0,0,0.5); transition:all 0.3s ease" srcdoc="${html.replace(/"/g,'&quot;')}"></iframe>
+       </div>`,
       `<button class="btn btn-outline" onclick="closeModal('card-preview')">Close</button>
        <a class="btn btn-primary" href="${API.export.pdfSingle(studentId)}" download>⬇ Download PDF</a>`,
-      'modal-full'
+      'modal-xl'
     );
+    overlay.classList.add('modal-fullscreen-overlay');
   } catch (err) {
     Spinner.hide();
     Toast.error('Preview Failed', err.message);
@@ -301,7 +302,7 @@ async function saveResultSettings(standardId) {
     show_grade: document.getElementById('rs-show_grade').checked,
     show_pass_fail: document.getElementById('rs-show_pass_fail').checked,
     paper_size: document.getElementById('rs-paper_size').value,
-    result_categories: ['Distinction','First Class','Second Class','Pass','Fail']
+    result_categories: ['A1','A2','B1','B2','C1','C2','D','Fail','Distinction','First Class','Second Class','Pass']
   };
   
   try {

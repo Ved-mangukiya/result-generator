@@ -57,11 +57,21 @@ router.get('/default', (req, res) => {
   }
 });
 
-// GET /api/subjects/all-names — All unique subject names in the DB (for autocomplete)
+// GET /api/subjects/all-names — All unique subject names in the DB + preloaded list (for autocomplete)
 router.get('/all-names', (req, res) => {
   try {
-    const rows = db.prepare('SELECT DISTINCT name FROM subjects ORDER BY name ASC').all();
-    res.json(rows.map(r => r.name));
+    const rows = db.prepare('SELECT DISTINCT name FROM subjects').all();
+    const dbNames = rows.map(r => r.name);
+    
+    let preloadedNames = [];
+    try {
+      preloadedNames = require('../data/indian_subjects.json').subjects;
+    } catch (e) {
+      console.error('Failed to load indian_subjects.json:', e);
+    }
+    
+    const allNames = Array.from(new Set([...dbNames, ...preloadedNames])).sort((a, b) => a.localeCompare(b));
+    res.json(allNames);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

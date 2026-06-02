@@ -187,7 +187,12 @@
       <div class="card-footer">
         <div class="sign-block"><div class="sign-line"></div><div class="sign-label">Class Teacher's Signature</div></div>
         <div class="footer-center">{{COACHING_NAME}}<br>{{COACHING_WEBSITE}}</div>
-        <div class="sign-block"><div class="sign-line"></div><div class="sign-label">Principal's Signature</div></div>
+        <div class="sign-block">
+          <div style="height: 34px; display: flex; align-items: center; justify-content: center; margin-bottom: 2px;">{{SIGNATURE_IMG}}</div>
+          <div class="sign-line" style="margin: 0 auto 2px; height: 1px; border: none; border-top: 1px solid currentColor;"></div>
+          <div style="font-size: 7.5pt; font-weight: 700; color: inherit; line-height: 1.1;">{{SIGNATORY_NAME}}</div>
+          <div class="sign-label" style="margin-top: 1px; font-size: 6.5pt; line-height: 1.0; text-transform: none; letter-spacing: 0;">{{SIGNATORY_TITLE}}</div>
+        </div>
       </div>
     </div>
   </div>

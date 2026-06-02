@@ -49,7 +49,7 @@ router.get('/dashboard-stats', (req, res) => {
       marksRows.forEach(m => { marksMap[m.subject_id] = m; });
       const result = calculateStudentResult(student, subjects, marksMap, std.board_id);
       if (result.finalStatus === 'Fail') failCount++;
-      else if (result.finalStatus === 'Distinction') { distCount++; passCount++; }
+      else if (result.finalStatus === 'Distinction' || result.finalStatus === 'A1' || result.finalStatus === 'A2') { distCount++; passCount++; }
       else passCount++;
     }
 

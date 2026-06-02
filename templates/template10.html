@@ -3,254 +3,248 @@
 <head>
 <meta charset="UTF-8">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Marcellus&family=Inter:wght@400;500;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;500;600;700;800&display=swap');
   
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Inter', sans-serif; background: #fdfaf2; color: #3e2723; }
+  
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #fafbfc;
+    color: #1e293b;
+    padding: 0;
+    margin: 0;
+  }
 
   .page {
     width: 210mm;
     min-height: 297mm;
-    background: #fdfaf2;
+    background: #fafbfc;
+    position: relative;
     padding: 12mm;
     display: flex;
     flex-direction: column;
   }
 
-  .outer-border {
-    border: 3px solid #b71c1c;
+  /* Tech-style high precision double border */
+  .outer-frame {
+    border: 2px solid #334155;
+    padding: 3mm;
     flex: 1;
-    padding: 2mm;
     display: flex;
     flex-direction: column;
     position: relative;
   }
 
-  .inner-border {
-    border: 1.5px solid #d84315;
+  .inner-frame {
+    border: 1px solid #94a3b8;
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 6mm;
+    overflow: hidden;
+    padding: 4mm;
+    position: relative;
   }
 
-  /* Traditional corners */
-  .corner { position: absolute; width: 20px; height: 20px; font-size: 16px; color: #b71c1c; line-height: 1; }
-  .corner-tl { top: 4px; left: 4px; }
-  .corner-tr { top: 4px; right: 4px; }
-  .corner-bl { bottom: 4px; left: 4px; }
-  .corner-br { bottom: 4px; right: 4px; }
+  /* Grid ornaments */
+  .grid-bg {
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(rgba(148, 163, 184, 0.04) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(148, 163, 184, 0.04) 1px, transparent 1px);
+    background-size: 20px 20px;
+    z-index: 0;
+    pointer-events: none;
+  }
 
   /* Header */
-  .header {
+  .card-header {
+    border-bottom: 2px solid #334155;
+    padding-bottom: 4mm;
+    margin-bottom: 4mm;
     display: flex;
     align-items: center;
-    border-bottom: 2px dashed #b71c1c;
-    padding-bottom: 4mm;
-    margin-bottom: 5mm;
     gap: 5mm;
+    z-index: 1;
   }
 
-  .coaching-logo { width: 70px; height: 70px; border-radius: 50%; border: 2px solid #b71c1c; object-fit: contain; }
-  .logo-placeholder { width: 70px; height: 70px; background: #fff8e1; border: 2px solid #b71c1c; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+  .coaching-logo { width: 68px; height: 68px; object-fit: contain; border: 1.5px solid #334155; padding: 3px; background: white; }
+  .logo-placeholder { width: 68px; height: 68px; background: rgba(51,65,85,0.05); border: 1.5px solid #334155; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; color: #334155; }
 
-  .coaching-info { flex: 1; text-align: center; }
-  .coaching-name { font-family: 'Marcellus', serif; font-size: 21pt; font-weight: 700; color: #b71c1c; }
-  .coaching-tagline { font-size: 9pt; color: #d84315; font-style: italic; margin-top: 2px; font-weight: 600; }
-  .coaching-contact { font-size: 8pt; color: #5d4037; margin-top: 3px; }
+  .header-center { flex: 1; text-align: center; }
+  .header-center .inst-name { font-family: 'Share Tech Mono', monospace; font-size: 22pt; font-weight: 700; color: #0f172a; letter-spacing: 1px; }
+  .header-center .inst-tagline { font-size: 8.5pt; color: #475569; font-weight: 600; text-transform: uppercase; margin-top: 1px; letter-spacing: 2px; }
+  .header-center .inst-contact { font-size: 8pt; color: #64748b; margin-top: 2px; }
 
-  .student-photo { width: 60px; height: 75px; border: 2px solid #d84315; object-fit: cover; }
-  .photo-placeholder { width: 60px; height: 75px; border: 2px dashed #d84315; display: flex; align-items: center; justify-content: center; font-size: 7pt; color: #8d6e63; }
+  .header-photo { width: 68px; height: 82px; border: 1.5px solid #334155; overflow: hidden; background: white; }
+  .header-photo img { width: 100%; height: 100%; object-fit: cover; }
+  .header-photo .photo-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: rgba(51,65,85,0.05); color: #94a3b8; font-size: 18pt; }
 
-  .title-area {
+  /* Title Area */
+  .title-banner {
     text-align: center;
-    margin-bottom: 5mm;
+    border: 1px solid #cbd5e1;
+    background: #f1f5f9;
+    padding: 2mm 0;
+    margin-bottom: 4mm;
+    z-index: 1;
   }
-  .title-area h2 { font-family: 'Marcellus', serif; font-size: 13pt; color: #b71c1c; }
-  .sanskrit-verse { font-size: 8.5pt; color: #d84315; margin-top: 1.5mm; font-style: italic; font-weight: 600; }
+  .title-banner h2 { font-family: 'Share Tech Mono', monospace; font-size: 12pt; color: #334155; letter-spacing: 2px; }
 
-  /* Student details */
-  .profile-grid {
+  /* Student Info */
+  .student-info {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 2mm 6mm;
-    background: #fff8e1;
-    border: 1px solid #ffe082;
-    border-radius: 6px;
-    padding: 3mm 4mm;
-    margin-bottom: 5mm;
+    gap: 0 6mm;
+    padding: 4mm 5mm;
+    border: 1px solid #e2e8f0;
+    background: white;
+    margin-bottom: 4mm;
+    z-index: 1;
   }
-  .info-row { display: flex; font-size: 9pt; }
-  .info-label { color: #8d6e63; font-weight: 600; width: 100px; flex-shrink: 0; }
-  .info-val { color: #3e2723; font-weight: 700; }
 
-  /* Marks */
-  .marks-section { flex: 1; margin-bottom: 5mm; }
-  .marks-table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+  .info-row { display: flex; align-items: center; padding: 1.2mm 0; font-size: 8.5pt; border-bottom: 1px dashed #f1f5f9; }
+  .info-row:last-child { border-bottom: none; }
+  .info-label { color: #475569; font-weight: 700; min-width: 100px; font-family: 'Share Tech Mono', monospace; }
+  .info-value { color: #0f172a; font-weight: 500; }
+
+  /* Marks Table */
+  .marks-section { flex: 1; margin-bottom: 4mm; z-index: 1; }
+  .marks-table { width: 100%; border-collapse: collapse; font-size: 8.5pt; background: white; }
   .marks-table th {
-    background: #b71c1c;
+    background: #334155;
     color: white;
-    font-weight: 600;
-    font-family: 'Marcellus', serif;
     padding: 2.5mm 2mm;
-    border: 1px solid #b71c1c;
+    text-align: center;
+    border: 1px solid #1e293b;
+    font-size: 8pt;
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 0.5px;
   }
   .marks-table th:first-child { text-align: left; padding-left: 3mm; }
   .marks-table td {
     padding: 2mm;
-    border: 1px solid #ffe082;
+    border: 1px solid #e2e8f0;
     text-align: center;
-    color: #4e342e;
+    vertical-align: middle;
   }
-  .marks-table td:first-child { text-align: left; padding-left: 3mm; font-weight: 700; }
-  .marks-table tr:nth-child(even) { background: rgba(255, 248, 225, 0.5); }
+  .marks-table td:first-child { text-align: left; padding-left: 3mm; font-weight: 600; color: #0f172a; }
+  .marks-table tr:nth-child(even) { background: #f8fafc; }
 
-  .optional-tag { font-size: 6.5pt; color: #8d6e63; }
-  .pf-cell.pass { color: #2e7d32; font-weight: 700; }
-  .pf-cell.fail { color: #c62828; font-weight: 700; }
-  .pf-cell.absent { color: #ef6c00; }
+  .optional-tag { font-size: 7pt; color: #64748b; font-weight: bold; background: #f1f5f9; padding: 1px 4px; border: 1px solid #cbd5e1; border-radius: 3px; }
 
-  /* Summary Row */
-  .summary-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr) 1.2fr;
+  .pf-cell.pass { color: #16a34a; font-weight: 700; }
+  .pf-cell.fail { color: #dc2626; font-weight: 700; }
+  .pf-cell.absent { color: #ea580c; }
+
+  /* Summary Section */
+  .summary-section {
+    display: flex;
     gap: 3mm;
-    margin-bottom: 5mm;
+    margin-bottom: 4mm;
+    z-index: 1;
   }
+
   .summary-box {
-    background: #fff8e1;
-    border: 1px solid #ffe082;
-    border-radius: 4px;
-    padding: 2.5mm;
+    flex: 1;
     text-align: center;
+    background: white;
+    border: 1px solid #cbd5e1;
+    padding: 2.5mm;
   }
-  .summary-label { font-size: 6.5pt; text-transform: uppercase; color: #8d6e63; font-weight: 600; }
-  .summary-val { font-size: 11pt; font-weight: 800; color: #3e2723; margin-top: 1px; }
-  
-  .result-box {
-    background: #b71c1c;
-    color: white;
+  .summary-box .s-label { font-size: 7.5pt; color: #64748b; font-weight: bold; text-transform: uppercase; font-family: 'Share Tech Mono', monospace; }
+  .summary-box .s-value { font-size: 12pt; font-weight: 800; color: #1e293b; margin-top: 1px; }
+
+  .result-status-box {
+    min-width: 44mm;
+    border: 1px solid #334155;
+    background: #f8fafc;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    padding: 2mm;
   }
-  .result-box .summary-label { color: #ffccbc; }
-  .result-box .summary-val { color: white; font-family: 'Marcellus', serif; font-size: 12pt; }
+  .result-status-box .rs-label { font-size: 7.5pt; color: #475569; font-weight: bold; text-transform: uppercase; font-family: 'Share Tech Mono', monospace; }
+  .result-status-box .rs-value { font-size: 13pt; font-weight: 800; color: var(--overall-grade-color); }
 
-  .remarks-bar {
-    border: 1px solid #ffe082;
-    background: #fffdf7;
+  /* Remarks */
+  .remarks-section {
+    border: 1px solid #cbd5e1;
+    background: white;
     padding: 3mm 4mm;
-    border-radius: 4px;
+    display: flex;
+    gap: 3mm;
+    align-items: center;
+    margin-bottom: 4mm;
     font-size: 8.5pt;
-    margin-bottom: 5mm;
+    z-index: 1;
   }
-  .remarks-label { font-weight: 700; color: #d84315; }
-  .remarks-text { color: #5d4037; font-style: italic; }
+  .remarks-label { font-weight: 700; color: #475569; white-space: nowrap; font-family: 'Share Tech Mono', monospace; }
+  .remarks-text { color: #334155; font-style: italic; }
 
   /* Footer */
-  .footer {
+  .card-footer {
+    border-top: 1px solid #cbd5e1;
+    padding-top: 4mm;
     display: flex;
     justify-content: space-between;
-    align-items: flex-end;
-    margin-top: auto;
-    font-size: 8pt;
+    align-items: center;
+    background: transparent;
+    z-index: 1;
   }
-  .sign-col { text-align: center; width: 115px; }
-  .sign-line { border-bottom: 1.5px solid #8d6e63; margin-bottom: 1.5mm; height: 7mm; }
-  .sign-label { font-size: 7.5pt; color: #8d6e63; font-weight: 600; }
-  
-  .footer-center { text-align: center; font-size: 7.5pt; color: #8d6e63; }
-  .swastik { font-size: 11pt; color: #b71c1c; }
 
-  /* A5 Paper size adjustments */
-  .page.size-a5 {
-    width: 148mm;
-    min-height: 210mm;
-    padding: 6mm 8mm;
-  }
-  .page.size-a5 * {
-    font-size: 92% !important;
-  }
-  .page.size-a5 .header {
-    padding-bottom: 2mm;
-    margin-bottom: 3mm;
-  }
-  .page.size-a5 .coaching-logo, .page.size-a5 .logo-placeholder {
-    width: 45px;
-    height: 45px;
-  }
-  .page.size-a5 .student-photo, .page.size-a5 .photo-placeholder {
-    width: 45px;
-    height: 55px;
-  }
-  .page.size-a5 .coaching-name {
-    font-size: 14pt !important;
-  }
-  .page.size-a5 .title-area {
-    margin-bottom: 3mm;
-  }
-  .page.size-a5 .profile-grid {
-    padding: 2mm 3mm;
-    margin-bottom: 3mm;
-  }
-  .page.size-a5 .marks-section {
-    margin-bottom: 3mm;
-  }
-  .page.size-a5 .marks-table th, .page.size-a5 .marks-table td {
-    padding: 1.2mm 1.5mm;
-  }
-  .page.size-a5 .summary-row {
-    margin-bottom: 3mm;
-  }
-  .page.size-a5 .summary-box {
-    padding: 1.5mm;
-  }
-  .page.size-a5 .remarks-bar {
-    padding: 2.2mm 3mm;
-    margin-bottom: 3mm;
-  }
-  .page.size-a5 .sign-line {
-    height: 5mm;
-  }
+  .footer-sign { text-align: center; width: 125px; }
+  .sign-line { width: 100px; border-top: 1.5px solid #334155; margin: 4mm auto 1mm; }
+  .sign-label { font-size: 7.5pt; color: #64748b; font-weight: 600; }
+
+  /* A5 Paper adjustments */
+  .page.size-a5 { width: 148mm; min-height: 210mm; padding: 5mm 6mm; }
+  .page.size-a5 * { font-size: 90% !important; }
+  .page.size-a5 .card-header { padding-bottom: 2.5mm; margin-bottom: 2.5mm; }
+  .page.size-a5 .coaching-logo, .page.size-a5 .logo-placeholder { width: 44px; height: 44px; }
+  .page.size-a5 .header-photo { width: 44px; height: 54px; }
+  .page.size-a5 .title-banner { padding: 1.5mm 0; margin-bottom: 2.5mm; }
+  .page.size-a5 .student-info { padding: 2mm 3mm; margin-bottom: 2.5mm; }
+  .page.size-a5 .marks-section { margin-bottom: 2.5mm; }
+  .page.size-a5 .marks-table th, .page.size-a5 .marks-table td { padding: 1.2mm; }
+  .page.size-a5 .summary-section { margin-bottom: 2.5mm; }
+  .page.size-a5 .remarks-section { padding: 2mm 3mm; margin-bottom: 2.5mm; }
 </style>
 </head>
 <body>
 <div class="page">
-  <div class="outer-border">
-    <div class="corner corner-tl">🌸</div>
-    <div class="corner corner-tr">🌸</div>
-    <div class="corner corner-bl">🌸</div>
-    <div class="corner corner-br">🌸</div>
-
-    <div class="inner-border">
+  <div class="outer-frame">
+    <div class="inner-frame">
+      <div class="grid-bg"></div>
       
       <!-- Header -->
-      <div class="header">
+      <div class="card-header">
         {{COACHING_LOGO}}
-        <div class="coaching-info">
-          <div class="coaching-name">{{COACHING_NAME}}</div>
-          <div class="coaching-tagline">{{COACHING_TAGLINE}}</div>
-          <div class="coaching-contact">{{COACHING_ADDRESS}} | {{COACHING_PHONE}}</div>
+        <div class="header-center">
+          <div class="inst-name">{{COACHING_NAME}}</div>
+          <div class="inst-tagline">{{COACHING_TAGLINE}}</div>
+          <div class="inst-contact">{{COACHING_ADDRESS}} | {{COACHING_PHONE}} | {{COACHING_WEBSITE}}</div>
         </div>
-        {{STUDENT_PHOTO}}
+        <div class="header-photo">{{STUDENT_PHOTO}}</div>
       </div>
 
-      <!-- Title Area -->
-      <div class="title-area">
-        <h2>विद्या प्रगति पत्र (Report of Learning Progress) — {{ACADEMIC_YEAR}}</h2>
-        <div class="sanskrit-verse">"सा विद्या या विमुक्तये" (That is knowledge which liberates)</div>
+      <!-- Title Banner -->
+      <div class="title-banner">
+        <h2>🔬 ACADEMIC EVALUATION ENGINE & Scorecard 🔬</h2>
       </div>
 
-      <!-- Student details -->
-      <div class="profile-grid">
-        <div class="info-row"><span class="info-label">छात्र (Student):</span><span class="info-val">{{STUDENT_NAME}}</span></div>
-        <div class="info-row"><span class="info-label">अनुक्रमांक (Roll No):</span><span class="info-val">{{STUDENT_ROLL}}</span></div>
-        <div class="info-row"><span class="info-label">जन्म तिथि (DOB):</span><span class="info-val">{{STUDENT_DOB}}</span></div>
-        <div class="info-row"><span class="info-label">कक्षा (Class):</span><span class="info-val">{{STANDARD_DISPLAY}}</span></div>
-        <div class="info-row"><span class="info-label">अभिभावक (Father):</span><span class="info-val">{{FATHER_NAME}}</span></div>
-        <div class="info-row"><span class="info-label">उपस्थिति (Attend):</span><span class="info-val">{{ATTENDANCE}}</span></div>
+      <!-- Student Info -->
+      <div class="student-info">
+        <div>
+          <div class="info-row"><span class="info-label">STUDENT NAME:</span><span class="info-value">{{STUDENT_NAME}}</span></div>
+          <div class="info-row"><span class="info-label">ROLL NO / ID:</span><span class="info-value">{{STUDENT_ROLL}}</span></div>
+          <div class="info-row"><span class="info-label">DATE OF BIRTH:</span><span class="info-value">{{STUDENT_DOB}}</span></div>
+        </div>
+        <div>
+          <div class="info-row"><span class="info-label">CLASS STREAM:</span><span class="info-value">{{STANDARD_DISPLAY}}</span></div>
+          <div class="info-row"><span class="info-label">BOARD / ORG:</span><span class="info-value">{{BOARD_NAME}}</span></div>
+          <div class="info-row"><span class="info-label">ATTENDANCE:</span><span class="info-value">{{ATTENDANCE}}</span></div>
+        </div>
       </div>
 
       <!-- Marks Section -->
@@ -258,13 +252,13 @@
         <table class="marks-table">
           <thead>
             <tr>
-              <th style="width: 38%; text-align: left; padding-left: 3mm;">विषय (Subject)</th>
-              <th style="width: 10%;">पूर्णांक (Max)</th>
-              <th class="split-col" style="width: 10%;">Int</th>
-              <th class="split-col" style="width: 10%;">Ext</th>
-              <th style="width: 12%;">प्राप्तांक (Obt)</th>
-              <th class="grade-col" style="width: 10%;">श्रेणी (Grade)</th>
-              <th class="pf-col" style="width: 10%;">स्थिति (P/F)</th>
+              <th style="width:38%">Subject Description</th>
+              <th>Max Marks</th>
+              <th class="split-col">Internal</th>
+              <th class="split-col">External</th>
+              <th>Obtained</th>
+              <th class="grade-col">Grade</th>
+              <th class="pf-col">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -273,52 +267,53 @@
         </table>
       </div>
 
-      <!-- Summary Row -->
-      <div class="summary-row">
+      <!-- Summary -->
+      <div class="summary-section">
         <div class="summary-box">
-          <div class="summary-label">कुल प्राप्तांक</div>
-          <div class="summary-val">{{TOTAL_OBTAINED}} / {{TOTAL_MAX}}</div>
+          <div class="s-label">SUM_OBTAINED</div>
+          <div class="s-value">{{TOTAL_OBTAINED}} / {{TOTAL_MAX}}</div>
         </div>
         <div class="summary-box">
-          <div class="summary-label">प्रतिशत</div>
-          <div class="summary-val">{{OVERALL_PCT}}</div>
+          <div class="s-label">PERCENTAGE</div>
+          <div class="s-value">{{OVERALL_PCT}}</div>
         </div>
         <div class="summary-box">
-          <div class="summary-label">श्रेणी</div>
-          <div class="summary-val">{{OVERALL_GRADE}}</div>
+          <div class="s-label">OVERALL_GRADE</div>
+          <div class="s-value" style="color:var(--overall-grade-color)">{{OVERALL_GRADE}}</div>
         </div>
         <div class="summary-box">
-          <div class="summary-label">स्थान</div>
-          <div class="summary-val">#{{RANK}} / {{TOTAL_STUDENTS}}</div>
+          <div class="s-label">RANK_POSITION</div>
+          <div class="s-value">#{{RANK}} / {{TOTAL_STUDENTS}}</div>
         </div>
-        <div class="summary-box result-box">
-          <div class="summary-label">परिणाम (Result)</div>
-          <div class="summary-val">{{FINAL_STATUS}}</div>
+        <div class="result-status-box" style="border-color: var(--overall-grade-color)">
+          <div class="rs-label">EVAL_OUTCOME</div>
+          <div class="rs-value" style="color:var(--overall-grade-color)">{{FINAL_STATUS}}</div>
         </div>
       </div>
 
       <!-- Remarks -->
-      <div class="remarks-bar">
-        <span class="remarks-label">विशेष टिप्पणी (Feedback):</span>
-        <span class="remarks-text">{{REMARKS}}</span>
+      <div class="remarks-section">
+        <span class="remarks-label">PERFORMANCE REMARKS:</span>
+        <span class="remarks-text">"{{REMARKS}}"</span>
       </div>
 
       <!-- Footer -->
-      <div class="footer">
-        <div class="sign-col">
+      <div class="card-footer">
+        <div class="footer-sign">
           <div class="sign-line"></div>
-          <div class="sign-label">आचार्य (Teacher)</div>
+          <div class="sign-label">Class Teacher</div>
         </div>
-        <div class="footer-center">
-          <div class="swastik">卍</div>
-          <div>{{COACHING_WEBSITE}}</div>
+        <div style="text-align:center;font-size:7pt;color:#64748b;font-family:'Share Tech Mono', monospace">
+          HIGH-PRECISION EDUCATION REPORT SHEET<br>
+          SESSION YEAR: {{ACADEMIC_YEAR}}
         </div>
-        <div class="sign-col">
-          <div class="sign-line"></div>
-          <div class="sign-label">संचालक (Director)</div>
+        <div class="footer-sign">
+          <div style="height: 34px; display: flex; align-items: center; justify-content: center; margin-bottom: 2px;">{{SIGNATURE_IMG}}</div>
+          <div class="sign-line" style="margin: 0 auto 2px; height: 1px; border: none; border-top: 1px solid currentColor;"></div>
+          <div style="font-size: 7.5pt; font-weight: 700; color: inherit; line-height: 1.1;">{{SIGNATORY_NAME}}</div>
+          <div class="sign-label" style="margin-top: 1px; font-size: 6.5pt; line-height: 1.0; text-transform: none; letter-spacing: 0;">{{SIGNATORY_TITLE}}</div>
         </div>
       </div>
-
     </div>
   </div>
 </div>

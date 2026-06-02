@@ -51,8 +51,9 @@ const API = {
 
   // ─── Coaching Profile ──────────────────────────
   coaching: {
-    get:    ()      => API.get('/api/coaching'),
-    update: (data)  => API.put('/api/coaching', data),
+    get:          ()      => API.get('/api/coaching'),
+    update:       (data)  => API.put('/api/coaching', data),
+    onboardSetup: (data)  => API.post('/api/coaching/onboard-setup', data),
   },
 
   // ─── Dashboard ─────────────────────────────────
@@ -118,6 +119,7 @@ const API = {
   tests: {
     list:        (standardId)   => API.get(`/api/tests?standard_id=${standardId}`),
     add:         (data)         => API.post('/api/tests', data),
+    bulkAdd:     (tests)        => API.post('/api/tests/bulk', { tests }),
     update:      (id, data)     => API.put(`/api/tests/${id}`, data),
     delete:      (id)           => API.delete(`/api/tests/${id}`),
     getMarks:    (id)           => API.get(`/api/tests/${id}/marks`),
@@ -125,6 +127,13 @@ const API = {
     excel:       (id)           => `/api/tests/${id}/export/excel`,
     pdf:         (id)           => `/api/tests/${id}/export/pdf`,
     importMarks: (id, form)     => API.uploadFile(`/api/tests/${id}/import`, form),
+  },
+
+  // ─── School Exams ──────────────────────────────
+  schoolExams: {
+    list:   (standardId) => API.get(`/api/school-exams${standardId ? `?standard_id=${standardId}` : ''}`),
+    add:    (data)       => API.post('/api/school-exams', data),
+    delete: (id)         => API.delete(`/api/school-exams/${id}`),
   },
 
   // ─── Fees ──────────────────────────────────────

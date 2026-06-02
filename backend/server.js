@@ -19,6 +19,7 @@ const testsRoutes = require('./routes/tests');
 const feesRoutes = require('./routes/fees');
 const testCyclesRoutes = require('./routes/testCycles');
 const resetRoutes = require('./routes/reset');
+const schoolExamsRoutes = require('./routes/schoolExams');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -74,6 +75,7 @@ app.use('/api/tests', requireAuth, testsRoutes);
 app.use('/api/fees', requireAuth, feesRoutes);
 app.use('/api/test-cycles', requireAuth, testCyclesRoutes);
 app.use('/api/reset', requireAuth, resetRoutes);
+app.use('/api/school-exams', requireAuth, schoolExamsRoutes);
 
 // Dashboard stats
 app.get('/api/dashboard', requireAuth, (req, res) => {
@@ -132,7 +134,7 @@ app.get('/api/dashboard', requireAuth, (req, res) => {
       const marksMap = {};
       marksRows.forEach(m => { marksMap[m.subject_id] = m; });
       const result = calculateStudentResult(student, subjects, marksMap, std.board_id_val);
-      if (result.finalStatus === 'Distinction') distinction++;
+      if (result.finalStatus === 'Distinction' || result.finalStatus === 'A1' || result.finalStatus === 'A2') distinction++;
       if (result.finalStatus === 'Fail') fail++;
       else if (result.finalStatus !== 'Pending') pass++;
     }

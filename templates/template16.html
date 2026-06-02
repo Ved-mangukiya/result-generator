@@ -3,247 +3,237 @@
 <head>
 <meta charset="UTF-8">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Chivo:wght@400;500;600;700;800;900&display=swap');
   
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Inter', sans-serif; background: #e0f2fe; color: #0369a1; }
+  
+  body {
+    font-family: 'Chivo', sans-serif;
+    background: #f8fafc;
+    color: #1e293b;
+    padding: 0;
+    margin: 0;
+  }
 
   .page {
     width: 210mm;
     min-height: 297mm;
-    background: #f0f9ff;
-    /* Grid background */
-    background-image: linear-gradient(rgba(3, 105, 161, 0.08) 1px, transparent 1px),
-                      linear-gradient(90deg, rgba(3, 105, 161, 0.08) 1px, transparent 1px);
-    background-size: 5mm 5mm;
+    background: #f8fafc;
+    position: relative;
     padding: 12mm;
     display: flex;
     flex-direction: column;
-    position: relative;
   }
 
-  .outer-border {
-    border: 2px solid #0284c7;
-    flex: 1;
+  /* Deep corporate navy frame */
+  .outer-frame {
+    border: 3px solid #1e3a8a; /* Deep navy */
+    background: #ffffff;
+    border-radius: 8px;
     padding: 4mm;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-  }
-
-  .inner-border {
-    border: 1px solid rgba(2, 132, 199, 0.4);
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 6mm;
-    background: rgba(255, 255, 255, 0.85);
+    position: relative;
+    box-shadow: 0 4px 10px rgba(30, 58, 138, 0.1);
+  }
+
+  .inner-frame {
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 5mm;
+    background: #ffffff;
   }
 
   /* Header */
-  .header {
-    display: flex;
-    align-items: center;
-    border-bottom: 2px solid #0284c7;
+  .card-header {
+    border-bottom: 3px solid #1e3a8a;
     padding-bottom: 4mm;
     margin-bottom: 5mm;
+    display: flex;
+    align-items: center;
     gap: 5mm;
   }
 
-  .coaching-logo { width: 70px; height: 70px; border-radius: 0; border: 2px solid #0284c7; object-fit: contain; background: #ffffff; }
-  .logo-placeholder { width: 70px; height: 70px; background: rgba(2, 132, 199, 0.05); border: 2px solid #0284c7; border-radius: 0; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: #0284c7; }
+  .coaching-logo { width: 70px; height: 70px; object-fit: contain; border: 2px solid #1e3a8a; padding: 2px; background: white; }
+  .logo-placeholder { width: 70px; height: 70px; background: #eff6ff; border: 2px solid #1e3a8a; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; color: #1e3a8a; }
 
-  .coaching-info { flex: 1; text-align: center; }
-  .coaching-name { font-family: 'Share Tech Mono', monospace; font-size: 20pt; font-weight: 700; color: #0369a1; letter-spacing: 1px; }
-  .coaching-tagline { font-family: 'Share Tech Mono', monospace; font-size: 9pt; color: #0284c7; margin-top: 2px; }
-  .coaching-contact { font-size: 8pt; color: #0369a1; margin-top: 3px; font-family: 'Share Tech Mono', monospace; }
+  .header-center { flex: 1; text-align: center; }
+  .header-center .inst-name { font-size: 21pt; font-weight: 900; color: #1e3a8a; letter-spacing: 0.5px; }
+  .header-center .inst-tagline { font-size: 8.5pt; color: #f97316; font-weight: 700; text-transform: uppercase; margin-top: 1px; letter-spacing: 1.5px; }
+  .header-center .inst-contact { font-size: 8pt; color: #475569; margin-top: 2px; }
 
-  .student-photo { width: 65px; height: 80px; border: 1.5px solid #0284c7; object-fit: cover; }
-  .photo-placeholder { width: 65px; height: 80px; border: 1.5px dashed rgba(2, 132, 199, 0.5); display: flex; align-items: center; justify-content: center; font-size: 7.5pt; color: #0369a1; }
+  .header-photo { width: 66px; height: 80px; border: 2px solid #1e3a8a; overflow: hidden; background: white; }
+  .header-photo img { width: 100%; height: 100%; object-fit: cover; }
+  .header-photo .photo-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #eff6ff; color: #bfdbfe; font-size: 18pt; }
 
-  .title-area {
+  /* Title Banner */
+  .title-banner {
     text-align: center;
-    margin-bottom: 5mm;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    padding: 2.5mm 0;
+    margin-bottom: 4mm;
   }
-  .title-area h2 { font-family: 'Share Tech Mono', monospace; font-size: 13pt; color: #0284c7; border-bottom: 1.5px dashed #0284c7; display: inline-block; padding-bottom: 1px; }
-  
-  /* Student details */
-  .profile-grid {
+  .title-banner h2 { font-size: 11pt; font-weight: 800; color: #1e3a8a; letter-spacing: 1.5px; text-transform: uppercase; }
+
+  /* Student Info */
+  .student-info {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 2mm 8mm;
-    background: rgba(240, 249, 255, 0.6);
-    border: 1px solid #bae6fd;
+    gap: 0 6mm;
+    padding: 4mm 5mm;
+    border: 1px solid #e2e8f0;
     border-radius: 4px;
-    padding: 3.5mm 5mm;
+    background: #f8fafc;
     margin-bottom: 5mm;
   }
-  .info-row { display: flex; font-size: 9.5pt; }
-  .info-label { color: #0284c7; font-family: 'Share Tech Mono', monospace; font-weight: 600; width: 100px; flex-shrink: 0; }
-  .info-val { color: #0369a1; font-weight: 700; }
+
+  .info-row { display: flex; align-items: center; padding: 1.2mm 0; font-size: 8.5pt; border-bottom: 1px solid #f1f5f9; }
+  .info-row:last-child { border-bottom: none; }
+  .info-label { color: #1e3a8a; font-weight: 800; min-width: 100px; }
+  .info-value { color: #334155; font-weight: 600; }
 
   /* Marks Table */
-  .marks-section { flex: 1; margin-bottom: 5mm; }
-  .marks-table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+  .marks-section { flex: 1; margin-bottom: 4mm; }
+  .marks-table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
   .marks-table th {
-    background: #0284c7;
-    color: #ffffff;
-    font-weight: 600;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 9pt;
+    background: #1e3a8a;
+    color: white;
     padding: 2.5mm 2mm;
-    border: 1px solid #0284c7;
+    text-align: center;
+    border: 1px solid #172554;
+    font-size: 8pt;
+    font-weight: 800;
   }
   .marks-table th:first-child { text-align: left; padding-left: 3mm; }
   .marks-table td {
     padding: 2mm;
-    border: 1px solid #bae6fd;
+    border: 1px solid #cbd5e1;
     text-align: center;
-    color: #0369a1;
+    vertical-align: middle;
+    font-weight: 600;
   }
-  .marks-table td:first-child { text-align: left; padding-left: 3mm; font-weight: 700; }
-  .marks-table tr:nth-child(even) { background: rgba(240, 249, 255, 0.4); }
+  .marks-table td:first-child { text-align: left; padding-left: 3mm; color: #1e3a8a; font-weight: 800; }
+  .marks-table tr:nth-child(even) { background: #f8fafc; }
 
-  .optional-tag { font-size: 7.5pt; color: #0284c7; font-family: 'Share Tech Mono', monospace; }
-  .pf-cell.pass { color: #16a34a; font-weight: 700; }
-  .pf-cell.fail { color: #dc2626; font-weight: 700; }
-  .pf-cell.absent { color: #ea580c; }
+  .optional-tag { font-size: 7pt; color: #1e3a8a; background: #eff6ff; border: 1px solid #bfdbfe; padding: 1px 4px; border-radius: 3px; }
 
-  /* Summary Row */
-  .summary-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr) 1.2fr;
+  .pf-cell.pass { color: #15803d; font-weight: 800; }
+  .pf-cell.fail { color: #b91c1c; font-weight: 800; }
+  .pf-cell.absent { color: #d97706; }
+
+  /* Summary Section */
+  .summary-section {
+    display: flex;
     gap: 3mm;
     margin-bottom: 5mm;
   }
+
   .summary-box {
-    background: rgba(240, 249, 255, 0.6);
-    border: 1px solid #bae6fd;
+    flex: 1;
+    text-align: center;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
     border-radius: 4px;
     padding: 2.5mm;
-    text-align: center;
   }
-  .summary-label { font-size: 7.5pt; text-transform: uppercase; color: #0284c7; font-family: 'Share Tech Mono', monospace; font-weight: 600; }
-  .summary-val { font-size: 11pt; font-weight: 700; color: #0369a1; margin-top: 1px; }
-  
-  .result-box {
-    background: #0284c7;
-    color: #ffffff;
+  .summary-box .s-label { font-size: 7.5pt; color: #475569; font-weight: bold; text-transform: uppercase; }
+  .summary-box .s-value { font-size: 12pt; font-weight: 800; color: #1e293b; margin-top: 1px; }
+
+  .result-status-box {
+    min-width: 44mm;
+    border: 2px solid #1e3a8a;
+    background: #eff6ff;
+    border-radius: 4px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    padding: 2mm;
   }
-  .result-box .summary-label { color: #bae6fd; }
-  .result-box .summary-val { color: #ffffff; font-family: 'Share Tech Mono', monospace; font-size: 11pt; }
+  .result-status-box .rs-label { font-size: 7.5pt; color: #1e3a8a; font-weight: bold; text-transform: uppercase; }
+  .result-status-box .rs-value { font-size: 13pt; font-weight: 800; color: var(--overall-grade-color); }
 
-  .remarks-bar {
-    border: 1px solid #bae6fd;
-    background: rgba(255, 255, 255, 0.6);
+  /* Remarks */
+  .remarks-section {
+    border: 1px solid #cbd5e1;
+    background: white;
     padding: 3mm 4mm;
-    border-radius: 4px;
-    font-size: 9.5pt;
-    margin-bottom: 5mm;
+    display: flex;
+    gap: 3mm;
+    align-items: center;
+    margin-bottom: 4mm;
+    font-size: 8.5pt;
   }
-  .remarks-label { font-weight: 700; color: #0284c7; font-family: 'Share Tech Mono', monospace; }
-  .remarks-text { color: #0369a1; font-style: italic; }
+  .remarks-label { font-weight: 700; color: #1e3a8a; white-space: nowrap; }
+  .remarks-text { color: #334155; font-style: italic; }
 
   /* Footer */
-  .footer {
+  .card-footer {
+    border-top: 2px solid #1e3a8a;
+    padding-top: 4mm;
     display: flex;
     justify-content: space-between;
-    align-items: flex-end;
-    margin-top: auto;
-    font-size: 9pt;
+    align-items: center;
+    background: transparent;
   }
-  .sign-col { text-align: center; width: 115px; }
-  .sign-line { border-bottom: 1.5px solid #0284c7; margin-bottom: 1.5mm; height: 7mm; }
-  .sign-label { font-size: 8pt; color: #0284c7; font-family: 'Share Tech Mono', monospace; font-size: 7.5pt; font-weight: 600; }
-  
-  .footer-center { text-align: center; font-size: 8.5pt; color: #0369a1; font-family: 'Share Tech Mono', monospace; }
-  .logo-blueprint { font-size: 12pt; color: #0284c7; }
 
-  /* A5 Paper size adjustments */
-  .page.size-a5 {
-    width: 148mm;
-    min-height: 210mm;
-    padding: 6mm 8mm;
-  }
-  .page.size-a5 * {
-    font-size: 92% !important;
-  }
-  .page.size-a5 .header {
-    padding-bottom: 2mm;
-    margin-bottom: 3mm;
-  }
-  .page.size-a5 .coaching-logo, .page.size-a5 .logo-placeholder {
-    width: 45px;
-    height: 45px;
-  }
-  .page.size-a5 .student-photo, .page.size-a5 .photo-placeholder {
-    width: 45px;
-    height: 55px;
-  }
-  .page.size-a5 .coaching-name {
-    font-size: 14pt !important;
-  }
-  .page.size-a5 .title-area {
-    margin-bottom: 3mm;
-  }
-  .page.size-a5 .profile-grid {
-    padding: 2mm 3mm;
-    margin-bottom: 3mm;
-  }
-  .page.size-a5 .marks-section {
-    margin-bottom: 3mm;
-  }
-  .page.size-a5 .marks-table th, .page.size-a5 .marks-table td {
-    padding: 1.2mm 1.5mm;
-  }
-  .page.size-a5 .summary-row {
-    margin-bottom: 3mm;
-  }
-  .page.size-a5 .summary-box {
-    padding: 1.5mm;
-  }
-  .page.size-a5 .remarks-bar {
-    padding: 2.2mm 3mm;
-    margin-bottom: 3mm;
-  }
-  .page.size-a5 .sign-line {
-    height: 5mm;
-  }
+  .footer-sign { text-align: center; width: 125px; }
+  .sign-line { width: 100px; border-top: 1.5px solid #1e3a8a; margin: 4mm auto 1mm; }
+  .sign-label { font-size: 7.5pt; color: #64748b; font-weight: 600; }
+
+  /* A5 Paper adjustments */
+  .page.size-a5 { width: 148mm; min-height: 210mm; padding: 5mm 6mm; }
+  .page.size-a5 * { font-size: 90% !important; }
+  .page.size-a5 .card-header { padding-bottom: 2.5mm; margin-bottom: 2.5mm; }
+  .page.size-a5 .coaching-logo, .page.size-a5 .logo-placeholder { width: 44px; height: 44px; }
+  .page.size-a5 .header-photo { width: 44px; height: 54px; }
+  .page.size-a5 .title-banner { padding: 1.5mm 0; margin-bottom: 2.5mm; }
+  .page.size-a5 .student-info { padding: 2mm 3mm; margin-bottom: 2.5mm; }
+  .page.size-a5 .marks-section { margin-bottom: 2.5mm; }
+  .page.size-a5 .marks-table th, .page.size-a5 .marks-table td { padding: 1.2mm; }
+  .page.size-a5 .summary-section { margin-bottom: 2.5mm; }
+  .page.size-a5 .remarks-section { padding: 2mm 3mm; margin-bottom: 2.5mm; }
 </style>
 </head>
 <body>
 <div class="page">
-  <div class="outer-border">
-    <div class="inner-border">
+  <div class="outer-frame">
+    <div class="inner-frame">
       
       <!-- Header -->
-      <div class="header">
+      <div class="card-header">
         {{COACHING_LOGO}}
-        <div class="coaching-info">
-          <div class="coaching-name">{{COACHING_NAME}}</div>
-          <div class="coaching-tagline">{{COACHING_TAGLINE}}</div>
-          <div class="coaching-contact">{{COACHING_ADDRESS}} | {{COACHING_PHONE}}</div>
+        <div class="header-center">
+          <div class="inst-name">{{COACHING_NAME}}</div>
+          <div class="inst-tagline">{{COACHING_TAGLINE}}</div>
+          <div class="inst-contact">{{COACHING_ADDRESS}} | {{COACHING_PHONE}} | {{COACHING_WEBSITE}}</div>
         </div>
-        {{STUDENT_PHOTO}}
+        <div class="header-photo">{{STUDENT_PHOTO}}</div>
       </div>
 
-      <!-- Title Area -->
-      <div class="title-area">
-        <h2>PERFORMANCE SCHEMATIC DATA — {{ACADEMIC_YEAR}}</h2>
+      <!-- Title Banner -->
+      <div class="title-banner">
+        <h2>📊 COMPETITIVE SCORE METRIC & JEE PERFORMANCE SHEET 📊</h2>
       </div>
 
-      <!-- Student details -->
-      <div class="profile-grid">
-        <div class="info-row"><span class="info-label">CANDIDATE:</span><span class="info-val">{{STUDENT_NAME}}</span></div>
-        <div class="info-row"><span class="info-label">REG_NUMBER:</span><span class="info-val">{{STUDENT_ROLL}}</span></div>
-        <div class="info-row"><span class="info-label">DATE_OF_BIRTH:</span><span class="info-val">{{STUDENT_DOB}}</span></div>
-        <div class="info-row"><span class="info-label">STD_LEVEL:</span><span class="info-val">{{STANDARD_DISPLAY}}</span></div>
-        <div class="info-row"><span class="info-label">PARENT_NAME:</span><span class="info-val">{{FATHER_NAME}}</span></div>
-        <div class="info-row"><span class="info-label">ATTENDANCE:</span><span class="info-val">{{ATTENDANCE}}</span></div>
+      <!-- Student Info -->
+      <div class="student-info">
+        <div>
+          <div class="info-row"><span class="info-label">Candidate Name:</span><span class="info-value">{{STUDENT_NAME}}</span></div>
+          <div class="info-row"><span class="info-label">Application No:</span><span class="info-value">{{STUDENT_ROLL}}</span></div>
+          <div class="info-row"><span class="info-label">Date of Birth:</span><span class="info-value">{{STUDENT_DOB}}</span></div>
+        </div>
+        <div>
+          <div class="info-row"><span class="info-label">Standard/Batch:</span><span class="info-value">{{STANDARD_DISPLAY}}</span></div>
+          <div class="info-row"><span class="info-label">Board / Series:</span><span class="info-value">{{BOARD_NAME}}</span></div>
+          <div class="info-row"><span class="info-label">Attendance:</span><span class="info-value">{{ATTENDANCE}}</span></div>
+        </div>
       </div>
 
       <!-- Marks Section -->
@@ -251,13 +241,13 @@
         <table class="marks-table">
           <thead>
             <tr>
-              <th style="width: 38%; text-align: left; padding-left: 3mm;">SUBJECT PARAMETER</th>
-              <th style="width: 10%;">MAX</th>
-              <th class="split-col" style="width: 10%;">INT</th>
-              <th class="split-col" style="width: 10%;">EXT</th>
-              <th style="width: 12%;">OBTAINED</th>
-              <th class="grade-col" style="width: 10%;">GRADE</th>
-              <th class="pf-col" style="width: 10%;">STATUS</th>
+              <th style="width:38%">Subject / Test Section</th>
+              <th>Max Marks</th>
+              <th class="split-col">Theory</th>
+              <th class="split-col">Objective</th>
+              <th>Score Obtained</th>
+              <th class="grade-col">Grade</th>
+              <th class="pf-col">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -266,52 +256,53 @@
         </table>
       </div>
 
-      <!-- Summary Row -->
-      <div class="summary-row">
+      <!-- Summary -->
+      <div class="summary-section">
         <div class="summary-box">
-          <div class="summary-label">TOTAL_SCORE</div>
-          <div class="summary-val">{{TOTAL_OBTAINED}} / {{TOTAL_MAX}}</div>
+          <div class="s-label">Total Score</div>
+          <div class="s-value">{{TOTAL_OBTAINED}} / {{TOTAL_MAX}}</div>
         </div>
         <div class="summary-box">
-          <div class="summary-label">PCT_CALC</div>
-          <div class="summary-val">{{OVERALL_PCT}}</div>
+          <div class="s-label">Score Percentage</div>
+          <div class="s-value">{{OVERALL_PCT}}</div>
         </div>
         <div class="summary-box">
-          <div class="summary-label">GRADE_VAL</div>
-          <div class="summary-val">{{OVERALL_GRADE}}</div>
+          <div class="s-label">Marks Rating</div>
+          <div class="s-value" style="color:var(--overall-grade-color)">{{OVERALL_GRADE}}</div>
         </div>
-        <div class="summary-box">
-          <div class="summary-label">INDEX_RANK</div>
-          <div class="summary-val">#{{RANK}} / {{TOTAL_STUDENTS}}</div>
+        <div class="summary-box" style="border-color:#f97316; background:#fff7ed">
+          <div class="s-label" style="color:#c2410c">All India / Inst. Rank</div>
+          <div class="s-value" style="color:#ea580c">#{{RANK}} / {{TOTAL_STUDENTS}}</div>
         </div>
-        <div class="summary-box result-box">
-          <div class="summary-label">FINAL_STATUS</div>
-          <div class="summary-val">{{FINAL_STATUS}}</div>
+        <div class="result-status-box" style="border-color: var(--overall-grade-color)">
+          <div class="rs-label">Qualified Status</div>
+          <div class="rs-value" style="color:var(--overall-grade-color)">{{FINAL_STATUS}}</div>
         </div>
       </div>
 
       <!-- Remarks -->
-      <div class="remarks-bar">
-        <span class="remarks-label">TUTOR_NOTES:</span>
-        <span class="remarks-text">{{REMARKS}}</span>
+      <div class="remarks-section">
+        <span class="remarks-label">Evaluator feedback:</span>
+        <span class="remarks-text">"{{REMARKS}}"</span>
       </div>
 
       <!-- Footer -->
-      <div class="footer">
-        <div class="sign-col">
+      <div class="card-footer">
+        <div class="footer-sign">
           <div class="sign-line"></div>
-          <div class="sign-label">INSPECTOR_SIG</div>
+          <div class="sign-label">Lead Coordinator</div>
         </div>
-        <div class="footer-center">
-          <div class="logo-blueprint">◱</div>
-          <div>{{COACHING_WEBSITE}}</div>
+        <div style="text-align:center;font-size:7.5pt;color:#475569">
+          JEE/NEET Competitive Exam Prep Center<br>
+          Academic Session {{ACADEMIC_YEAR}}
         </div>
-        <div class="sign-col">
-          <div class="sign-line"></div>
-          <div class="sign-label">SUPERVISOR_SIG</div>
+        <div class="footer-sign">
+          <div style="height: 34px; display: flex; align-items: center; justify-content: center; margin-bottom: 2px;">{{SIGNATURE_IMG}}</div>
+          <div class="sign-line" style="margin: 0 auto 2px; height: 1px; border: none; border-top: 1px solid currentColor;"></div>
+          <div style="font-size: 7.5pt; font-weight: 700; color: inherit; line-height: 1.1;">{{SIGNATORY_NAME}}</div>
+          <div class="sign-label" style="margin-top: 1px; font-size: 6.5pt; line-height: 1.0; text-transform: none; letter-spacing: 0;">{{SIGNATORY_TITLE}}</div>
         </div>
       </div>
-
     </div>
   </div>
 </div>
