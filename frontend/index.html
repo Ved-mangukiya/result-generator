@@ -1,15 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Apex Tuition ERP — Indian Coaching Class Tuition ERP</title>
-  <meta name="description" content="Premium tuition management ERP for Indian coaching classes. Manage admissions, track fees, schedule tests, and generate reminder notices or print-ready result cards.">
+  <meta name="description"
+    content="Premium tuition management ERP for Indian coaching classes. Manage admissions, track fees, schedule tests, and generate reminder notices or print-ready result cards.">
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap"
+    rel="stylesheet">
 
   <!-- CSS -->
   <link rel="stylesheet" href="/css/main.css">
@@ -18,531 +22,557 @@
   <link rel="stylesheet" href="/css/animations.css">
 
   <!-- Favicon -->
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎓%3C/text%3E%3C/svg%3E">
+  <link rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎓%3C/text%3E%3C/svg%3E">
 </head>
+
 <body>
 
-<!-- ══════════════════════════════════════════════ -->
-<!-- LOGIN PAGE                                     -->
-<!-- ══════════════════════════════════════════════ -->
-<div id="login-page" style="display:none;">
-  <div class="login-bg"></div>
-  <div class="login-grid"></div>
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- LOGIN PAGE                                     -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div id="login-page" style="display:none;">
+    <div class="login-bg"></div>
+    <div class="login-grid"></div>
 
-  <!-- Left Panel — Branding -->
-  <div class="login-left">
-    <div class="login-brand-logo animate-float">🎓</div>
-    <h1 class="login-brand-title">Apex Tuition ERP</h1>
-    <p class="login-brand-subtitle">
-      The complete tuition management ERP for Indian coaching classes —<br>
-      track admissions, manage fees ledger, schedule tests, and export reminders.
-    </p>
+    <!-- Left Panel — Branding -->
+    <div class="login-left">
+      <div class="login-brand-logo animate-float">🎓</div>
+      <h1 class="login-brand-title">Apex Tuition ERP</h1>
+      <p class="login-brand-subtitle">
+        The complete tuition management ERP for Indian coaching classes —<br>
+        track admissions, manage fees ledger, schedule tests, and export reminders.
+      </p>
 
-    <div class="login-features">
-      <div class="login-feature-item">
-        <div class="feature-icon">👤</div>
-        <span>Admission Details &amp; Fee Ledger Accounts</span>
+      <div class="login-features">
+        <div class="login-feature-item">
+          <div class="feature-icon">👤</div>
+          <span>Admission Details &amp; Fee Ledger Accounts</span>
+        </div>
+        <div class="login-feature-item">
+          <div class="feature-icon">📅</div>
+          <span>Grouped Test cycles &amp; Schedule reminders</span>
+        </div>
+        <div class="login-feature-item">
+          <div class="feature-icon">📊</div>
+          <span>Bulk Excel import &amp; PDF export for entire classes</span>
+        </div>
+        <div class="login-feature-item">
+          <div class="feature-icon">🏆</div>
+          <span>Auto grading, ranks, percentile &amp; result status</span>
+        </div>
       </div>
-      <div class="login-feature-item">
-        <div class="feature-icon">📅</div>
-        <span>Grouped Test cycles &amp; Schedule reminders</span>
-      </div>
-      <div class="login-feature-item">
-        <div class="feature-icon">📊</div>
-        <span>Bulk Excel import &amp; PDF export for entire classes</span>
-      </div>
-      <div class="login-feature-item">
-        <div class="feature-icon">🏆</div>
-        <span>Auto grading, ranks, percentile &amp; result status</span>
+    </div>
+
+    <!-- Right Panel — Login Form -->
+    <div class="login-right">
+      <div class="login-card">
+        <div style="text-align:center; margin-bottom: var(--space-2)">
+          <div style="font-size:2rem; margin-bottom: var(--space-3)">🎓</div>
+          <h2>Welcome Back</h2>
+          <p class="login-tagline">Sign in to your admin dashboard</p>
+        </div>
+
+        <form id="login-form">
+          <div class="form-group mb-4">
+            <label class="form-label" for="login-email">Email Address</label>
+            <input type="email" id="login-email" class="form-control" placeholder="admin@result.local" required
+              autocomplete="email">
+          </div>
+          <div class="form-group mb-6">
+            <label class="form-label" for="login-password">Password</label>
+            <div style="position:relative">
+              <input type="password" id="login-password" class="form-control" placeholder="Enter your password" required
+                autocomplete="current-password">
+              <button type="button" id="toggle-password" class="btn-ghost btn-icon"
+                style="position:absolute;right:6px;top:50%;transform:translateY(-50%)"
+                title="Show/hide password">👁</button>
+            </div>
+          </div>
+
+          <div id="login-error" class="form-error hidden" style="margin-bottom:var(--space-4)">
+            <span>⚠</span> <span id="login-error-text">Invalid credentials</span>
+          </div>
+
+          <button type="submit" id="login-btn" class="btn btn-primary w-full btn-lg">
+            <span id="login-btn-text">Sign In</span>
+            <div id="login-spinner" class="spinner spinner-sm hidden"
+              style="border-color:rgba(255,255,255,0.3);border-top-color:white"></div>
+          </button>
+
+          <p style="text-align:center;margin-top:var(--space-4);font-size:0.75rem;color:var(--text-muted)">
+            Default: admin@result.local / admin123
+          </p>
+        </form>
       </div>
     </div>
   </div>
 
-  <!-- Right Panel — Login Form -->
-  <div class="login-right">
-    <div class="login-card">
-      <div style="text-align:center; margin-bottom: var(--space-2)">
-        <div style="font-size:2rem; margin-bottom: var(--space-3)">🎓</div>
-        <h2>Welcome Back</h2>
-        <p class="login-tagline">Sign in to your admin dashboard</p>
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- ONBOARDING WIZARD                              -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div id="onboarding-overlay" style="display:none;">
+    <div class="onboarding-card">
+      <div class="onboarding-header">
+        <div style="font-size:2.5rem;margin-bottom:var(--space-3)">🏫</div>
+        <h2 id="ob-header-title" style="font-size:1.5rem; font-weight:800; color:var(--text-primary);">Set Up Your Coaching Profile</h2>
+        <p id="ob-header-subtitle" style="color:var(--text-secondary); margin-top:4px;">This information will appear on every result card you generate.</p>
       </div>
 
-      <form id="login-form">
-        <div class="form-group mb-4">
-          <label class="form-label" for="login-email">Email Address</label>
-          <input type="email" id="login-email" class="form-control" placeholder="admin@result.local" required autocomplete="email">
-        </div>
-        <div class="form-group mb-6">
-          <label class="form-label" for="login-password">Password</label>
-          <div style="position:relative">
-            <input type="password" id="login-password" class="form-control" placeholder="Enter your password" required autocomplete="current-password">
-            <button type="button" id="toggle-password" class="btn-ghost btn-icon" style="position:absolute;right:6px;top:50%;transform:translateY(-50%)" title="Show/hide password">👁</button>
+      <div class="onboarding-steps" id="onboarding-step-dots">
+        <div class="onboarding-step-dot active" data-step="0"></div>
+        <div class="onboarding-step-dot" data-step="1"></div>
+        <div class="onboarding-step-dot" data-step="2"></div>
+        <div class="onboarding-step-dot" data-step="3"></div>
+        <div class="onboarding-step-dot" data-step="4"></div>
+        <div class="onboarding-step-dot" data-step="5"></div>
+      </div>
+
+      <div class="onboarding-body">
+        <!-- Step 0: Basic Info -->
+        <div id="onboarding-step-0">
+          <p class="form-section-title">Basic Information</p>
+          <div class="form-group mb-4">
+            <label class="form-label">Coaching Name <span class="required">*</span></label>
+            <input type="text" id="ob-name" class="form-control" placeholder="e.g. Sharma Classes, Apex Institute">
+          </div>
+          <div class="form-group mb-4">
+            <label class="form-label">Tagline</label>
+            <input type="text" id="ob-tagline" class="form-control"
+              placeholder="e.g. Excellence in Education Since 2010">
+          </div>
+          <div class="form-grid mb-4">
+            <div class="form-group">
+              <label class="form-label">Year of Establishment</label>
+              <input type="number" id="ob-established-year" class="form-control" placeholder="e.g. 2015">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Primary Brand Color</label>
+              <input type="color" id="ob-color-picker" class="form-control" value="#7a6130"
+                style="padding:0 6px; height:42px; cursor:pointer">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Full Address</label>
+            <textarea id="ob-address" class="form-control" placeholder="Street, City, State — PIN Code"></textarea>
           </div>
         </div>
 
-        <div id="login-error" class="form-error hidden" style="margin-bottom:var(--space-4)">
-          <span>⚠</span> <span id="login-error-text">Invalid credentials</span>
+        <!-- Step 1: Contact & Web -->
+        <div id="onboarding-step-1" style="display:none;">
+          <p class="form-section-title">Contact &amp; Web Details</p>
+          <div class="form-grid mb-4">
+            <div class="form-group">
+              <label class="form-label">Primary Phone <span class="required">*</span></label>
+              <input type="tel" id="ob-phone" class="form-control" placeholder="+91 9876543210">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Alternate Phone</label>
+              <input type="tel" id="ob-alternate-phone" class="form-control" placeholder="+91 9876543211">
+            </div>
+          </div>
+          <div class="form-group mb-4">
+            <label class="form-label">Official Contact Email</label>
+            <input type="email" id="ob-email" class="form-control" placeholder="contact@institute.com">
+          </div>
+          <div class="form-group mb-4">
+            <label class="form-label">Website URL</label>
+            <input type="url" id="ob-website" class="form-control" placeholder="https://www.yourcoaching.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Select Accent / Swatch Theme</label>
+            <div class="color-swatch-grid mt-2">
+              <div class="color-swatch selected" data-color="#7a6130" style="background:#7a6130" title="Gold-Bronze">
+              </div>
+              <div class="color-swatch" data-color="#d4af37" style="background:#d4af37" title="Gold"></div>
+              <div class="color-swatch" data-color="#7c1d1d" style="background:#7c1d1d" title="Maroon"></div>
+              <div class="color-swatch" data-color="#0f4c2e" style="background:#0f4c2e" title="Emerald"></div>
+              <div class="color-swatch" data-color="#1a1a2e" style="background:#1a1a2e" title="Dark"></div>
+              <div class="color-swatch" data-color="#c17f24" style="background:#c17f24" title="Saffron"></div>
+              <div class="color-swatch" data-color="#4a1a6b" style="background:#4a1a6b" title="Purple"></div>
+              <div class="color-swatch" data-color="#2d4a1a" style="background:#2d4a1a" title="Forest"></div>
+            </div>
+            <input type="hidden" id="ob-color" value="#7a6130">
+          </div>
         </div>
 
-        <button type="submit" id="login-btn" class="btn btn-primary w-full btn-lg">
-          <span id="login-btn-text">Sign In</span>
-          <div id="login-spinner" class="spinner spinner-sm hidden" style="border-color:rgba(255,255,255,0.3);border-top-color:white"></div>
+        <!-- Step 2: Branding Files (Logo & Signature) -->
+        <div id="onboarding-step-2" style="display:none;">
+          <p class="form-section-title">Branding Files (Logo &amp; Signature)</p>
+          <div class="form-grid mb-4">
+            <div class="file-upload-area" id="ob-logo-area" style="padding:var(--space-4)">
+              <input type="file" id="ob-logo-file" accept="image/png,image/jpeg,image/jpg,image/webp">
+              <div id="ob-logo-preview"
+                style="display:none;flex-direction:column;align-items:center;gap:var(--space-2)">
+                <img id="ob-logo-img" src="" alt="Logo preview" style="max-height:80px;border-radius:var(--radius)">
+                <span class="text-xs text-muted">Click to change Logo</span>
+              </div>
+              <div id="ob-logo-placeholder">
+                <div class="file-upload-icon" style="font-size:1.5rem">🖼</div>
+                <p class="file-upload-text text-sm">Upload institute logo</p>
+                <p class="file-upload-hint text-xs">PNG, JPG · Max 5MB</p>
+              </div>
+            </div>
+
+            <div class="file-upload-area" id="ob-sig-area" style="padding:var(--space-4)">
+              <input type="file" id="ob-sig-file" accept="image/png,image/jpeg,image/jpg,image/webp">
+              <div id="ob-sig-preview" style="display:none;flex-direction:column;align-items:center;gap:var(--space-2)">
+                <img id="ob-sig-img" src="" alt="Signature preview" style="max-height:80px;border-radius:var(--radius)">
+                <span class="text-xs text-muted">Click to change Signature</span>
+              </div>
+              <div id="ob-sig-placeholder">
+                <div class="file-upload-icon" style="font-size:1.5rem">✍️</div>
+                <p class="file-upload-text text-sm">Upload digital signature</p>
+                <p class="file-upload-hint text-xs">PNG (transparent) · Max 5MB</p>
+              </div>
+            </div>
+          </div>
+          <div class="form-grid mb-2">
+            <div class="form-group">
+              <label class="form-label">Signatory Name</label>
+              <input type="text" id="ob-signatory-name" class="form-control" placeholder="e.g. Sharma Sir">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Designation / Title</label>
+              <input type="text" id="ob-signatory-title" class="form-control" placeholder="e.g. Director, Principal"
+                value="Director">
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Exam Configuration & Registration -->
+        <div id="onboarding-step-3" style="display:none;">
+          <p class="form-section-title">Academic &amp; Registration Setup</p>
+          <div class="form-grid mb-4">
+            <div class="form-group">
+              <label class="form-label">Registration / Licence No.</label>
+              <input type="text" id="ob-reg-no" class="form-control" placeholder="e.g. REG-2023-MAH">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Registration Authority</label>
+              <input type="text" id="ob-reg-auth" class="form-control" placeholder="e.g. Govt of Gujarat">
+            </div>
+          </div>
+          <div class="form-group mb-4">
+            <label class="form-label">How many weekly/monthly tests do you conduct in a year?</label>
+            <input type="number" id="ob-weekly-tests" class="form-control" value="40" min="0" max="150">
+            <span class="form-hint">Average count of short exams/unit tests conducted across standards.</span>
+          </div>
+          <div class="form-group mb-3">
+            <label class="toggle-group">
+              <span class="toggle">
+                <input type="checkbox" id="ob-has-midsem" checked>
+                <span class="toggle-slider"></span>
+              </span>
+              <span class="toggle-label">Conduct Semester 1 / Midterm Exam (before Diwali)</span>
+            </label>
+          </div>
+          <div class="form-group mb-4">
+            <label class="toggle-group">
+              <span class="toggle">
+                <input type="checkbox" id="ob-has-final" checked>
+                <span class="toggle-slider"></span>
+              </span>
+              <span class="toggle-label">Conduct Semester 2 / Final Exam (end of academic year)</span>
+            </label>
+          </div>
+
+          <p class="form-section-title mt-4">Advanced Exam Conduction Details</p>
+          <div class="form-grid mb-4">
+            <div class="form-group">
+              <label class="form-label">Default Exam Mode</label>
+              <select id="ob-exam-mode-default" class="form-control">
+                <option value="Offline">Offline (Written/Paper-based)</option>
+                <option value="Online">Online Portal</option>
+                <option value="Hybrid">Hybrid (OMR + Viva)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Passing Percentage (%)</label>
+              <input type="number" id="ob-passing-percentage" class="form-control" value="33" min="10" max="100">
+            </div>
+          </div>
+          <div class="form-grid mb-4">
+            <div class="form-group">
+              <label class="form-label">Default Grading Scale Format</label>
+              <select id="ob-grading-format" class="form-control">
+                <option value="State Scale">State Board Scale (A, B, C, D, Fail)</option>
+                <option value="CBSE Scale">CBSE Style (A1, A2, B1, B2...)</option>
+                <option value="Percentage Only">Percentage & Pass/Fail Status Only</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Evaluation Style</label>
+              <select id="ob-eval-style" class="form-control">
+                <option value="Manual">Manual Grading by Faculty</option>
+                <option value="OMR">OMR Optical Scan Grading</option>
+                <option value="Online Auto">Online Auto-Evaluation</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Notice Schedule Lead Time (Days in Advance)</label>
+            <input type="number" id="ob-notice-lead-days" class="form-control" value="3" min="1" max="30">
+            <span class="form-hint">How many days prior to exams should schedule notices automatically compile.</span>
+          </div>
+        </div>
+
+        <!-- Step 4: Streams & Standards Taught -->
+        <div id="onboarding-step-4" style="display:none;">
+          <p class="form-section-title">Streams &amp; Classes Taught</p>
+          <p class="text-xs text-muted mb-4" style="line-height:1.5">
+            Select which sections, board streams, entrance targets, or professional streams your academy teaches. We
+            will automatically create these classes and default subjects. **This is fully customizable and editable
+            later.**
+          </p>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:var(--space-4)">
+            <div
+              style="grid-column: span 2; font-weight:700; font-size:0.8rem; text-transform:uppercase; color:var(--accent); margin-top:4px;">
+              Individual Standards (1st to 10th)</div>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
+              <input type="checkbox" id="ob-stream-class-1" checked> <span>Class 1</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
+              <input type="checkbox" id="ob-stream-class-2" checked> <span>Class 2</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
+              <input type="checkbox" id="ob-stream-class-3" checked> <span>Class 3</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
+              <input type="checkbox" id="ob-stream-class-4" checked> <span>Class 4</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
+              <input type="checkbox" id="ob-stream-class-5" checked> <span>Class 5</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
+              <input type="checkbox" id="ob-stream-class-6" checked> <span>Class 6</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
+              <input type="checkbox" id="ob-stream-class-7" checked> <span>Class 7</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
+              <input type="checkbox" id="ob-stream-class-8" checked> <span>Class 8</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
+              <input type="checkbox" id="ob-stream-class-9" checked> <span>Class 9</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
+              <input type="checkbox" id="ob-stream-class-10" checked> <span>Class 10</span>
+            </label>
+
+            <div
+              style="grid-column: span 2; font-weight:700; font-size:0.8rem; text-transform:uppercase; color:var(--accent); margin-top:8px;">
+              Higher & Entrance Streams</div>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
+              <input type="checkbox" id="ob-stream-hsc-science"> <span>HSC Science (PCM/PCB)</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
+              <input type="checkbox" id="ob-stream-hsc-commerce"> <span>HSC Commerce</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
+              <input type="checkbox" id="ob-stream-hsc-arts"> <span>HSC Arts</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
+              <input type="checkbox" id="ob-stream-jee"> <span>JEE Main &amp; Advanced</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
+              <input type="checkbox" id="ob-stream-neet"> <span>NEET Medical</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
+              <input type="checkbox" id="ob-stream-professional"> <span>Professional Courses</span>
+            </label>
+          </div>
+          <div
+            style="background:rgba(212, 175, 55, 0.08); border-left:4px solid var(--accent); padding:10px; border-radius:var(--radius)"
+            class="text-xs text-secondary">
+            💡 <strong>Note:</strong> All standards and custom subjects will be seeded in a clean, Indian board pattern
+            structure. You can customize, reorder, delete, or add custom classes at any time.
+          </div>
+        </div>
+
+        <!-- Step 5: Academic Exam Path Planner -->
+        <div id="onboarding-step-5" style="display:none;">
+          <p class="form-section-title">Academic Exam Path Planner</p>
+          <p class="text-xs text-muted mb-3" style="line-height:1.5">
+            Review and customize the recommended exam/test cycles (exam paths) for each selected stream. You can add
+            custom exams (e.g. Unit Test 1) or delete existing ones. These cycles will group tests and marks for result
+            reporting.
+          </p>
+          <div id="ob-exam-paths-container"
+            style="max-height:280px; overflow-y:auto; padding-right:6px; display:flex; flex-direction:column; gap:12px">
+            <!-- Dynamically populated exam paths tag grids -->
+          </div>
+        </div>
+      </div>
+
+      <div class="onboarding-footer">
+        <button class="btn btn-outline" id="ob-back-btn" style="display:none" type="button">← Back</button>
+        <button class="btn btn-primary btn-lg" id="ob-next-btn" type="button">Next →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- MAIN APP SHELL (after login)                   -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div id="app" style="display:none;">
+
+    <!-- Sidebar -->
+    <nav id="sidebar" role="navigation" aria-label="Main navigation">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">🎓</div>
+        <div>
+          <div class="sidebar-brand-name">Apex Tuition ERP</div>
+          <div class="sidebar-brand-sub">Admin Panel</div>
+        </div>
+      </div>
+
+      <div class="sidebar-coaching-name">
+        <div class="coaching-chip">
+          <div class="coaching-chip-logo" id="sidebar-logo-thumb">🏫</div>
+          <div class="coaching-chip-text">
+            <div class="name" id="sidebar-coaching-name">Coaching Institute</div>
+            <div class="sub">Active Profile</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-nav">
+        <span class="nav-section-label">Main</span>
+
+        <a class="nav-item active" href="#" data-page="dashboard" id="nav-dashboard" role="menuitem">
+          <span class="nav-icon">📊</span>
+          <span>Dashboard</span>
+        </a>
+
+        <a class="nav-item" href="#" data-page="boards" id="nav-boards" role="menuitem">
+          <span class="nav-icon">🏛</span>
+          <span>Boards &amp; Classes</span>
+        </a>
+
+        <a class="nav-item" href="#" data-page="students" id="nav-students" role="menuitem">
+          <span class="nav-icon">👥</span>
+          <span>Admissions &amp; Fees</span>
+        </a>
+
+        <a class="nav-item" href="#" data-page="tests" id="nav-tests" role="menuitem">
+          <span class="nav-icon">📅</span>
+          <span>Test Scheduler</span>
+        </a>
+
+        <a class="nav-item" href="#" data-page="results" id="nav-results" role="menuitem">
+          <span class="nav-icon">📋</span>
+          <span>Results Panel</span>
+        </a>
+
+        <span class="nav-section-label" style="margin-top:var(--space-2)">Utilities</span>
+
+        <a class="nav-item" href="#" data-page="reminders" id="nav-reminders" role="menuitem">
+          <span class="nav-icon">🔔</span>
+          <span>Timetable &amp; Reminders</span>
+        </a>
+
+        <a class="nav-item" href="#" data-page="templates" id="nav-templates" role="menuitem">
+          <span class="nav-icon">🎨</span>
+          <span>Templates</span>
+        </a>
+
+        <a class="nav-item" href="#" data-page="import" id="nav-import" role="menuitem">
+          <span class="nav-icon">📥</span>
+          <span>Import Excel</span>
+        </a>
+      </div>
+
+      <div class="sidebar-footer">
+        <a class="nav-item" href="#" data-page="settings" id="nav-settings" role="menuitem">
+          <span class="nav-icon">⚙</span>
+          <span>Settings</span>
+        </a>
+        <button class="nav-item w-full" id="logout-btn" style="text-align:left;">
+          <span class="nav-icon">🚪</span>
+          <span>Sign Out</span>
         </button>
+      </div>
+    </nav>
 
-        <p style="text-align:center;margin-top:var(--space-4);font-size:0.75rem;color:var(--text-muted)">
-          Default: admin@result.local / admin123
-        </p>
-      </form>
+    <!-- Main Wrapper -->
+    <div id="main-wrapper">
+      <!-- Top Bar -->
+      <header id="topbar">
+        <div>
+          <div class="topbar-title" id="topbar-title">Dashboard</div>
+          <div class="topbar-breadcrumb" id="topbar-breadcrumb">
+            <span>Result Generator</span>
+            <span>›</span>
+            <span id="breadcrumb-current">Dashboard</span>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-outline btn-sm" id="topbar-quick-add" title="Quick Add Student">
+            ➕ Add Student
+          </button>
+          <div class="topbar-admin-chip">
+            <div class="admin-avatar" id="admin-avatar-initials">A</div>
+            <span id="topbar-admin-email">admin</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main id="page-content" aria-live="polite">
+        <!-- Pages are injected here by the router -->
+      </main>
     </div>
   </div>
-</div>
 
-<!-- ══════════════════════════════════════════════ -->
-<!-- ONBOARDING WIZARD                              -->
-<!-- ══════════════════════════════════════════════ -->
-<div id="onboarding-overlay" style="display:none;">
-  <div class="onboarding-card">
-    <div class="onboarding-header">
-      <div style="font-size:2rem;margin-bottom:var(--space-3)">🏫</div>
-      <h2>Set Up Your Coaching Profile</h2>
-      <p>This information will appear on every result card you generate.</p>
+  <!-- ══════════════════════════════════════════════ -->
+  <!-- GLOBAL OVERLAYS                                -->
+  <!-- ══════════════════════════════════════════════ -->
+
+  <!-- Toast Container -->
+  <div id="toast-container" role="alert" aria-live="assertive"></div>
+
+  <!-- Spinner Overlay (for PDF generation etc.) -->
+  <div id="spinner-overlay" class="spinner-overlay" style="display:none;">
+    <div class="orbit-loader">
+      <div class="dot" style="top:50%;left:calc(100% - 10px);transform:translateY(-50%)"></div>
+      <div class="dot" style="top:0;left:calc(50% - 5px)"></div>
+      <div class="dot" style="bottom:0;left:calc(50% - 5px)"></div>
     </div>
+    <p class="spinner-text" id="spinner-text">Generating PDF, please wait...</p>
+  </div>
 
-    <div class="onboarding-steps" id="onboarding-step-dots">
-      <div class="onboarding-step-dot active" data-step="0"></div>
-      <div class="onboarding-step-dot" data-step="1"></div>
-      <div class="onboarding-step-dot" data-step="2"></div>
-      <div class="onboarding-step-dot" data-step="3"></div>
-      <div class="onboarding-step-dot" data-step="4"></div>
-      <div class="onboarding-step-dot" data-step="5"></div>
-    </div>
-
-    <div class="onboarding-body">
-      <!-- Step 0: Basic Info -->
-      <div id="onboarding-step-0">
-        <p class="form-section-title">Basic Information</p>
-        <div class="form-group mb-4">
-          <label class="form-label">Coaching Name <span class="required">*</span></label>
-          <input type="text" id="ob-name" class="form-control" placeholder="e.g. Sharma Classes, Apex Institute">
-        </div>
-        <div class="form-group mb-4">
-          <label class="form-label">Tagline</label>
-          <input type="text" id="ob-tagline" class="form-control" placeholder="e.g. Excellence in Education Since 2010">
-        </div>
-        <div class="form-grid mb-4">
-          <div class="form-group">
-            <label class="form-label">Year of Establishment</label>
-            <input type="number" id="ob-established-year" class="form-control" placeholder="e.g. 2015">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Primary Brand Color</label>
-            <input type="color" id="ob-color-picker" class="form-control" value="#7a6130" style="padding:0 6px; height:42px; cursor:pointer">
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Full Address</label>
-          <textarea id="ob-address" class="form-control" placeholder="Street, City, State — PIN Code"></textarea>
-        </div>
+  <!-- Global Confirm Dialog -->
+  <div id="confirm-overlay" class="modal-overlay" style="display:none;">
+    <div class="modal confirm-dialog">
+      <div class="modal-body" style="text-align:center;padding:var(--space-8)">
+        <div class="confirm-icon" id="confirm-icon">⚠️</div>
+        <h3 id="confirm-title">Are you sure?</h3>
+        <p style="color:var(--text-secondary);margin-top:var(--space-2);font-size:0.875rem" id="confirm-message">This
+          action cannot be undone.</p>
       </div>
-
-      <!-- Step 1: Contact & Web -->
-      <div id="onboarding-step-1" style="display:none;">
-        <p class="form-section-title">Contact &amp; Web Details</p>
-        <div class="form-grid mb-4">
-          <div class="form-group">
-            <label class="form-label">Primary Phone <span class="required">*</span></label>
-            <input type="tel" id="ob-phone" class="form-control" placeholder="+91 9876543210">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Alternate Phone</label>
-            <input type="tel" id="ob-alternate-phone" class="form-control" placeholder="+91 9876543211">
-          </div>
-        </div>
-        <div class="form-group mb-4">
-          <label class="form-label">Official Contact Email</label>
-          <input type="email" id="ob-email" class="form-control" placeholder="contact@institute.com">
-        </div>
-        <div class="form-group mb-4">
-          <label class="form-label">Website URL</label>
-          <input type="url" id="ob-website" class="form-control" placeholder="https://www.yourcoaching.com">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Select Accent / Swatch Theme</label>
-          <div class="color-swatch-grid mt-2">
-            <div class="color-swatch selected" data-color="#7a6130" style="background:#7a6130" title="Gold-Bronze"></div>
-            <div class="color-swatch" data-color="#d4af37" style="background:#d4af37" title="Gold"></div>
-            <div class="color-swatch" data-color="#7c1d1d" style="background:#7c1d1d" title="Maroon"></div>
-            <div class="color-swatch" data-color="#0f4c2e" style="background:#0f4c2e" title="Emerald"></div>
-            <div class="color-swatch" data-color="#1a1a2e" style="background:#1a1a2e" title="Dark"></div>
-            <div class="color-swatch" data-color="#c17f24" style="background:#c17f24" title="Saffron"></div>
-            <div class="color-swatch" data-color="#4a1a6b" style="background:#4a1a6b" title="Purple"></div>
-            <div class="color-swatch" data-color="#2d4a1a" style="background:#2d4a1a" title="Forest"></div>
-          </div>
-          <input type="hidden" id="ob-color" value="#7a6130">
-        </div>
+      <div class="modal-footer" style="justify-content:center;">
+        <button class="btn btn-outline" id="confirm-cancel-btn">Cancel</button>
+        <button class="btn btn-danger" id="confirm-ok-btn">Delete</button>
       </div>
-
-      <!-- Step 2: Branding Files (Logo & Signature) -->
-      <div id="onboarding-step-2" style="display:none;">
-        <p class="form-section-title">Branding Files (Logo &amp; Signature)</p>
-        <div class="form-grid mb-4">
-          <div class="file-upload-area" id="ob-logo-area" style="padding:var(--space-4)">
-            <input type="file" id="ob-logo-file" accept="image/png,image/jpeg,image/jpg,image/webp">
-            <div id="ob-logo-preview" style="display:none;flex-direction:column;align-items:center;gap:var(--space-2)">
-              <img id="ob-logo-img" src="" alt="Logo preview" style="max-height:80px;border-radius:var(--radius)">
-              <span class="text-xs text-muted">Click to change Logo</span>
-            </div>
-            <div id="ob-logo-placeholder">
-              <div class="file-upload-icon" style="font-size:1.5rem">🖼</div>
-              <p class="file-upload-text text-sm">Upload institute logo</p>
-              <p class="file-upload-hint text-xs">PNG, JPG · Max 5MB</p>
-            </div>
-          </div>
-
-          <div class="file-upload-area" id="ob-sig-area" style="padding:var(--space-4)">
-            <input type="file" id="ob-sig-file" accept="image/png,image/jpeg,image/jpg,image/webp">
-            <div id="ob-sig-preview" style="display:none;flex-direction:column;align-items:center;gap:var(--space-2)">
-              <img id="ob-sig-img" src="" alt="Signature preview" style="max-height:80px;border-radius:var(--radius)">
-              <span class="text-xs text-muted">Click to change Signature</span>
-            </div>
-            <div id="ob-sig-placeholder">
-              <div class="file-upload-icon" style="font-size:1.5rem">✍️</div>
-              <p class="file-upload-text text-sm">Upload digital signature</p>
-              <p class="file-upload-hint text-xs">PNG (transparent) · Max 5MB</p>
-            </div>
-          </div>
-        </div>
-        <div class="form-grid mb-2">
-          <div class="form-group">
-            <label class="form-label">Signatory Name</label>
-            <input type="text" id="ob-signatory-name" class="form-control" placeholder="e.g. Sharma Sir">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Designation / Title</label>
-            <input type="text" id="ob-signatory-title" class="form-control" placeholder="e.g. Director, Principal" value="Director">
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 3: Exam Configuration & Registration -->
-      <div id="onboarding-step-3" style="display:none;">
-        <p class="form-section-title">Academic &amp; Registration Setup</p>
-        <div class="form-grid mb-4">
-          <div class="form-group">
-            <label class="form-label">Registration / Licence No.</label>
-            <input type="text" id="ob-reg-no" class="form-control" placeholder="e.g. REG-2023-MAH">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Registration Authority</label>
-            <input type="text" id="ob-reg-auth" class="form-control" placeholder="e.g. Govt of Gujarat">
-          </div>
-        </div>
-        <div class="form-group mb-4">
-          <label class="form-label">How many weekly/monthly tests do you conduct in a year?</label>
-          <input type="number" id="ob-weekly-tests" class="form-control" value="40" min="0" max="150">
-          <span class="form-hint">Average count of short exams/unit tests conducted across standards.</span>
-        </div>
-        <div class="form-group mb-3">
-          <label class="toggle-group">
-            <span class="toggle">
-              <input type="checkbox" id="ob-has-midsem" checked>
-              <span class="toggle-slider"></span>
-            </span>
-            <span class="toggle-label">Conduct Semester 1 / Midterm Exam (before Diwali)</span>
-          </label>
-        </div>
-        <div class="form-group mb-4">
-          <label class="toggle-group">
-            <span class="toggle">
-              <input type="checkbox" id="ob-has-final" checked>
-              <span class="toggle-slider"></span>
-            </span>
-            <span class="toggle-label">Conduct Semester 2 / Final Exam (end of academic year)</span>
-          </label>
-        </div>
-
-        <p class="form-section-title mt-4">Advanced Exam Conduction Details</p>
-        <div class="form-grid mb-4">
-          <div class="form-group">
-            <label class="form-label">Default Exam Mode</label>
-            <select id="ob-exam-mode-default" class="form-control">
-              <option value="Offline">Offline (Written/Paper-based)</option>
-              <option value="Online">Online Portal</option>
-              <option value="Hybrid">Hybrid (OMR + Viva)</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Passing Percentage (%)</label>
-            <input type="number" id="ob-passing-percentage" class="form-control" value="33" min="10" max="100">
-          </div>
-        </div>
-        <div class="form-grid mb-4">
-          <div class="form-group">
-            <label class="form-label">Default Grading Scale Format</label>
-            <select id="ob-grading-format" class="form-control">
-              <option value="State Scale">State Board Scale (A, B, C, D, Fail)</option>
-              <option value="CBSE Scale">CBSE Style (A1, A2, B1, B2...)</option>
-              <option value="Percentage Only">Percentage & Pass/Fail Status Only</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Evaluation Style</label>
-            <select id="ob-eval-style" class="form-control">
-              <option value="Manual">Manual Grading by Faculty</option>
-              <option value="OMR">OMR Optical Scan Grading</option>
-              <option value="Online Auto">Online Auto-Evaluation</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Notice Schedule Lead Time (Days in Advance)</label>
-          <input type="number" id="ob-notice-lead-days" class="form-control" value="3" min="1" max="30">
-          <span class="form-hint">How many days prior to exams should schedule notices automatically compile.</span>
-        </div>
-      </div>
-
-      <!-- Step 4: Streams & Standards Taught -->
-      <div id="onboarding-step-4" style="display:none;">
-        <p class="form-section-title">Streams &amp; Classes Taught</p>
-        <p class="text-xs text-muted mb-4" style="line-height:1.5">
-          Select which sections, board streams, entrance targets, or professional streams your academy teaches. We will automatically create these classes and default subjects. **This is fully customizable and editable later.**
-        </p>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:var(--space-4)">
-          <div style="grid-column: span 2; font-weight:700; font-size:0.8rem; text-transform:uppercase; color:var(--accent); margin-top:4px;">Individual Standards (1st to 10th)</div>
-          <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-            <input type="checkbox" id="ob-stream-class-1" checked> <span>Class 1</span>
-          </label>
-          <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-            <input type="checkbox" id="ob-stream-class-2" checked> <span>Class 2</span>
-          </label>
-          <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-            <input type="checkbox" id="ob-stream-class-3" checked> <span>Class 3</span>
-          </label>
-          <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-            <input type="checkbox" id="ob-stream-class-4" checked> <span>Class 4</span>
-          </label>
-          <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-            <input type="checkbox" id="ob-stream-class-5" checked> <span>Class 5</span>
-          </label>
-          <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-            <input type="checkbox" id="ob-stream-class-6" checked> <span>Class 6</span>
-          </label>
-          <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-            <input type="checkbox" id="ob-stream-class-7" checked> <span>Class 7</span>
-          </label>
-          <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-            <input type="checkbox" id="ob-stream-class-8" checked> <span>Class 8</span>
-          </label>
-          <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-            <input type="checkbox" id="ob-stream-class-9" checked> <span>Class 9</span>
-          </label>
-          <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-            <input type="checkbox" id="ob-stream-class-10" checked> <span>Class 10</span>
-          </label>
-          
-          <div style="grid-column: span 2; font-weight:700; font-size:0.8rem; text-transform:uppercase; color:var(--accent); margin-top:8px;">Higher & Entrance Streams</div>
-          <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-            <input type="checkbox" id="ob-stream-hsc-science"> <span>HSC Science (PCM/PCB)</span>
-          </label>
-          <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-            <input type="checkbox" id="ob-stream-hsc-commerce"> <span>HSC Commerce</span>
-          </label>
-          <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-            <input type="checkbox" id="ob-stream-hsc-arts"> <span>HSC Arts</span>
-          </label>
-          <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-            <input type="checkbox" id="ob-stream-jee"> <span>JEE Main &amp; Advanced</span>
-          </label>
-          <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-            <input type="checkbox" id="ob-stream-neet"> <span>NEET Medical</span>
-          </label>
-          <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-            <input type="checkbox" id="ob-stream-professional"> <span>Professional Courses</span>
-          </label>
-        </div>
-        <div style="background:rgba(212, 175, 55, 0.08); border-left:4px solid var(--accent); padding:10px; border-radius:var(--radius)" class="text-xs text-secondary">
-          💡 <strong>Note:</strong> All standards and custom subjects will be seeded in a clean, Indian board pattern structure. You can customize, reorder, delete, or add custom classes at any time.
-        </div>
-      </div>
-
-      <!-- Step 5: Academic Exam Path Planner -->
-      <div id="onboarding-step-5" style="display:none;">
-        <p class="form-section-title">Academic Exam Path Planner</p>
-        <p class="text-xs text-muted mb-3" style="line-height:1.5">
-          Review and customize the recommended exam/test cycles (exam paths) for each selected stream. You can add custom exams (e.g. Unit Test 1) or delete existing ones. These cycles will group tests and marks for result reporting.
-        </p>
-        <div id="ob-exam-paths-container" style="max-height:280px; overflow-y:auto; padding-right:6px; display:flex; flex-direction:column; gap:12px">
-          <!-- Dynamically populated exam paths tag grids -->
-        </div>
-      </div>
-    </div>
-
-    <div class="onboarding-footer">
-      <button class="btn btn-outline" id="ob-back-btn" style="display:none" type="button">← Back</button>
-      <button class="btn btn-primary btn-lg" id="ob-next-btn" type="button">Next →</button>
     </div>
   </div>
-</div>
 
-<!-- ══════════════════════════════════════════════ -->
-<!-- MAIN APP SHELL (after login)                   -->
-<!-- ══════════════════════════════════════════════ -->
-<div id="app" style="display:none;">
-
-  <!-- Sidebar -->
-  <nav id="sidebar" role="navigation" aria-label="Main navigation">
-    <div class="sidebar-header">
-      <div class="sidebar-logo">🎓</div>
-      <div>
-        <div class="sidebar-brand-name">Apex Tuition ERP</div>
-        <div class="sidebar-brand-sub">Admin Panel</div>
-      </div>
-    </div>
-
-    <div class="sidebar-coaching-name">
-      <div class="coaching-chip">
-        <div class="coaching-chip-logo" id="sidebar-logo-thumb">🏫</div>
-        <div class="coaching-chip-text">
-          <div class="name" id="sidebar-coaching-name">Coaching Institute</div>
-          <div class="sub">Active Profile</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="sidebar-nav">
-      <span class="nav-section-label">Main</span>
-
-      <a class="nav-item active" href="#" data-page="dashboard" id="nav-dashboard" role="menuitem">
-        <span class="nav-icon">📊</span>
-        <span>Dashboard</span>
-      </a>
-
-      <a class="nav-item" href="#" data-page="boards" id="nav-boards" role="menuitem">
-        <span class="nav-icon">🏛</span>
-        <span>Boards &amp; Classes</span>
-      </a>
-
-      <a class="nav-item" href="#" data-page="students" id="nav-students" role="menuitem">
-        <span class="nav-icon">👥</span>
-        <span>Admissions &amp; Fees</span>
-      </a>
-
-      <a class="nav-item" href="#" data-page="tests" id="nav-tests" role="menuitem">
-        <span class="nav-icon">📅</span>
-        <span>Test Scheduler</span>
-      </a>
-
-      <a class="nav-item" href="#" data-page="results" id="nav-results" role="menuitem">
-        <span class="nav-icon">📋</span>
-        <span>Results Panel</span>
-      </a>
-
-      <span class="nav-section-label" style="margin-top:var(--space-2)">Utilities</span>
-
-      <a class="nav-item" href="#" data-page="reminders" id="nav-reminders" role="menuitem">
-        <span class="nav-icon">🔔</span>
-        <span>Timetable &amp; Reminders</span>
-      </a>
-
-      <a class="nav-item" href="#" data-page="templates" id="nav-templates" role="menuitem">
-        <span class="nav-icon">🎨</span>
-        <span>Templates</span>
-      </a>
-
-      <a class="nav-item" href="#" data-page="import" id="nav-import" role="menuitem">
-        <span class="nav-icon">📥</span>
-        <span>Import Excel</span>
-      </a>
-    </div>
-
-    <div class="sidebar-footer">
-      <a class="nav-item" href="#" data-page="settings" id="nav-settings" role="menuitem">
-        <span class="nav-icon">⚙</span>
-        <span>Settings</span>
-      </a>
-      <button class="nav-item w-full" id="logout-btn" style="text-align:left;">
-        <span class="nav-icon">🚪</span>
-        <span>Sign Out</span>
-      </button>
-    </div>
-  </nav>
-
-  <!-- Main Wrapper -->
-  <div id="main-wrapper">
-    <!-- Top Bar -->
-    <header id="topbar">
-      <div>
-        <div class="topbar-title" id="topbar-title">Dashboard</div>
-        <div class="topbar-breadcrumb" id="topbar-breadcrumb">
-          <span>Result Generator</span>
-          <span>›</span>
-          <span id="breadcrumb-current">Dashboard</span>
-        </div>
-      </div>
-      <div class="topbar-actions">
-        <button class="btn btn-outline btn-sm" id="topbar-quick-add" title="Quick Add Student">
-          ➕ Add Student
-        </button>
-        <div class="topbar-admin-chip">
-          <div class="admin-avatar" id="admin-avatar-initials">A</div>
-          <span id="topbar-admin-email">admin</span>
-        </div>
-      </div>
-    </header>
-
-    <!-- Page Content -->
-    <main id="page-content" aria-live="polite">
-      <!-- Pages are injected here by the router -->
-    </main>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════ -->
-<!-- GLOBAL OVERLAYS                                -->
-<!-- ══════════════════════════════════════════════ -->
-
-<!-- Toast Container -->
-<div id="toast-container" role="alert" aria-live="assertive"></div>
-
-<!-- Spinner Overlay (for PDF generation etc.) -->
-<div id="spinner-overlay" class="spinner-overlay" style="display:none;">
-  <div class="orbit-loader">
-    <div class="dot" style="top:50%;left:calc(100% - 10px);transform:translateY(-50%)"></div>
-    <div class="dot" style="top:0;left:calc(50% - 5px)"></div>
-    <div class="dot" style="bottom:0;left:calc(50% - 5px)"></div>
-  </div>
-  <p class="spinner-text" id="spinner-text">Generating PDF, please wait...</p>
-</div>
-
-<!-- Global Confirm Dialog -->
-<div id="confirm-overlay" class="modal-overlay" style="display:none;">
-  <div class="modal confirm-dialog">
-    <div class="modal-body" style="text-align:center;padding:var(--space-8)">
-      <div class="confirm-icon" id="confirm-icon">⚠️</div>
-      <h3 id="confirm-title">Are you sure?</h3>
-      <p style="color:var(--text-secondary);margin-top:var(--space-2);font-size:0.875rem" id="confirm-message">This action cannot be undone.</p>
-    </div>
-    <div class="modal-footer" style="justify-content:center;">
-      <button class="btn btn-outline" id="confirm-cancel-btn">Cancel</button>
-      <button class="btn btn-danger" id="confirm-ok-btn">Delete</button>
-    </div>
-  </div>
-</div>
-
-<!-- JavaScript -->
-<script src="/js/utils.js"></script>
-<script src="/js/api.js"></script>
-<script src="/js/auth.js"></script>
-<script src="/js/dashboard.js"></script>
-<script src="/js/boards.js"></script>
-<script src="/js/students.js"></script>
-<script src="/js/results.js"></script>
-<script src="/js/templates.js"></script>
-<script src="/js/tests.js"></script>
-<script src="/js/import.js"></script>
-<script src="/js/settings.js"></script>
-<script src="/js/reminders.js"></script>
-<script src="/js/app.js"></script>
+  <!-- JavaScript -->
+  <script src="/js/utils.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/dashboard.js"></script>
+  <script src="/js/boards.js"></script>
+  <script src="/js/students.js"></script>
+  <script src="/js/results.js"></script>
+  <script src="/js/templates.js"></script>
+  <script src="/js/tests.js"></script>
+  <script src="/js/import.js"></script>
+  <script src="/js/settings.js"></script>
+  <script src="/js/reminders.js"></script>
+  <script src="/js/app.js"></script>
 
 </body>
+
 </html>

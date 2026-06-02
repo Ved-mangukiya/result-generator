@@ -22,7 +22,7 @@ async function buildResultCardHTML(studentId, templatePath) {
   if (studentId && studentId !== 'mock' && studentId !== 'null' && studentId !== 'undefined') {
     student = db.prepare('SELECT * FROM students WHERE id = ?').get(studentId);
   }
-  
+
   if (!student) {
     student = {
       id: 9999,
@@ -228,7 +228,7 @@ async function buildResultCardHTML(studentId, templatePath) {
     .pf-col { display: ${data.SHOW_PF_COL} !important; }
   </style>
   </head>`;
-  
+
   templateHTML = templateHTML.replace('</head>', dynamicStyles);
   const paperSizeClass = settings.paper_size === 'A5 Portrait' ? 'size-a5' : 'size-a4';
   templateHTML = templateHTML.replace('class="page"', `class="page ${paperSizeClass}"`);
@@ -389,10 +389,10 @@ async function generateReminderPDF(payload) {
 
   // Choose template based on notice type
   const templateMap = {
-    vacation:       'reminder_vacation.html',
-    exam_schedule:  'reminder_exam.html',
-    starting_date:  'reminder_batch.html',
-    general:        'reminder_general.html',
+    vacation: 'reminder_vacation.html',
+    exam_schedule: 'reminder_exam.html',
+    starting_date: 'reminder_batch.html',
+    general: 'reminder_general.html',
   };
   const templateFile = templateMap[type] || 'reminder_template.html';
   const templatePath = path.join(__dirname, '../../templates/', templateFile);

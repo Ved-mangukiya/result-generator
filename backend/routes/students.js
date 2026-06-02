@@ -86,20 +86,37 @@ router.get('/:id', (req, res) => {
 // POST /api/students
 router.post('/', (req, res) => {
   const { standard_id, name, roll_number, father_name, mother_name, dob, remarks, attendance_pct, admission_date, status, total_fees, elective_subjects } = req.body;
-  if (!standard_id || !name || !roll_number) return res.status(400).json({ error: 'standard_id, name, roll_number required' });
+  if (!standard_id || !name) return res.status(400).json({ error: 'standard_id and name required' });
+
+  let roll = roll_number;
+  if (!roll) {
+    try {
+      const students = db.prepare('SELECT roll_number FROM students WHERE standard_id = ?').all(standard_id);
+      let maxRoll = 0;
+      for (const s of students) {
+        const val = parseInt(s.roll_number);
+        if (!isNaN(val) && val > maxRoll) {
+          maxRoll = val;
+        }
+      }
+      roll = String(maxRoll + 1);
+    } catch (e) {
+      roll = '1';
+    }
+  }
 
   // Check duplicate roll in same standard
-  const existing = db.prepare('SELECT id FROM students WHERE standard_id = ? AND roll_number = ?').get(standard_id, roll_number);
-  if (existing) return res.status(409).json({ error: `Roll number ${roll_number} already exists in this class` });
+  const existing = db.prepare('SELECT id FROM students WHERE standard_id = ? AND roll_number = ?').get(standard_id, roll);
+  if (existing) return res.status(409).json({ error: `Roll number ${roll} already exists in this class` });
 
   const result = db.prepare(`INSERT INTO students (standard_id, name, roll_number, father_name, mother_name, dob, remarks, attendance_pct, admission_date, status, total_fees, elective_subjects)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
-      standard_id, name, roll_number, father_name || '', mother_name || '', dob || '', remarks || '', attendance_pct || null,
+      standard_id, name, roll, father_name || '', mother_name || '', dob || '', remarks || '', attendance_pct || null,
       admission_date || '', status || 'Active', parseFloat(total_fees) || 0, JSON.stringify(elective_subjects || [])
     );
   
   const std = db.prepare('SELECT display_name FROM standards WHERE id = ?').get(standard_id);
-  logActivity('STUDENT_ADD', `Enrolled student ${name} (Roll: ${roll_number}) in ${std ? std.display_name : 'Class'}`);
+  logActivity('STUDENT_ADD', `Enrolled student ${name} (Roll: ${roll}) in ${std ? std.display_name : 'Class'}`);
   res.json({ success: true, id: result.lastInsertRowid });
 });
 

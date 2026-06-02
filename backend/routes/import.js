@@ -17,16 +17,70 @@ router.post('/parse', (req, res) => {
 
 // POST /api/import/execute — execute import with column mapping
 router.post('/execute', (req, res) => {
-  const { file_path, standard_id, mapping } = req.body;
+  const { file_path, standard_id, mapping, sort_by } = req.body;
   if (!file_path || !standard_id || !mapping) {
     return res.status(400).json({ error: 'file_path, standard_id, and mapping required' });
   }
 
   try {
-    const result = importStudentsFromExcel(file_path, parseInt(standard_id), mapping);
+    const result = importStudentsFromExcel(file_path, parseInt(standard_id), mapping, sort_by);
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: 'Import failed: ' + err.message });
+  }
+});
+
+// GET /api/import/template — Download Excel template for student info import
+router.get('/template', (req, res) => {
+  try {
+    const XLSX = require('xlsx');
+    const headers = [
+      'Student Name', 
+      "Father's Name", 
+      "Mother's Name", 
+      'Date of Birth (YYYY-MM-DD)', 
+      'Admission Date (YYYY-MM-DD)', 
+      'Enrollment Status (Active/Completed/Terminated)', 
+      'Total Course Fees (INR)', 
+      'Remarks'
+    ];
+    const sampleData = [
+      headers,
+      ['Ananya Sharma', 'Rajesh Sharma', 'Sunita Sharma', '2008-05-15', '2026-06-01', 'Active', '15000', 'Regular batch'],
+      ['Aditya Patel', 'Vikram Patel', 'Meena Patel', '2008-09-20', '2026-06-01', 'Active', '18000', 'Scholarship batch']
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet(sampleData);
+    
+    worksheet['!cols'] = [
+      { wch: 25 }, // Student Name
+      { wch: 25 }, // Father's Name
+      { wch: 25 }, // Mother's Name
+      { wch: 25 }, // Date of Birth
+      { wch: 25 }, // Admission Date
+      { wch: 45 }, // Enrollment Status
+      { wch: 25 }, // Total Course Fees
+      { wch: 30 }  // Remarks
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Students Template');
+
+    const filename = 'Student_Import_Template.xlsx';
+    const outputPath = path.join(__dirname, '../../exports', filename);
+
+    const exportsDir = path.dirname(outputPath);
+    if (!fs.existsSync(exportsDir)) {
+      fs.mkdirSync(exportsDir, { recursive: true });
+    }
+
+    XLSX.writeFile(workbook, outputPath);
+    res.download(outputPath, filename, (err) => {
+      if (err) console.error('Template download error:', err);
+      try { fs.unlinkSync(outputPath); } catch(e) {}
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to generate template: ' + err.message });
   }
 });
 

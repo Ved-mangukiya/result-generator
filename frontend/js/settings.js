@@ -187,6 +187,33 @@ async function renderSettings() {
           </div>
         </div>
 
+        <div class="card mb-4" id="sync-settings-card">
+          <div class="card-header">
+            <h3>☁️ Cloud Synchronization & Backups</h3>
+            <p class="text-xs text-muted">Keep your website data securely synced or backed up</p>
+          </div>
+          <div class="card-body">
+            <p class="text-xs text-muted mb-4">
+              Export your entire coaching database (admissions, classes, timetables, and grades) as a single JSON file. You can store this backup on Google Drive or import it to sync data across hosting servers.
+            </p>
+            
+            <div style="display:flex; flex-direction:column; gap:10px" class="mb-4">
+              <button class="btn btn-outline w-full flex items-center justify-center gap-2" onclick="performCloudSyncExport()">
+                📥 Export & Download Backup JSON
+              </button>
+              
+              <label class="btn btn-outline w-full flex items-center justify-center gap-2" style="cursor:pointer; margin-bottom:0">
+                📤 Upload & Restore Backup JSON
+                <input type="file" accept=".json" style="display:none" onchange="performCloudSyncImport(this)">
+              </label>
+            </div>
+            
+            <div style="background:rgba(37, 99, 235, 0.06); border-left:3px solid var(--primary-light); padding:10px; border-radius:var(--radius);" class="text-xs text-secondary">
+              💡 <strong>Google Drive Automations:</strong> To sync automatically with Google Drive, link a custom client-side OAuth script. You can trigger backup saves dynamically on every database transaction.
+            </div>
+          </div>
+        </div>
+
         <div class="card mb-4">
           <div class="card-header"><h3>ℹ️ System Info</h3></div>
           <div class="card-body">
@@ -442,6 +469,55 @@ async function performSelectiveReset() {
   }
 }
 
+async function performCloudSyncExport() {
+  Spinner.show('Compiling backup JSON...');
+  try {
+    const data = await API.sync.export();
+    Spinner.hide();
+    
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+    const dlAnchorElem = document.createElement('a');
+    dlAnchorElem.setAttribute("href",     dataStr);
+    dlAnchorElem.setAttribute("download", `apex_tuition_sync_backup_${Date.now()}.json`);
+    dlAnchorElem.click();
+    
+    Toast.success('Export Successful', 'Database JSON backup downloaded.');
+  } catch (err) {
+    Spinner.hide();
+    Toast.error('Export Failed', err.message);
+  }
+}
+
+async function performCloudSyncImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+  
+  const ok = await Confirm.show('Restore Database Backup?', 
+    'This will wipe your current database completely and replace all tables with the data in this backup file. Are you sure?', 
+    'Restore Backup', 'btn-danger');
+  
+  if (!ok) {
+    input.value = '';
+    return;
+  }
+  
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    Spinner.show('Restoring and syncing database...');
+    try {
+      const data = JSON.parse(e.target.result);
+      await API.sync.import(data);
+      Spinner.hide();
+      Toast.success('Database Synced', 'Backup restored successfully.');
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (err) {
+      Spinner.hide();
+      Toast.error('Sync Failed', 'Invalid backup file format or error: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
 window.renderSettings = renderSettings;
 window.setProfileColor = setProfileColor;
 window.uploadLogo = uploadLogo;
@@ -452,6 +528,8 @@ window.performSelectiveReset = performSelectiveReset;
 window.showMasterResetWarning = showMasterResetWarning;
 window.cancelMasterReset = cancelMasterReset;
 window.executeMasterReset = executeMasterReset;
+window.performCloudSyncExport = performCloudSyncExport;
+window.performCloudSyncImport = performCloudSyncImport;
 
 // ─── Guided Walkthrough Tour ──────────────────────
 let _currentTourStep = 0;

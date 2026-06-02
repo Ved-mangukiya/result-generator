@@ -20,6 +20,7 @@ const feesRoutes = require('./routes/fees');
 const testCyclesRoutes = require('./routes/testCycles');
 const resetRoutes = require('./routes/reset');
 const schoolExamsRoutes = require('./routes/schoolExams');
+const syncRoutes = require('./routes/sync');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -76,6 +77,7 @@ app.use('/api/fees', requireAuth, feesRoutes);
 app.use('/api/test-cycles', requireAuth, testCyclesRoutes);
 app.use('/api/reset', requireAuth, resetRoutes);
 app.use('/api/school-exams', requireAuth, schoolExamsRoutes);
+app.use('/api/sync', requireAuth, syncRoutes);
 
 // Dashboard stats
 app.get('/api/dashboard', requireAuth, (req, res) => {

@@ -44,14 +44,39 @@ async function renderImport() {
             <p class="file-upload-text">Drop your Excel or CSV file here</p>
             <p class="file-upload-hint">Supported: .xlsx, .xls, .csv · Max 20MB</p>
           </div>
-          <div class="mt-4">
-            <p class="text-sm text-muted mb-2">📝 <strong>Tips for a clean import:</strong></p>
-            <ul class="text-sm text-muted" style="list-style:disc;padding-left:1.5rem;line-height:2">
-              <li>Row 1 should be column headers (Name, Roll, Maths, etc.)</li>
-              <li>Each subsequent row = one student</li>
-              <li>Marks columns can be named anything — you'll map them in step 2</li>
-              <li>Internal/External marks can be separate columns or a combined total</li>
-            </ul>
+          <div class="mt-5">
+            <p class="text-sm text-secondary mb-2" style="font-weight:600">📋 Expected Excel Format Specimen:</p>
+            <div class="table-wrap mb-4" style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius-sm)">
+              <table style="width:max-content; border-collapse:collapse; font-size:0.75rem; background:var(--bg-elevated)">
+                <thead>
+                  <tr style="border-bottom:1px solid var(--border)">
+                    <th style="padding:var(--space-2) var(--space-3); font-weight:600; text-align:left">Student Name</th>
+                    <th style="padding:var(--space-2) var(--space-3); font-weight:600; text-align:left">Father's Name</th>
+                    <th style="padding:var(--space-2) var(--space-3); font-weight:600; text-align:left">Mother's Name</th>
+                    <th style="padding:var(--space-2) var(--space-3); font-weight:600; text-align:left">Date of Birth</th>
+                    <th style="padding:var(--space-2) var(--space-3); font-weight:600; text-align:left">Admission Date</th>
+                    <th style="padding:var(--space-2) var(--space-3); font-weight:600; text-align:left">Enrollment Status</th>
+                    <th style="padding:var(--space-2) var(--space-3); font-weight:600; text-align:left">Total Course Fees</th>
+                    <th style="padding:var(--space-2) var(--space-3); font-weight:600; text-align:left">Remarks</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="padding:var(--space-2) var(--space-3); border-top:1px solid var(--border)">Ananya Sharma</td>
+                    <td style="padding:var(--space-2) var(--space-3); border-top:1px solid var(--border)">Rajesh Sharma</td>
+                    <td style="padding:var(--space-2) var(--space-3); border-top:1px solid var(--border)">Sunita Sharma</td>
+                    <td style="padding:var(--space-2) var(--space-3); border-top:1px solid var(--border)">2008-05-15</td>
+                    <td style="padding:var(--space-2) var(--space-3); border-top:1px solid var(--border)">2026-06-01</td>
+                    <td style="padding:var(--space-2) var(--space-3); border-top:1px solid var(--border)">Active</td>
+                    <td style="padding:var(--space-2) var(--space-3); border-top:1px solid var(--border)">15000</td>
+                    <td style="padding:var(--space-2) var(--space-3); border-top:1px solid var(--border)">Regular Batch</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <button class="btn btn-sm" onclick="downloadImportTemplate()" style="background:#16a34a; color:white; border:none; display:flex; align-items:center; gap:6px; font-weight:600; padding:var(--space-2) var(--space-3)">
+              📥 Download Excel Template
+            </button>
           </div>
         </div>
       </div>
@@ -150,7 +175,6 @@ function showImportStep(step) {
 }
 
 async function renderColumnMapping(parseResult, standardId) {
-  const subjects = await API.subjects.list(standardId);
   const headers = parseResult.headers;
   
   const headerOptions = `<option value="">— Not mapped —</option>` +
@@ -164,7 +188,9 @@ async function renderColumnMapping(parseResult, standardId) {
       father_name: ['father', 'dad', 'fathername'],
       mother_name: ['mother', 'mom', 'mothername'],
       dob: ['dob', 'birth', 'birthdate', 'dateofbirth'],
-      attendance: ['attendance', 'attend', 'att', 'present'],
+      admission_date: ['admission', 'admit', 'joined'],
+      status: ['status', 'enrollment'],
+      total_fees: ['fees', 'fee', 'course_fee', 'charge'],
       remarks: ['remark', 'remarks', 'comment', 'note'],
     };
     const pats = patterns[field] || [field];
@@ -176,18 +202,19 @@ async function renderColumnMapping(parseResult, standardId) {
     <div class="card mb-4">
       <div class="card-header">
         <h3>Step 2: Map Excel Columns</h3>
-        <p class="text-sm text-muted">Tell us which Excel column contains which data</p>
+        <p class="text-sm text-muted">Tell us which Excel column contains which student details</p>
       </div>
       <div class="card-body">
         <p class="form-section-title">Student Information Columns</p>
         <div class="grid grid-2 gap-3 mb-6">
           ${[
             ['name', 'Student Name *'],
-            ['roll_number', 'Roll Number *'],
             ['father_name', "Father's Name"],
             ['mother_name', "Mother's Name"],
             ['dob', 'Date of Birth'],
-            ['attendance', 'Attendance %'],
+            ['admission_date', 'Admission Date'],
+            ['status', 'Enrollment Status'],
+            ['total_fees', 'Total Course Fees'],
             ['remarks', 'Remarks'],
           ].map(([id, label]) => {
             const suggested = autoSuggest(id);
@@ -199,35 +226,16 @@ async function renderColumnMapping(parseResult, standardId) {
             </div>`;
           }).join('')}
         </div>
-        
-        <p class="form-section-title">Marks Columns (${subjects.length} subjects)</p>
-        <div class="table-wrap">
-          <table class="mapping-table">
-            <thead><tr><th>Subject</th><th>Marks Column (Total)</th><th>Internal Column</th><th>External Column</th></tr></thead>
-            <tbody>
-              ${subjects.map(sub => {
-                const nameWords = sub.name.toLowerCase().split(/\s+/);
-                const suggestCol = headers.find(h => nameWords.some(w => w.length > 2 && h.toLowerCase().includes(w))) || '';
-                return `<tr>
-                  <td class="mapping-field-label">
-                    ${sub.name}
-                    ${sub.marks_type === 'split' ? `<span class="badge badge-primary" style="margin-left:4px">Split</span>` : ''}
-                  </td>
-                  <td>
-                    <select class="form-control mapping-select" id="map-marks-${sub.id}">
-                      ${headerOptions.replace(`value="${suggestCol}"`, `value="${suggestCol}" selected`)}
-                    </select>
-                  </td>
-                  <td>
-                    ${sub.marks_type === 'split' ? `<select class="form-control mapping-select" id="map-int-${sub.id}">${headerOptions}</select>` : '—'}
-                  </td>
-                  <td>
-                    ${sub.marks_type === 'split' ? `<select class="form-control mapping-select" id="map-ext-${sub.id}">${headerOptions}</select>` : '—'}
-                  </td>
-                </tr>`;
-              }).join('')}
-            </tbody>
-          </table>
+
+        <p class="form-section-title mt-4">Roll Number Auto-Resequencing Option</p>
+        <div class="form-group mb-2">
+          <label class="form-label" style="font-weight:600">Select sorting criteria to generate new roll numbers for all students in this class:</label>
+          <select class="form-control" id="import-sort-by" style="max-width:400px">
+            <option value="first_name" selected>Sort Alphabetically by Student First Name (A-Z)</option>
+            <option value="surname">Sort Alphabetically by Student Surname/Last Name (A-Z)</option>
+            <option value="father_name">Sort Alphabetically by Father's Name (A-Z)</option>
+          </select>
+          <span class="form-hint">The website will automatically sort the entire class and reassign sequential roll numbers (1, 2, 3...) upon successful import.</span>
         </div>
       </div>
     </div>
@@ -253,15 +261,15 @@ async function renderColumnMapping(parseResult, standardId) {
     </div>`;
 
   document.getElementById('import-next-btn')?.addEventListener('click', () => {
-    executeImportPreview(subjects.map(s => ({ id: s.id, type: s.marks_type })));
+    executeImportPreview();
   });
 }
 
-async function executeImportPreview(subjectMeta) {
-  const mapping = buildMapping(subjectMeta);
+async function executeImportPreview() {
+  const mapping = buildMapping();
   
-  if (!mapping.name || !mapping.roll_number) {
-    Toast.error('Required', 'Please map at least Name and Roll Number columns.');
+  if (!mapping.name) {
+    Toast.error('Required', 'Please map at least the Student Name column.');
     return;
   }
   
@@ -272,7 +280,8 @@ async function executeImportPreview(subjectMeta) {
     const result = await API.import.execute({
       file_path: _importFileData.file_path,
       standard_id: _importStandardId,
-      mapping
+      mapping,
+      sort_by: document.getElementById('import-sort-by').value
     });
     
     container.innerHTML = `
@@ -319,27 +328,11 @@ async function executeImportPreview(subjectMeta) {
   }
 }
 
-function buildMapping(subjectMeta) {
+function buildMapping() {
   const mapping = {};
-  ['name','roll_number','father_name','mother_name','dob','attendance','remarks'].forEach(field => {
+  ['name','father_name','mother_name','dob','admission_date','status','total_fees','remarks'].forEach(field => {
     const el = document.getElementById(`map-${field}`);
     if (el?.value) mapping[field] = el.value;
-  });
-  
-  mapping.marks = {};
-  mapping.internal_marks = {};
-  mapping.external_marks = {};
-  
-  subjectMeta.forEach(sub => {
-    const marksEl = document.getElementById(`map-marks-${sub.id}`);
-    if (marksEl?.value) mapping.marks[sub.id] = marksEl.value;
-    
-    if (sub.type === 'split') {
-      const intEl = document.getElementById(`map-int-${sub.id}`);
-      const extEl = document.getElementById(`map-ext-${sub.id}`);
-      if (intEl?.value) mapping.internal_marks[sub.id] = intEl.value;
-      if (extEl?.value) mapping.external_marks[sub.id] = extEl.value;
-    }
   });
   
   return mapping;
@@ -349,8 +342,13 @@ function finishImport() {
   Router.navigate('students', { standardId: _importStandardId });
 }
 
+function downloadImportTemplate() {
+  window.location.href = '/api/import/template';
+}
+
 window.renderImport = renderImport;
 window.handleImportFile = handleImportFile;
 window.showImportStep = showImportStep;
 window.executeImportPreview = executeImportPreview;
 window.finishImport = finishImport;
+window.downloadImportTemplate = downloadImportTemplate;

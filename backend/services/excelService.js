@@ -25,9 +25,9 @@ function parseFilePreview(filePath) {
 
 /**
  * Import students from Excel using column mapping
- * mapping: { name: colName, roll_number: colName, father_name: colName, ... marks: { subjectId: colName } }
+ * mapping: { name: colName, father_name: colName, ... }
  */
-function importStudentsFromExcel(filePath, standardId, mapping) {
+function importStudentsFromExcel(filePath, standardId, mapping, sortBy = 'first_name') {
   const workbook = XLSX.readFile(filePath);
   const sheetName = workbook.SheetNames[0];
   const sheet = workbook.Sheets[sheetName];
@@ -45,8 +45,8 @@ function importStudentsFromExcel(filePath, standardId, mapping) {
   const errors = [];
 
   const insertStudent = db.prepare(`
-    INSERT OR IGNORE INTO students (standard_id, name, roll_number, father_name, mother_name, dob, remarks, attendance_pct)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT OR IGNORE INTO students (standard_id, name, roll_number, father_name, mother_name, dob, remarks, attendance_pct, admission_date, status, total_fees)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const upsertMark = db.prepare(`
     INSERT INTO marks (student_id, subject_id, total_marks, internal_marks, external_marks)
@@ -63,35 +63,32 @@ function importStudentsFromExcel(filePath, standardId, mapping) {
       const rowObj = headers.reduce((obj, h, idx) => { obj[h] = row[idx] !== undefined ? String(row[idx]).trim() : ''; return obj; }, {});
 
       const name = mapping.name ? (rowObj[mapping.name] || '') : '';
-      const roll = mapping.roll_number ? (rowObj[mapping.roll_number] || '') : '';
 
-      if (!name || !roll) {
+      if (!name) {
         skipped++;
         continue;
       }
 
-      // Check for duplicate roll
-      const existing = db.prepare('SELECT id FROM students WHERE standard_id = ? AND roll_number = ?').get(standardId, roll);
-      if (existing) {
-        errors.push({ row: i + 2, message: `Roll number ${roll} already exists — skipped` });
-        skipped++;
-        continue;
-      }
+      // Assign a temporary unique roll number for insertion
+      const tempRoll = `TEMP_IMP_${Date.now()}_${i}`;
 
       const result = insertStudent.run(
         standardId,
         name,
-        roll,
+        tempRoll,
         mapping.father_name ? (rowObj[mapping.father_name] || '') : '',
         mapping.mother_name ? (rowObj[mapping.mother_name] || '') : '',
         mapping.dob ? (rowObj[mapping.dob] || '') : '',
         mapping.remarks ? (rowObj[mapping.remarks] || '') : '',
-        mapping.attendance ? (parseFloat(rowObj[mapping.attendance]) || null) : null
+        null, // attendance is null
+        mapping.admission_date ? (rowObj[mapping.admission_date] || '') : '',
+        mapping.status ? (rowObj[mapping.status] || 'Active') : 'Active',
+        mapping.total_fees ? (parseFloat(rowObj[mapping.total_fees]) || 0) : 0
       );
 
       const studentId = result.lastInsertRowid;
 
-      // Insert marks
+      // Insert marks (if mapping.marks exists)
       if (mapping.marks && studentId) {
         for (const subject of subjects) {
           const col = mapping.marks[subject.id];
@@ -115,6 +112,32 @@ function importStudentsFromExcel(filePath, standardId, mapping) {
       }
       imported++;
     }
+
+    // RESEQUENCE ALL STUDENTS IN THIS CLASS ACCORDING TO USER'S OPTION
+    const allStudents = db.prepare('SELECT id, name, father_name FROM students WHERE standard_id = ?').all(standardId);
+    
+    allStudents.sort((a, b) => {
+      let valA = '';
+      let valB = '';
+      if (sortBy === 'surname') {
+        const partsA = a.name.trim().split(/\s+/);
+        const partsB = b.name.trim().split(/\s+/);
+        valA = partsA.length > 1 ? partsA[partsA.length - 1] : a.name;
+        valB = partsB.length > 1 ? partsB[partsB.length - 1] : b.name;
+      } else if (sortBy === 'father_name') {
+        valA = a.father_name || '';
+        valB = b.father_name || '';
+      } else { // first_name / default
+        valA = a.name || '';
+        valB = b.name || '';
+      }
+      return valA.localeCompare(valB, undefined, { sensitivity: 'base', numeric: true });
+    });
+
+    const updateRoll = db.prepare('UPDATE students SET roll_number = ? WHERE id = ?');
+    allStudents.forEach((s, idx) => {
+      updateRoll.run(String(idx + 1), s.id);
+    });
   });
 
   importAll();

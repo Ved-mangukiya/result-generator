@@ -121,6 +121,30 @@ function showOBStep(step) {
     if (el) el.style.display = i === step ? '' : 'none';
   }
   
+  // Dynamic conversational headers
+  const obTitles = [
+    "What is your coaching institute's name?",
+    "How can students and parents contact you?",
+    "Upload your official branding files",
+    "Configure your academic and grading rules",
+    "Which classes and streams do you teach?",
+    "Review your scheduled exam rounds"
+  ];
+  
+  const obSubtitles = [
+    "Let's start by entering the basic name, tagline, and location of your center.",
+    "These contact details and brand colors will appear at the top of your student reports.",
+    "Upload your official logo and director's signature to automatically sign report cards.",
+    "Set your passing limits, default evaluation style, and grading formats.",
+    "We will automatically set up sections and default subjects for the classes you select.",
+    "Verify the exam categories we have recommended for your streams. You can add more cycles anytime."
+  ];
+
+  const titleEl = document.getElementById('ob-header-title');
+  const subEl = document.getElementById('ob-header-subtitle');
+  if (titleEl) titleEl.textContent = obTitles[step];
+  if (subEl) subEl.textContent = obSubtitles[step];
+  
   // Update dots
   $$('.onboarding-step-dot').forEach((dot, i) => {
     dot.classList.toggle('active', i === step);

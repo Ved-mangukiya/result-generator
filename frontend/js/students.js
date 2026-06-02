@@ -195,7 +195,6 @@ async function loadStudents() {
               <th>Father's Name</th>
               <th>Class</th>
               <th>Board</th>
-              <th>Attendance</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -229,7 +228,6 @@ async function loadStudents() {
                     ${electivesHTML}
                   </td>
                   <td><span class="badge badge-primary">${s.board_short || '—'}</span></td>
-                  <td>${s.attendance_pct !== null ? s.attendance_pct + '%' : '—'}</td>
                   <td>
                     <div class="td-actions">
                       <button class="btn btn-outline btn-sm" onclick="showMarksEntry(${s.id})">📝 Marks</button>
@@ -295,32 +293,11 @@ function buildStudentForm(s) {
 
       <div class="flex-1">
         <p class="form-section-title">Personal Details</p>
-        <div class="form-grid mb-4">
-          <div class="form-group">
-            <label class="form-label">Full Name <span class="required">*</span></label>
-            <input type="text" class="form-control" id="st-name" value="${s?.name || ''}" placeholder="Student's full name">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Roll Number <span class="required">*</span></label>
-            <input type="text" class="form-control" id="st-roll" value="${s?.roll_number || ''}" placeholder="e.g. 2024001">
-          </div>
+        <input type="hidden" id="st-roll" value="${s?.roll_number || ''}">
+        <div class="form-group mb-4">
+          <label class="form-label">Full Name <span class="required">*</span></label>
+          <input type="text" class="form-control" id="st-name" value="${s?.name || ''}" placeholder="Student's full name">
         </div>
-        ${!s ? `
-        <div class="form-group mb-4" id="st-roll-option-wrap">
-          <label class="form-label" style="font-weight:600">Roll Number Assignment Option</label>
-          <div style="display:flex; gap:16px; align-items:center; margin-top:6px">
-            <label style="display:flex; align-items:center; gap:6px; font-size:0.875rem; cursor:pointer">
-              <input type="radio" name="st-roll-mode" value="append" checked onclick="toggleStudentRollMode('append')"> 
-              <span>Append Sequential (Add after last student)</span>
-            </label>
-            <label style="display:flex; align-items:center; gap:6px; font-size:0.875rem; cursor:pointer">
-              <input type="radio" name="st-roll-mode" value="resequence" onclick="toggleStudentRollMode('resequence')"> 
-              <span>Resequence Alphabetically (Changes all roll numbers in class)</span>
-            </label>
-          </div>
-          <span class="form-hint mt-1" id="st-roll-hint">Adds the student with the next sequential roll number without changing others.</span>
-        </div>
-        ` : ''}
         <div class="form-grid mb-4">
           <div class="form-group">
             <label class="form-label">Father's Name</label>
@@ -335,10 +312,6 @@ function buildStudentForm(s) {
           <div class="form-group">
             <label class="form-label">Date of Birth</label>
             <input type="date" class="form-control" id="st-dob" value="${s?.dob || ''}">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Attendance %</label>
-            <input type="number" class="form-control" id="st-attendance" value="${s?.attendance_pct ?? ''}" min="0" max="100" placeholder="e.g. 87.5">
           </div>
         </div>
         
@@ -532,8 +505,8 @@ async function saveStudent(studentId) {
     roll = 'TEMP_' + Date.now();
   }
   
-  if (!name || !roll || !standardId) {
-    Toast.error('Required Fields', 'Name, roll number, and class are required.');
+  if (!name || !standardId) {
+    Toast.error('Required Fields', 'Name and class are required.');
     return;
   }
   
@@ -550,12 +523,12 @@ async function saveStudent(studentId) {
   });
 
   const data = {
-    name, roll_number: roll,
+    name, roll_number: roll || null,
     father_name: getVal('st-father'),
     mother_name: getVal('st-mother'),
     dob: getVal('st-dob'),
     remarks: getVal('st-remarks'),
-    attendance_pct: getVal('st-attendance') ? parseFloat(getVal('st-attendance')) : null,
+    attendance_pct: null,
     standard_id: parseInt(standardId),
     admission_date: getVal('st-admission-date'),
     status: getVal('st-status') || 'Active',

@@ -157,6 +157,12 @@ const API = {
     execute: (categories) => API.post('/api/reset', { categories }),
   },
 
+  // ─── Sync ───────────────────────────────────────────
+  sync: {
+    export: () => API.get('/api/sync/export'),
+    import: (data) => API.post('/api/sync/import', data),
+  },
+
   // ─── Import ────────────────────────────────────
   import: {
     parse:   (formData)         => API.uploadFile('/api/upload/import', formData),
