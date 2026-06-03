@@ -31,8 +31,10 @@ function getGrade(boardId, percentage) {
  */
 function getFinalStatus(boardId, percentage, hasAnyFail) {
   if (hasAnyFail) return 'Fail';
-  const grade = getGrade(boardId, percentage);
-  return grade.status;
+  if (percentage !== null && percentage < getPassMark(boardId)) {
+    return 'Fail';
+  }
+  return 'Pass';
 }
 
 /**
@@ -88,12 +90,10 @@ function calculateStudentResult(student, subjects, marksMap, boardId) {
       : null;
     const grade = pct !== null ? getGrade(boardId, pct) : { label: '-', status: '-', color: '#999' };
 
-    if (subject.is_compulsory) {
-      if (!mark || (!isAbsent && obtained === null)) {
-        isPending = true;
-      } else if (pct !== null && pct < getPassMark(boardId)) {
-        hasAnyFail = true;
-      }
+    if (!mark || (!isAbsent && obtained === null)) {
+      isPending = true;
+    } else if (pct !== null && pct < getPassMark(boardId)) {
+      hasAnyFail = true;
     }
 
     if (obtained !== null) {

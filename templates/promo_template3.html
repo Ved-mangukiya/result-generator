@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Top Performers Certificate — Premium Ivory & Navy Gold</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap');
+    body {
+      margin: 0; padding: 0;
+      font-family: 'Outfit', sans-serif;
+      background-color: #faf8f5; /* Ivory white paper */
+      background-image: radial-gradient(circle at 10% 10%, rgba(212,175,55,0.08) 0%, transparent 40%),
+                        radial-gradient(circle at 90% 90%, rgba(27,42,74,0.06) 0%, transparent 40%);
+      color: #1b2a4a; /* Deep navy */
+      width: 100%; height: 100vh;
+      position: relative;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+    .border-double {
+      position: absolute;
+      top: 15px; left: 15px; right: 15px; bottom: 15px;
+      border: 3px double #d4af37;
+      border-radius: 8px;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .content {
+      position: relative;
+      z-index: 1;
+      padding: 40px;
+      height: 100%;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+    .logo { max-height: 80px; margin-bottom: 10px; }
+    .coaching-name { font-size: 24px; font-weight: 800; letter-spacing: 2px; color: #1b2a4a; text-transform: uppercase; border-bottom: 2px solid #d4af37; display: inline-block; padding-bottom: 4px; }
+    .title { font-family: 'Playfair Display', serif; font-size: 46px; font-weight: 800; margin: 10px 0; color: #1b2a4a; letter-spacing: 1px; text-shadow: 1px 1px 2px rgba(27,42,74,0.1); }
+    .subtitle { font-size: 18px; font-weight: 700; color: #d4af37; text-transform: uppercase; letter-spacing: 0.1em; }
+    
+    .students-grid {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+      width: 100%;
+    }
+    .student-card {
+      background: white;
+      border: 2px solid #1b2a4a;
+      border-top: 6px solid #d4af37;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      width: 200px;
+      position: relative;
+      box-shadow: 0 10px 25px rgba(27,42,74,0.08);
+      box-sizing: border-box;
+    }
+    .rank-badge {
+      position: absolute;
+      top: -15px; left: 50%;
+      transform: translateX(-50%);
+      background: #1b2a4a;
+      color: #faf8f5;
+      font-weight: 900;
+      font-size: 18px;
+      padding: 3px 14px;
+      border-radius: 30px;
+      box-shadow: 0 4px 10px rgba(27,42,74,0.3);
+      border: 2px solid #d4af37;
+    }
+    .student-photo {
+      width: 110px; height: 110px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #d4af37;
+      margin-bottom: 12px;
+      margin-top: 10px;
+    }
+    .student-name { font-size: 18px; font-weight: 800; margin-bottom: 5px; color: #1b2a4a; }
+    .student-marks { font-size: 26px; font-weight: 900; color: #d4af37; }
+    .marks-max { font-size: 14px; color: #64748b; }
+    .student-pct { font-size: 16px; font-weight: 700; background: rgba(27,42,74,0.05); color: #1b2a4a; display: inline-block; padding: 4px 10px; border-radius: 8px; margin-top: 8px; border: 1px solid rgba(27,42,74,0.1); }
+  </style>
+</head>
+<body>
+  <div class="border-double"></div>
+  <div class="content">
+    <div class="header">
+      {{COACHING_LOGO}}
+      <div class="coaching-name">{{COACHING_NAME}}</div>
+      <div class="title">Academic Excellence</div>
+      <div class="subtitle">TOP PERFORMERS — {{SERIES_TITLE}} ({{STANDARD_NAME}})</div>
+    </div>
+    <div class="students-grid">
+      {{STUDENTS_GRID}}
+    </div>
+  </div>
+</body>
+</html>

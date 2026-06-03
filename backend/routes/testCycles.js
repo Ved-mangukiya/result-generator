@@ -12,8 +12,10 @@ router.get('/', (req, res) => {
     SELECT tc.*,
            (SELECT COUNT(*) FROM tests t WHERE t.cycle_id = tc.id) as total_tests,
            (SELECT COUNT(DISTINCT t.id) FROM tests t 
-            JOIN test_marks tm ON tm.test_id = t.id 
-            WHERE t.cycle_id = tc.id) as completed_tests
+            LEFT JOIN test_marks tm ON tm.test_id = t.id 
+            WHERE t.cycle_id = tc.id AND 
+              (tm.id IS NOT NULL OR (t.test_date IS NOT NULL AND t.test_date != '' AND t.test_date <= date('now', 'localtime')))
+           ) as completed_tests
     FROM test_cycles tc 
     WHERE tc.standard_id = ? 
     ORDER BY tc.id DESC

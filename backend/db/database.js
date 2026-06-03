@@ -271,6 +271,15 @@ function initializeDatabase() {
       FOREIGN KEY (standard_id) REFERENCES standards(id) ON DELETE CASCADE,
       FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
     );
+
+    -- Batches for classes
+    CREATE TABLE IF NOT EXISTS batches (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      standard_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (standard_id) REFERENCES standards(id) ON DELETE CASCADE
+    );
   `);
 
   // Dynamic migrations helper
@@ -307,6 +316,23 @@ function initializeDatabase() {
   runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN grading_format TEXT DEFAULT 'State Scale'");
   runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN eval_style TEXT DEFAULT 'Manual'");
   runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN notice_lead_days INTEGER DEFAULT 3");
+  
+  // Batch system migrations
+  runMigrationSafe("ALTER TABLE students ADD COLUMN batch_id INTEGER DEFAULT NULL");
+  runMigrationSafe("ALTER TABLE tests ADD COLUMN batch_id INTEGER DEFAULT NULL");
+
+  // Calendar notes table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS calendar_notes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      note_date TEXT UNIQUE NOT NULL,
+      content TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  // School exams cycle migration
+  runMigrationSafe("ALTER TABLE school_exams ADD COLUMN cycle_id INTEGER DEFAULT NULL");
 
   // Migration to convert old Distinction, First Class labels to letter grades
   try {
@@ -316,6 +342,7 @@ function initializeDatabase() {
       UPDATE grade_scales SET label = 'C1', result_status = 'C1' WHERE label = 'Second Class';
       UPDATE grade_scales SET label = 'D', result_status = 'D' WHERE label = 'Pass Class';
       UPDATE grade_scales SET label = 'D', result_status = 'D' WHERE label = 'Pass';
+      UPDATE grade_scales SET label = 'E', result_status = 'Fail' WHERE label = 'Fail';
       UPDATE result_card_settings SET result_categories = '["A1","A2","B1","B2","C1","C2","D","Fail"]' WHERE result_categories LIKE '%Distinction%';
     `);
   } catch (e) {

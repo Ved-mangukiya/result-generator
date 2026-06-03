@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Top Performers Certificate</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap');
+    body {
+      margin: 0; padding: 0;
+      font-family: 'Montserrat', sans-serif;
+      background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+      color: white;
+      width: 297mm; height: 210mm; /* A4 Landscape */
+      position: relative;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+    .bg-decoration {
+      position: absolute;
+      width: 150%; height: 150%;
+      top: -25%; left: -25%;
+      background: radial-gradient(circle at center, rgba(212,175,55,0.15) 0%, transparent 60%);
+      z-index: 0;
+    }
+    .content {
+      position: relative;
+      z-index: 1;
+      padding: 40px;
+      height: 100%;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+    .logo { max-height: 80px; margin-bottom: 10px; }
+    .coaching-name { font-size: 24px; font-weight: 800; letter-spacing: 2px; color: #d4af37; text-transform: uppercase; }
+    .title { font-size: 46px; font-weight: 900; margin: 10px 0; text-shadow: 0 4px 10px rgba(0,0,0,0.5); letter-spacing: 1px; }
+    .subtitle { font-size: 20px; font-weight: 700; color: #9ca3af; }
+    
+    .students-grid {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+      width: 100%;
+    }
+    .student-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid rgba(212, 175, 55, 0.3);
+      border-radius: 20px;
+      padding: 20px;
+      text-align: center;
+      width: 200px;
+      position: relative;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      transition: transform 0.3s ease;
+    }
+    .rank-badge {
+      position: absolute;
+      top: -15px; left: 50%;
+      transform: translateX(-50%);
+      background: #d4af37;
+      color: #111;
+      parent-color: #111;
+      font-weight: 900;
+      font-size: 20px;
+      padding: 3px 12px;
+      border-radius: 20px;
+      box-shadow: 0 5px 15px rgba(212,175,55,0.4);
+    }
+    .student-photo {
+      width: 110px; height: 110px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid #d4af37;
+      margin-bottom: 12px;
+      margin-top: 10px;
+    }
+    .student-name { font-size: 18px; font-weight: 800; margin-bottom: 5px; color: #f3f4f6; }
+    .student-marks { font-size: 26px; font-weight: 900; color: #d4af37; }
+    .marks-max { font-size: 14px; color: #9ca3af; }
+    .student-pct { font-size: 16px; font-weight: 700; background: rgba(255,255,255,0.1); display: inline-block; padding: 4px 10px; border-radius: 12px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="bg-decoration"></div>
+  <div class="content">
+    <div class="header">
+      {{COACHING_LOGO}}
+      <div class="coaching-name">{{COACHING_NAME}}</div>
+      <div class="title">CONGRATULATIONS</div>
+      <div class="subtitle">TOP SCORERS — {{SERIES_TITLE}} ({{STANDARD_NAME}})</div>
+    </div>
+    <div class="students-grid">
+      {{STUDENTS_GRID}}
+    </div>
+  </div>
+</body>
+</html>

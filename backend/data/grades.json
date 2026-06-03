@@ -8,7 +8,7 @@
       { "label": "C1", "min_pct": 51, "max_pct": 60, "color": "#f0a500", "result_status": "C1" },
       { "label": "C2", "min_pct": 41, "max_pct": 50, "color": "#f5bc42", "result_status": "C2" },
       { "label": "D",  "min_pct": 33, "max_pct": 40, "color": "#e07b39", "result_status": "D" },
-      { "label": "Fail",  "min_pct": 0,  "max_pct": 32, "color": "#d32f2f", "result_status": "Fail" }
+      { "label": "E",  "min_pct": 0,  "max_pct": 32, "color": "#d32f2f", "result_status": "Fail" }
     ],
     "ICSE": [
       { "label": "A1", "min_pct": 90, "max_pct": 100, "color": "#1a7a2e", "result_status": "A1" },
@@ -18,7 +18,7 @@
       { "label": "C1", "min_pct": 50, "max_pct": 59,  "color": "#f0a500", "result_status": "C1" },
       { "label": "C2", "min_pct": 40, "max_pct": 49,  "color": "#f5bc42", "result_status": "C2" },
       { "label": "D",  "min_pct": 35, "max_pct": 39,  "color": "#e07b39", "result_status": "D" },
-      { "label": "Fail",  "min_pct": 0,  "max_pct": 34,  "color": "#d32f2f", "result_status": "Fail" }
+      { "label": "E",  "min_pct": 0,  "max_pct": 34,  "color": "#d32f2f", "result_status": "Fail" }
     ],
     "STATE": [
       { "label": "A1", "min_pct": 90, "max_pct": 100, "color": "#1a7a2e", "result_status": "A1" },
@@ -28,7 +28,7 @@
       { "label": "C1", "min_pct": 50, "max_pct": 59,  "color": "#f0a500", "result_status": "C1" },
       { "label": "C2", "min_pct": 40, "max_pct": 49,  "color": "#f5bc42", "result_status": "C2" },
       { "label": "D",  "min_pct": 33, "max_pct": 39,  "color": "#e07b39", "result_status": "D" },
-      { "label": "Fail", "min_pct": 0,  "max_pct": 32, "color": "#d32f2f", "result_status": "Fail" }
+      { "label": "E", "min_pct": 0,  "max_pct": 32, "color": "#d32f2f", "result_status": "Fail" }
     ]
   },
   "boardGradeMap": {

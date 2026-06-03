@@ -10,7 +10,17 @@ let _currentStudentsTab = 'directory'; // 'directory', 'admissions', 'fees'
 
 async function renderStudents(params = {}) {
   setPageTitle('Admissions & Fees', 'Admissions & Fees');
-  _studentsStandardId = params.standardId || null;
+  
+  if (params.standardId) {
+    _studentsStandardId = parseInt(params.standardId);
+    localStorage.setItem('tuition_erp_students_standard_id', _studentsStandardId);
+  } else {
+    const cachedStd = localStorage.getItem('tuition_erp_students_standard_id');
+    _studentsStandardId = (cachedStd && cachedStd !== 'null') ? parseInt(cachedStd) : null;
+  }
+  
+  _studentsSearch = localStorage.getItem('tuition_erp_students_search') || '';
+  _currentStudentsTab = localStorage.getItem('tuition_erp_students_tab') || 'directory';
   
   document.getElementById('page-content').innerHTML = `
     <div class="page-header">
@@ -21,6 +31,7 @@ async function renderStudents(params = {}) {
       <div class="page-header-actions">
         <button class="btn btn-outline btn-sm" onclick="resequenceRollNumbers()">🔢 Resequence Rolls</button>
         <button class="btn btn-outline btn-sm" onclick="Router.navigate('import')">📥 Import Excel</button>
+        <button class="btn btn-outline btn-sm" onclick="showDirectGridAdmissionModal()">📊 Direct Grid Entry</button>
         <button class="btn btn-primary btn-sm" onclick="showAddStudentModal()">➕ Add Student</button>
       </div>
     </div>
@@ -42,6 +53,7 @@ async function renderStudents(params = {}) {
 
 async function switchStudentsTab(tab) {
   _currentStudentsTab = tab;
+  localStorage.setItem('tuition_erp_students_tab', tab);
   
   const btnDir = document.getElementById('btn-tab-directory');
   const btnAdm = document.getElementById('btn-tab-admissions');
@@ -67,6 +79,9 @@ async function switchStudentsTab(tab) {
             </div>
             <select class="form-control" style="width:260px" id="student-filter-std" onchange="filterByStandard(this.value)">
               <option value="">All Classes</option>
+            </select>
+            <select class="form-control" style="width:260px; display:none" id="student-filter-batch" onchange="filterByBatch(this.value)">
+              <option value="">All Batches</option>
             </select>
           </div>
         </div>
@@ -165,9 +180,14 @@ async function loadStudents() {
   try {
     const body = document.getElementById('students-body');
     const stdId = document.getElementById('student-filter-std')?.value || _studentsStandardId;
+    const batchId = document.getElementById('student-filter-batch')?.value || '';
     const search = document.getElementById('student-search')?.value || '';
     
     _studentsList = await API.students.list(stdId, search);
+    if (batchId) {
+      _studentsList = _studentsList.filter(s => s.batch_id == batchId);
+    }
+    
     document.getElementById('student-count').textContent = _studentsList.length;
     
     if (_studentsList.length === 0) {
@@ -225,6 +245,7 @@ async function loadStudents() {
                   <td>${s.father_name || '—'}</td>
                   <td class="text-sm">
                     <div>${s.standard_name || '—'}</div>
+                    <div class="text-muted text-xs">${s.batch_name || ''}</div>
                     ${electivesHTML}
                   </td>
                   <td><span class="badge badge-primary">${s.board_short || '—'}</span></td>
@@ -247,11 +268,28 @@ async function loadStudents() {
 
 function searchStudents(val) {
   _studentsSearch = val;
+  localStorage.setItem('tuition_erp_students_search', val);
   loadStudents();
 }
 
-function filterByStandard(val) {
-  _studentsStandardId = val || null;
+function filterByStandard(val, skipLoad = false) {
+  _studentsStandardId = val ? parseInt(val) : null;
+  localStorage.setItem('tuition_erp_students_standard_id', _studentsStandardId);
+  const batchSelect = document.getElementById('student-filter-batch');
+  if (val) {
+    API.batches.list(val).then(batches => {
+      batchSelect.innerHTML = '<option value="">All Batches</option>' + batches.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+      batchSelect.style.display = 'block';
+      if (!skipLoad) loadStudents();
+    }).catch(() => { if (!skipLoad) loadStudents(); });
+  } else {
+    batchSelect.style.display = 'none';
+    batchSelect.value = '';
+    if (!skipLoad) loadStudents();
+  }
+}
+
+function filterByBatch(val) {
   loadStudents();
 }
 
@@ -316,11 +354,19 @@ function buildStudentForm(s) {
         </div>
         
         <p class="form-section-title">Class Assignment</p>
-        <div class="form-group mb-4">
-          <label class="form-label">Board & Class <span class="required">*</span></label>
-          <select class="form-control" id="st-standard" onchange="onStudentStandardChange(this.value)">
-            <option value="">— Select Class —</option>
-          </select>
+        <div class="form-grid mb-4">
+          <div class="form-group">
+            <label class="form-label">Board & Class <span class="required">*</span></label>
+            <select class="form-control" id="st-standard" onchange="onStudentStandardChange(this.value, null, '${s?.batch_id || ''}')">
+              <option value="">— Select Class —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Batch</label>
+            <select class="form-control" id="st-batch">
+              <option value="">— All Batches —</option>
+            </select>
+          </div>
         </div>
 
         <div id="st-electives-section" style="margin-top:15px; display:none; margin-bottom: 1.5rem">
@@ -358,7 +404,7 @@ function buildStudentForm(s) {
     </div>`;
 }
 
-async function onStudentStandardChange(standardId, student = null) {
+async function onStudentStandardChange(standardId, student = null, currentBatchId = '') {
   if (!standardId) {
     const section = document.getElementById('st-electives-section');
     if (section) section.style.display = 'none';
@@ -366,6 +412,17 @@ async function onStudentStandardChange(standardId, student = null) {
   }
   await autoFillNextRoll(standardId);
   await renderElectiveSubjectsChecklist(standardId, student);
+  
+  // Load batches
+  const batchSelect = document.getElementById('st-batch');
+  if (batchSelect) {
+    try {
+      const batches = await API.batches.list(standardId);
+      batchSelect.innerHTML = '<option value="">— All Batches —</option>' + batches.map(b => `<option value="${b.id}" ${currentBatchId == b.id ? 'selected' : ''}>${b.name}</option>`).join('');
+    } catch (e) {
+      batchSelect.innerHTML = '<option value="">— All Batches —</option>';
+    }
+  }
 }
 
 async function renderElectiveSubjectsChecklist(standardId, student) {
@@ -530,6 +587,7 @@ async function saveStudent(studentId) {
     remarks: getVal('st-remarks'),
     attendance_pct: null,
     standard_id: parseInt(standardId),
+    batch_id: getVal('st-batch') ? parseInt(getVal('st-batch')) : null,
     admission_date: getVal('st-admission-date'),
     status: getVal('st-status') || 'Active',
     total_fees: parseFloat(getVal('st-total-fees')) || 0,
@@ -826,6 +884,7 @@ window.toggleStudentRollMode = toggleStudentRollMode;
 async function loadAdmissionsTab(standardId) {
   if (!standardId) return;
   _studentsStandardId = parseInt(standardId);
+  localStorage.setItem('tuition_erp_students_standard_id', _studentsStandardId);
   const container = document.getElementById('admissions-tab-body');
   if (!container) return;
   container.innerHTML = `<div class="empty-state"><div class="animate-pulse" style="font-size:2rem">🏛</div><p class="text-muted text-sm mt-2">Loading admissions data...</p></div>`;
@@ -920,6 +979,7 @@ async function updateStudentAdmissionStatus(studentId, newStatus) {
 async function loadFeesTab(standardId) {
   if (!standardId) return;
   _studentsStandardId = parseInt(standardId);
+  localStorage.setItem('tuition_erp_students_standard_id', _studentsStandardId);
   const container = document.getElementById('fees-tab-body');
   if (!container) return;
   container.innerHTML = `<div class="empty-state"><div class="animate-pulse" style="font-size:2rem">💰</div><p class="text-muted text-sm mt-2">Loading fees ledger...</p></div>`;
@@ -1153,6 +1213,328 @@ async function loadFeesDropdown() {
   } catch {}
 }
 
+async function showDirectGridAdmissionModal() {
+  createModal('direct-grid-admission-modal', '📊 Direct Grid Admission Entry',
+    `<div style="padding:var(--space-2)">
+      <div class="flex gap-4 mb-4 flex-wrap">
+        <div class="form-group" style="flex:1;min-width:200px">
+          <label class="form-label" style="font-weight:600">Select Class <span class="required">*</span></label>
+          <select class="form-control" id="grid-adm-standard" onchange="loadGridAdmissionBatches(this.value)">
+            <option value="">— Select Class —</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1;min-width:200px">
+          <label class="form-label" style="font-weight:600">Select Batch</label>
+          <select class="form-control" id="grid-adm-batch">
+            <option value="">— Select Batch (Optional) —</option>
+          </select>
+        </div>
+      </div>
+      <div style="max-height:450px; overflow-y:auto; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg-elevated)" class="mb-4">
+        <table style="width:100%; border-collapse:collapse" class="marks-table">
+          <thead style="position:sticky; top:0; z-index:10; background:var(--bg-surface)">
+            <tr style="border-bottom:1px solid var(--border)">
+              <th style="padding:8px; text-align:center; width:10%">Roll No.</th>
+              <th style="padding:8px; text-align:left; width:30%">Student Name *</th>
+              <th style="padding:8px; text-align:left; width:18%">Date of Birth</th>
+              <th style="padding:8px; text-align:left; width:18%">Father's Name</th>
+              <th style="padding:8px; text-align:left; width:18%">Mother's Name</th>
+              <th style="padding:8px; text-align:left; width:12%">Total Fees</th>
+              <th style="padding:8px; text-align:left; width:12%">Paid Fees</th>
+            </tr>
+          </thead>
+          <tbody id="grid-adm-tbody">
+            <!-- Populated with rows -->
+          </tbody>
+        </table>
+      </div>
+      <div class="flex justify-between items-center bg-surface p-3 rounded" style="border:1px solid var(--border)">
+        <button class="btn btn-outline btn-sm" onclick="addGridAdmissionRow()">➕ Add Row</button>
+        <p class="text-xs text-muted" style="margin:0">💡 Press <kbd>Enter</kbd> or <kbd>Tab</kbd> on the last cell to append a new row. Use Arrow keys to navigate. Press <kbd>Ctrl + S</kbd> to Save.</p>
+      </div>
+    </div>`,
+    `<button class="btn btn-outline" onclick="closeModal('direct-grid-admission-modal')">Cancel</button>
+     <button class="btn btn-primary" onclick="saveDirectGridAdmissions()">💾 Bulk Save Admissions</button>`,
+    'modal-xl'
+  );
+
+  // Clear tbody
+  document.getElementById('grid-adm-tbody').innerHTML = '';
+  
+  // Add 5 default rows
+  for (let i = 0; i < 5; i++) {
+    addGridAdmissionRow();
+  }
+  
+  // Load standard and batches
+  await loadGridAdmissionStandardsDropdown(_studentsStandardId);
+  
+  // Bind Ctrl+S shortcut inside modal
+  if (!window._gridAdmSaveShortcutBound) {
+    window._gridAdmSaveShortcutBound = true;
+    window.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 's') {
+        const modal = document.getElementById('direct-grid-admission-modal');
+        if (modal && modal.style.display !== 'none') {
+          e.preventDefault();
+          saveDirectGridAdmissions();
+        }
+      }
+    });
+  }
+}
+
+function addGridAdmissionRow() {
+  const tbody = document.getElementById('grid-adm-tbody');
+  if (!tbody) return;
+  const rowCount = tbody.children.length;
+  const tr = document.createElement('tr');
+  tr.dataset.rowIdx = rowCount;
+  tr.innerHTML = `
+    <td style="padding:4px;"><input type="text" class="form-control grid-adm-roll" placeholder="Auto" data-row="${rowCount}" data-col="0" style="text-align:center; padding:var(--space-1) var(--space-2)"></td>
+    <td style="padding:4px;"><input type="text" class="form-control grid-adm-name" placeholder="Full Name" data-row="${rowCount}" data-col="1" style="font-weight:600; padding:var(--space-1) var(--space-2)"></td>
+    <td style="padding:4px;"><input type="text" class="form-control grid-adm-dob" placeholder="DD/MM/YYYY" data-row="${rowCount}" data-col="2" style="padding:var(--space-1) var(--space-2)"></td>
+    <td style="padding:4px;"><input type="text" class="form-control grid-adm-father" placeholder="Father's Name" data-row="${rowCount}" data-col="3" style="padding:var(--space-1) var(--space-2)"></td>
+    <td style="padding:4px;"><input type="text" class="form-control grid-adm-mother" placeholder="Mother's Name" data-row="${rowCount}" data-col="4" style="padding:var(--space-1) var(--space-2)"></td>
+    <td style="padding:4px;"><input type="number" class="form-control grid-adm-total-fees" placeholder="0" data-row="${rowCount}" data-col="5" style="padding:var(--space-1) var(--space-2)"></td>
+    <td style="padding:4px;"><input type="number" class="form-control grid-adm-paid-fees" placeholder="0" data-row="${rowCount}" data-col="6" style="padding:var(--space-1) var(--space-2)"></td>
+  `;
+  tbody.appendChild(tr);
+  setupGridAdmissionKeyboardNavigation();
+}
+
+function setupGridAdmissionKeyboardNavigation() {
+  // Clear any previous event listeners by cloning
+  const newInputs = Array.from(document.querySelectorAll('#grid-adm-tbody input'));
+  newInputs.forEach(input => {
+    const cloned = input.cloneNode(true);
+    input.replaceWith(cloned);
+  });
+  
+  const inputs = Array.from(document.querySelectorAll('#grid-adm-tbody input'));
+  inputs.forEach(input => {
+    input.addEventListener('keydown', (e) => {
+      const row = parseInt(input.dataset.row);
+      const col = parseInt(input.dataset.col);
+      const maxRows = document.getElementById('grid-adm-tbody').children.length;
+      
+      let targetRow = row;
+      let targetCol = col;
+      let handled = false;
+      
+      if (e.key === 'ArrowUp') {
+        targetRow = Math.max(0, row - 1);
+        handled = true;
+      } else if (e.key === 'ArrowDown') {
+        targetRow = Math.min(maxRows - 1, row + 1);
+        handled = true;
+      } else if (e.key === 'Tab') {
+        if (e.shiftKey) {
+          if (col === 0 && row > 0) {
+            targetRow = row - 1;
+            targetCol = 6;
+            handled = true;
+          } else if (col > 0) {
+            targetCol = col - 1;
+            handled = true;
+          }
+        } else {
+          if (col === 6) {
+            if (row === maxRows - 1) {
+              e.preventDefault();
+              addGridAdmissionRow();
+              setTimeout(() => {
+                const nextInput = document.querySelector(`#grid-adm-tbody input[data-row="${row + 1}"][data-col="0"]`);
+                if (nextInput) {
+                  nextInput.focus();
+                  nextInput.select();
+                }
+              }, 10);
+              return;
+            } else {
+              targetRow = row + 1;
+              targetCol = 0;
+              handled = true;
+            }
+          } else {
+            targetCol = col + 1;
+            handled = true;
+          }
+        }
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (row === maxRows - 1 && col === 6) {
+          addGridAdmissionRow();
+          setTimeout(() => {
+            const nextInput = document.querySelector(`#grid-adm-tbody input[data-row="${row + 1}"][data-col="0"]`);
+            if (nextInput) {
+              nextInput.focus();
+              nextInput.select();
+            }
+          }, 10);
+          return;
+        } else if (col === 6) {
+          targetRow = row + 1;
+          targetCol = 0;
+          handled = true;
+        } else {
+          targetCol = col + 1;
+          handled = true;
+        }
+      }
+      
+      if (handled) {
+        e.preventDefault();
+        const nextInput = document.querySelector(`#grid-adm-tbody input[data-row="${targetRow}"][data-col="${targetCol}"]`);
+        if (nextInput) {
+          nextInput.focus();
+          nextInput.select();
+        }
+      }
+    });
+  });
+}
+
+async function loadGridAdmissionStandardsDropdown(selectedStandardId) {
+  try {
+    const boards = await API.boards.list();
+    const sel = document.getElementById('grid-adm-standard');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— Select Class —</option>';
+    for (const board of boards) {
+      const standards = await API.boards.getStandards(board.id);
+      if (standards.length > 0) {
+        const grp = document.createElement('optgroup');
+        grp.label = board.short_name;
+        standards.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s.id;
+          opt.textContent = s.display_name;
+          if (selectedStandardId && parseInt(selectedStandardId) === s.id) {
+            opt.selected = true;
+          }
+          grp.appendChild(opt);
+        });
+        sel.appendChild(grp);
+      }
+    }
+    
+    if (sel.value) {
+      await loadGridAdmissionBatches(sel.value);
+    }
+  } catch {}
+}
+
+async function loadGridAdmissionBatches(standardId) {
+  const batchSelect = document.getElementById('grid-adm-batch');
+  if (!batchSelect) return;
+  batchSelect.innerHTML = '<option value="">— Select Batch (Optional) —</option>';
+  if (!standardId) return;
+  
+  try {
+    const batches = await API.batches.list(standardId);
+    batches.forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b.id;
+      opt.textContent = b.name;
+      batchSelect.appendChild(opt);
+    });
+  } catch {}
+}
+
+async function saveDirectGridAdmissions() {
+  const stdId = document.getElementById('grid-adm-standard').value;
+  if (!stdId) {
+    Toast.error('Required Class', 'Please select a Class.');
+    return;
+  }
+  
+  const batchId = document.getElementById('grid-adm-batch').value || null;
+  const tbody = document.getElementById('grid-adm-tbody');
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  const studentsToInsert = [];
+  
+  for (const tr of rows) {
+    const nameInput = tr.querySelector('.grid-adm-name');
+    if (!nameInput) continue;
+    const name = nameInput.value.trim();
+    if (!name) continue;
+    
+    const roll = tr.querySelector('.grid-adm-roll').value.trim();
+    const dobInput = tr.querySelector('.grid-adm-dob').value.trim();
+    const father = tr.querySelector('.grid-adm-father').value.trim();
+    const mother = tr.querySelector('.grid-adm-mother').value.trim();
+    const totalFees = parseFloat(tr.querySelector('.grid-adm-total-fees').value) || 0;
+    const paidFees = parseFloat(tr.querySelector('.grid-adm-paid-fees').value) || 0;
+    
+    let dobParsed = '';
+    if (dobInput) {
+      const parts = dobInput.split('/');
+      if (parts.length === 3) {
+        const d = parts[0].padStart(2, '0');
+        const m = parts[1].padStart(2, '0');
+        const y = parts[2];
+        dobParsed = `${y}-${m}-${d}`;
+      } else {
+        dobParsed = dobInput;
+      }
+    }
+    
+    studentsToInsert.push({
+      name,
+      roll_number: roll || null,
+      dob: dobParsed,
+      father_name: father,
+      mother_name: mother,
+      total_fees: totalFees,
+      paid_fees: paidFees
+    });
+  }
+  
+  if (studentsToInsert.length === 0) {
+    Toast.warning('Empty Data', 'Please enter at least one student with a Name.');
+    return;
+  }
+  
+  Spinner.show('Creating students...');
+  try {
+    for (const student of studentsToInsert) {
+      const data = {
+        standard_id: parseInt(stdId),
+        batch_id: batchId ? parseInt(batchId) : null,
+        name: student.name,
+        roll_number: student.roll_number,
+        dob: student.dob,
+        father_name: student.father_name,
+        mother_name: student.mother_name,
+        total_fees: student.total_fees,
+        status: 'Active',
+        admission_date: new Date().toISOString().split('T')[0]
+      };
+      
+      const res = await API.students.add(data);
+      const studentId = res.id;
+      
+      if (student.paid_fees > 0 && studentId) {
+        await API.post(`/api/fees/student/${studentId}/payments`, {
+          amount: student.paid_fees,
+          payment_date: new Date().toISOString().split('T')[0],
+          payment_method: 'Cash',
+          remarks: 'Initial Admission Payment'
+        });
+      }
+    }
+    
+    Spinner.hide();
+    closeModal('direct-grid-admission-modal');
+    Toast.success('Success', `Successfully admitted ${studentsToInsert.length} students!`);
+    await loadStudents();
+  } catch (err) {
+    Spinner.hide();
+    Toast.error('Save Failed', err.message);
+  }
+}
+
 window.loadAdmissionsTab = loadAdmissionsTab;
 window.updateStudentAdmissionStatus = updateStudentAdmissionStatus;
 window.loadFeesTab = loadFeesTab;
@@ -1162,3 +1544,7 @@ window.showStudentLedgerModal = showStudentLedgerModal;
 window.deleteFeePayment = deleteFeePayment;
 window.loadAdmissionsDropdown = loadAdmissionsDropdown;
 window.loadFeesDropdown = loadFeesDropdown;
+window.showDirectGridAdmissionModal = showDirectGridAdmissionModal;
+window.addGridAdmissionRow = addGridAdmissionRow;
+window.loadGridAdmissionBatches = loadGridAdmissionBatches;
+window.saveDirectGridAdmissions = saveDirectGridAdmissions;

@@ -33,16 +33,16 @@ router.get('/', (req, res) => {
 
 // POST /api/school-exams
 router.post('/', (req, res) => {
-  const { standard_id, subject_id, exam_name, exam_date } = req.body;
+  const { standard_id, subject_id, exam_name, exam_date, cycle_id } = req.body;
   if (!standard_id || !subject_id || !exam_name || !exam_date) {
     return res.status(400).json({ error: 'standard_id, subject_id, exam_name, and exam_date are required' });
   }
 
   try {
     const result = db.prepare(`
-      INSERT INTO school_exams (standard_id, subject_id, exam_name, exam_date)
-      VALUES (?, ?, ?, ?)
-    `).run(standard_id, subject_id, exam_name, exam_date);
+      INSERT INTO school_exams (standard_id, subject_id, exam_name, exam_date, cycle_id)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(standard_id, subject_id, exam_name, exam_date, cycle_id || null);
 
     const std = db.prepare('SELECT display_name FROM standards WHERE id = ?').get(standard_id);
     const sub = db.prepare('SELECT name FROM subjects WHERE id = ?').get(subject_id);

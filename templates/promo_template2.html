@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Achievement Board</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800;900&display=swap');
+    body {
+      margin: 0; padding: 0;
+      font-family: 'Montserrat', sans-serif;
+      background: linear-gradient(135deg, #0b0f19 0%, #111827 100%);
+      color: white;
+      width: 210mm; height: 297mm; /* A4 Portrait */
+      position: relative;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+    .border-gold {
+      position: absolute;
+      top: 15px; left: 15px; right: 15px; bottom: 15px;
+      border: 2px solid #d4af37;
+      border-radius: 12px;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .content {
+      position: relative;
+      z-index: 2;
+      padding: 50px 40px;
+      height: 100%;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      width: 100%;
+    }
+    .logo { max-height: 70px; margin-bottom: 10px; }
+    .coaching-name { font-size: 20px; font-weight: 800; letter-spacing: 2px; color: #d4af37; text-transform: uppercase; }
+    .title { font-size: 38px; font-weight: 900; margin: 10px 0; text-shadow: 0 4px 10px rgba(0,0,0,0.5); color: #ffffff; letter-spacing: 2px; }
+    .subtitle { font-size: 16px; font-weight: 700; color: #9ca3af; text-transform: uppercase; }
+    
+    .table-container {
+      width: 100%;
+      margin-top: 10px;
+    }
+    .promo-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .promo-table th {
+      background: rgba(212, 175, 55, 0.15);
+      color: #d4af37;
+      font-weight: 700;
+      font-size: 14px;
+      text-transform: uppercase;
+      padding: 12px;
+      border-bottom: 2px solid #d4af37;
+      text-align: left;
+    }
+    .promo-table td {
+      padding: 12px;
+      font-size: 15px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: #e5e7eb;
+    }
+    .promo-table tr:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .rank-cell {
+      font-weight: 900;
+      font-size: 18px;
+      width: 10%;
+      text-align: center !important;
+    }
+    .photo-cell {
+      width: 15%;
+    }
+    .student-thumbnail {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #d4af37;
+    }
+    .name-cell {
+      font-weight: 700;
+      font-size: 16px;
+      color: #f3f4f6;
+    }
+    .marks-cell {
+      font-weight: 800;
+      color: #d4af37;
+    }
+    .pct-cell {
+      font-weight: 700;
+      background: rgba(255,255,255,0.06);
+      padding: 4px 8px;
+      border-radius: 6px;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <div class="border-gold"></div>
+  <div class="content">
+    <div class="header">
+      {{COACHING_LOGO}}
+      <div class="coaching-name">{{COACHING_NAME}}</div>
+      <div class="title">ACHIEVEMENT BOARD</div>
+      <div class="subtitle">TOP PERFORMERS — {{SERIES_TITLE}} ({{STANDARD_NAME}})</div>
+    </div>
+    <div class="table-container">
+      <table class="promo-table">
+        <thead>
+          <tr>
+            <th style="text-align:center">Rank</th>
+            <th>Photo</th>
+            <th>Student Name</th>
+            <th>Marks</th>
+            <th>Percentage</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{STUDENTS_GRID}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

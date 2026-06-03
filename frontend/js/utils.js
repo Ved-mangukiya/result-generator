@@ -5,35 +5,42 @@
 // ─── Toast Notifications ─────────────────────────
 const Toast = {
   show(type, title, message, duration = 4000) {
-    const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+    const svgIcons = {
+      success: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+      error:   `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+      warning: `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>`,
+      info:    `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/></svg>`,
+    };
     const container = document.getElementById('toast-container');
-    
+
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     toast.innerHTML = `
-      <span class="toast-icon">${icons[type] || 'ℹ️'}</span>
+      <span class="toast-icon">${svgIcons[type] || svgIcons.info}</span>
       <div class="toast-content">
         <div class="toast-title">${title}</div>
         ${message ? `<div class="toast-message">${message}</div>` : ''}
       </div>
-      <span class="toast-close" onclick="Toast.dismiss(this.parentElement)">✕</span>
+      <span class="toast-close" onclick="Toast.dismiss(this.parentElement)">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </span>
     `;
-    
+
     container.appendChild(toast);
-    
+
     if (duration > 0) {
       setTimeout(() => Toast.dismiss(toast), duration);
     }
     return toast;
   },
-  
+
   dismiss(toast) {
     if (!toast || !toast.parentNode) return;
     toast.classList.add('hiding');
     setTimeout(() => toast.remove(), 280);
   },
-  
-  success(msg, detail) { return this.show('success', msg, detail); },
+
+  success(msg, detail) { this.show('success', msg, detail); successRipple(); },
   error(msg, detail) { return this.show('error', msg, detail, 6000); },
   warning(msg, detail) { return this.show('warning', msg, detail); },
   info(msg, detail) { return this.show('info', msg, detail); }
@@ -46,6 +53,11 @@ const Confirm = {
   show(title, message, btnText = 'Delete', btnClass = 'btn-danger', icon = '⚠️') {
     return new Promise((resolve) => {
       this._resolve = resolve;
+      const overlay = document.getElementById('confirm-overlay');
+      if (overlay) {
+        overlay.classList.remove('hiding');
+        overlay.style.pointerEvents = '';
+      }
       document.getElementById('confirm-title').textContent = title;
       document.getElementById('confirm-message').textContent = message;
       document.getElementById('confirm-icon').textContent = icon;
@@ -57,16 +69,34 @@ const Confirm = {
   },
   
   _close(result) {
-    document.getElementById('confirm-overlay').style.display = 'none';
+    const overlay = document.getElementById('confirm-overlay');
+    if (overlay) {
+      overlay.style.pointerEvents = 'none';
+      overlay.classList.add('hiding');
+      setTimeout(() => {
+        overlay.style.display = 'none';
+        overlay.classList.remove('hiding');
+        overlay.style.pointerEvents = '';
+      }, 150);
+    }
     if (this._resolve) { this._resolve(result); this._resolve = null; }
   }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('confirm-ok-btn').addEventListener('click', () => Confirm._close(true));
-  document.getElementById('confirm-cancel-btn').addEventListener('click', () => Confirm._close(false));
+  document.getElementById('confirm-ok-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    Confirm._close(true);
+  });
+  document.getElementById('confirm-cancel-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    Confirm._close(false);
+  });
   document.getElementById('confirm-overlay').addEventListener('click', (e) => {
-    if (e.target === document.getElementById('confirm-overlay')) Confirm._close(false);
+    if (e.target === document.getElementById('confirm-overlay')) {
+      e.stopPropagation();
+      Confirm._close(false);
+    }
   });
 });
 
@@ -93,7 +123,7 @@ function createModal(id, title, bodyHTML, footerHTML, size = 'modal-md') {
     <div class="modal ${size}" id="${id}" role="dialog" aria-modal="true" aria-labelledby="${id}-title">
       <div class="modal-header">
         <h3 id="${id}-title">${title}</h3>
-        <button class="modal-close" onclick="closeModal('${id}')" aria-label="Close">✕</button>
+        <button class="modal-close" onclick="event.stopPropagation(); closeModal('${id}')" aria-label="Close">✕</button>
       </div>
       <div class="modal-body">${bodyHTML}</div>
       ${footerHTML ? `<div class="modal-footer">${footerHTML}</div>` : ''}
@@ -103,12 +133,18 @@ function createModal(id, title, bodyHTML, footerHTML, size = 'modal-md') {
   
   // Close on backdrop click
   overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) closeModal(id);
+    if (e.target === overlay) {
+      e.stopPropagation();
+      closeModal(id);
+    }
   });
   
   // Close on Escape
   const escHandler = (e) => {
-    if (e.key === 'Escape') { closeModal(id); document.removeEventListener('keydown', escHandler); }
+    if (e.key === 'Escape') { 
+      closeModal(id); 
+      document.removeEventListener('keydown', escHandler); 
+    }
   };
   document.addEventListener('keydown', escHandler);
   
@@ -117,15 +153,37 @@ function createModal(id, title, bodyHTML, footerHTML, size = 'modal-md') {
 
 function closeModal(id) {
   const overlay = document.getElementById(id + '-overlay');
-  if (overlay) overlay.remove();
+  if (overlay) {
+    overlay.style.pointerEvents = 'none';
+    overlay.classList.add('hiding');
+    setTimeout(() => overlay.remove(), 150);
+  }
 }
 
 // ─── Formatters ───────────────────────────────────
 const Format = {
+  // Always output DD/MM/YYYY
   date(str) {
     if (!str) return '—';
     try {
-      return new Date(str).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+      const d = new Date(str + (str.includes('T') ? '' : 'T00:00:00'));
+      if (isNaN(d)) return str;
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      return `${dd}/${mm}/${yyyy}`;
+    } catch { return str; }
+  },
+
+  // DOB specific (same DD/MM/YYYY)
+  dob(str) { return this.date(str); },
+
+  // Short date: 12 Jun 2024
+  dateShort(str) {
+    if (!str) return '—';
+    try {
+      const d = new Date(str + (str.includes('T') ? '' : 'T00:00:00'));
+      return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
     } catch { return str; }
   },
 
@@ -133,12 +191,12 @@ const Format = {
     if (val === null || val === undefined || isNaN(val)) return '0';
     return Number(val).toLocaleString('en-IN');
   },
-  
+
   pct(val) {
     if (val === null || val === undefined || isNaN(val)) return '—';
     return parseFloat(val).toFixed(2) + '%';
   },
-  
+
   marks(val, max) {
     if (val === null || val === undefined) return '—';
     if (max !== undefined) return `${val} / ${max}`;
@@ -150,10 +208,9 @@ const Format = {
     const v = n % 100;
     return n + (s[(v-20)%10] || s[v] || s[0]);
   },
-  
+
   timeAgo(dateStr) {
     if (!dateStr) return 'recently';
-    // SQLite CURRENT_TIMESTAMP stores UTC without 'Z' suffix — append 'Z' to parse as UTC
     const normalized = dateStr.includes('T') || dateStr.includes('Z') ? dateStr : dateStr.replace(' ', 'T') + 'Z';
     const d = new Date(normalized);
     const now = new Date();
@@ -164,6 +221,23 @@ const Format = {
     if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
     if (diff < 86400 * 7) return Math.floor(diff/86400) + 'd ago';
     return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+  },
+
+  // Full datetime: DD/MM/YYYY, HH:MM AM/PM
+  datetime(dateStr) {
+    if (!dateStr) return '—';
+    try {
+      const normalized = dateStr.includes('T') || dateStr.includes('Z') ? dateStr : dateStr.replace(' ', 'T') + 'Z';
+      const d = new Date(normalized);
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      let hh = d.getHours();
+      const min = String(d.getMinutes()).padStart(2, '0');
+      const ampm = hh >= 12 ? 'PM' : 'AM';
+      hh = hh % 12 || 12;
+      return `${dd}/${mm}/${yyyy}, ${hh}:${min} ${ampm}`;
+    } catch { return dateStr; }
   }
 };
 
@@ -282,10 +356,28 @@ function getStatusClass(status) {
 function getActivityDotClass(action) {
   if (!action) return 'update';
   const a = action.toUpperCase();
-  if (a.includes('ADD')) return 'add';
+  if (a.includes('ADD') || a.includes('CREATE')) return 'add';
   if (a.includes('DELETE')) return 'delete';
   if (a.includes('EXPORT') || a.includes('PDF')) return 'export';
+  if (a.includes('MARKS') || a.includes('SAVE')) return 'update';
   return 'update';
+}
+
+// ─── Success Ripple Animation ─────────────────────
+function successRipple() {
+  const el = document.createElement('div');
+  el.className = 'success-ripple-overlay';
+  el.innerHTML = `
+    <div class="success-ripple-inner">
+      <svg viewBox="0 0 52 52" class="success-ripple-checkmark">
+        <circle class="success-ripple-circle" cx="26" cy="26" r="25" fill="none" stroke="#22c55e" stroke-width="2"/>
+        <path class="success-ripple-check" fill="none" stroke="#22c55e" stroke-width="3"
+          stroke-linecap="round" stroke-linejoin="round" d="M14 26l8 8 16-16"/>
+      </svg>
+    </div>`;
+  document.body.appendChild(el);
+  setTimeout(() => { el.classList.add('show'); }, 10);
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 400); }, 1200);
 }
 
 // Expose globals
@@ -312,6 +404,7 @@ window.staggerAnimateItems = staggerAnimateItems;
 window.downloadFile = downloadFile;
 window.getStatusClass = getStatusClass;
 window.getActivityDotClass = getActivityDotClass;
+window.successRipple = successRipple;
 
 // Responsive Preview Helper Functions
 function togglePreviewDevice(device) {

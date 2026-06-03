@@ -19,8 +19,15 @@ async function renderTests(params = {}) {
         <p>Record weekly unit tests or schedule complete exam timetables (cycles) across multiple subjects.</p>
       </div>
       <div class="page-header-actions" id="tests-header-actions" style="display:none">
-        <button class="btn btn-outline btn-sm" id="btn-ai-schedule" onclick="showAISchedulerModal()" style="margin-right:8px">🤖 AI Auto-Scheduler</button>
-        <button class="btn btn-primary btn-sm" id="btn-create-test" onclick="triggerTestCreationAction()">➕ Create Test</button>
+        <button class="btn btn-outline btn-sm" id="btn-ai-schedule" onclick="showAISchedulerModal()" style="margin-right:8px">
+          ${Icons?.render?.('ai',{size:14}) || ''} AI Auto-Scheduler
+        </button>
+        <button class="btn btn-outline btn-sm" id="btn-create-series" onclick="showCreateSeriesModal()" style="margin-right:8px" title="Create a new test series for all subjects">
+          ${Icons?.render?.('add',{size:14}) || ''} New Series
+        </button>
+        <button class="btn btn-primary btn-sm" id="btn-create-test" onclick="triggerTestCreationAction()">
+          ${Icons?.render?.('add',{size:14}) || ''} Create Test
+        </button>
       </div>
     </div>
 
@@ -34,15 +41,27 @@ async function renderTests(params = {}) {
               <option value="">— Select a class to manage exams —</option>
             </select>
           </div>
+          <div class="form-group" style="flex:1;min-width:200px;display:none" id="tests-batch-filter-wrap">
+            <label class="form-label">Select Batch</label>
+            <select class="form-control" id="tests-batch-select" onchange="filterTestsByBatch(this.value)">
+              <option value="">— All Batches —</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- ERP Navigation Tabs -->
     <div class="tabs mb-6" id="tests-tabs" style="display:none">
-      <button class="btn ${_currentTestsTab === 'individual' ? 'btn-primary' : 'btn-outline'} btn-sm" id="btn-tests-individual" onclick="switchTestsTab('individual')">📑 Individual Tests</button>
-      <button class="btn ${_currentTestsTab === 'cycles' ? 'btn-primary' : 'btn-outline'} btn-sm" id="btn-tests-cycles" onclick="switchTestsTab('cycles')">🗓 Grouped Test Cycles</button>
-      <button class="btn ${_currentTestsTab === 'school' ? 'btn-primary' : 'btn-outline'} btn-sm" id="btn-tests-school" onclick="switchTestsTab('school')">🏫 School Exams</button>
+      <button class="btn ${_currentTestsTab === 'individual' ? 'btn-primary' : 'btn-outline'} btn-sm" id="btn-tests-individual" onclick="switchTestsTab('individual')">
+        ${Icons?.render?.('marks',{size:14}) || ''} Individual Tests
+      </button>
+      <button class="btn ${_currentTestsTab === 'cycles' ? 'btn-primary' : 'btn-outline'} btn-sm" id="btn-tests-cycles" onclick="switchTestsTab('cycles')">
+        ${Icons?.render?.('calendar',{size:14}) || ''} Grouped Test Cycles
+      </button>
+      <button class="btn ${_currentTestsTab === 'school' ? 'btn-primary' : 'btn-outline'} btn-sm" id="btn-tests-school" onclick="switchTestsTab('school')">
+        ${Icons?.render?.('school',{size:14}) || ''} School Exams
+      </button>
     </div>
 
     <!-- Tests List Container -->
@@ -78,7 +97,27 @@ async function loadTestsTabContent(standardId) {
   document.getElementById('tests-header-actions').style.display = 'block';
   document.getElementById('tests-tabs').style.display = 'flex';
   
+  const batchWrap = document.getElementById('tests-batch-filter-wrap');
+  const batchSelect = document.getElementById('tests-batch-select');
+  try {
+    const batches = await API.batches.list(standardId);
+    if (batches.length > 0) {
+      batchSelect.innerHTML = '<option value="">— All Batches —</option>' + batches.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+      batchWrap.style.display = 'block';
+    } else {
+      batchWrap.style.display = 'none';
+      batchSelect.value = '';
+    }
+  } catch (e) {
+    batchWrap.style.display = 'none';
+    batchSelect.value = '';
+  }
+  
   await switchTestsTab(_currentTestsTab);
+}
+
+function filterTestsByBatch(val) {
+  switchTestsTab(_currentTestsTab);
 }
 
 function triggerTestCreationAction() {
@@ -175,7 +214,11 @@ async function loadTestsForClass(standardId) {
     </div>`;
 
   try {
-    _testsList = await API.tests.list(_testsStandardId);
+    const batchId = document.getElementById('tests-batch-select')?.value || '';
+    let url = `/api/tests?standard_id=${_testsStandardId}`;
+    if (batchId) url += `&batch_id=${batchId}`;
+    
+    _testsList = await API.get(url);
     
     if (_testsList.length === 0) {
       container.innerHTML = `
@@ -206,35 +249,40 @@ async function loadTestsForClass(standardId) {
                   <span class="badge badge-gold" style="font-weight: 700;">Max: ${test.max_marks}</span>
                 </div>
                 <h3 style="font-size:1.1rem; font-weight:700; color:var(--text-primary);" class="mb-1">${test.name}</h3>
-                <p class="text-xs text-muted mb-2">📅 Test Date: ${Format.date(test.test_date)}</p>
-                
+                <p class="text-xs text-muted mb-2" style="display:flex;align-items:center;gap:4px">${Icons?.render?.('calendar',{size:12}) || ''} ${Format.date(test.test_date)}</p>
+
                 <div class="flex gap-2 flex-wrap mb-3" style="align-items:center">
                   <span class="badge" style="background:rgba(255,255,255,0.05); border: 1px solid var(--border); font-size:0.65rem">${test.exam_mode || 'Offline'}</span>
                   <span class="badge" style="background:rgba(255,255,255,0.05); color:${statusColor}; font-size:0.65rem; border: 1px solid ${statusColor}40">${test.status || 'Scheduled'}</span>
-                  
-                  ${test.notice_generated === 1 
-                    ? `<span class="badge" style="background:rgba(34,197,94,0.1); color:#4ade80; font-size:0.65rem">✓ Notice Generated</span>`
-                    : `<span class="badge" style="background:rgba(245,158,11,0.15); color:#fbbf24; font-size:0.65rem; cursor:pointer; border:1px dashed #fbbf24" onclick="navigateToPrefilledReminder(${test.id})" title="Click to prefill & generate Timetable/Notice PDF">⚠️ No Notice Generated</span>`}
+
+                  ${test.notice_generated === 1
+                    ? `<span class="badge" style="background:rgba(34,197,94,0.1); color:#4ade80; font-size:0.65rem; display:flex;align-items:center;gap:3px">${Icons?.render?.('check',{size:10}) || ''} Notice Generated</span>`
+                    : `<span class="badge" style="background:rgba(245,158,11,0.15); color:#fbbf24; font-size:0.65rem; cursor:pointer; border:1px dashed #fbbf24; display:flex;align-items:center;gap:3px" onclick="navigateToPrefilledReminder(${test.id})" title="Click to prefill & generate Timetable/Notice PDF">${Icons?.render?.('warning',{size:10}) || ''} No Notice</span>`}
                 </div>
-                
-                ${test.syllabus ? `<p class="text-xs text-secondary mb-2" style="background:rgba(0,0,0,0.1); padding:6px; border-radius:var(--radius); font-style:italic">📖 ${test.syllabus}</p>` : ''}
+
+                ${test.syllabus ? `<p class="text-xs text-secondary mb-2" style="background:rgba(0,0,0,0.1); padding:6px; border-radius:var(--radius); font-style:italic">${test.syllabus}</p>` : ''}
+                ${test.batch_name ? `<p class="text-xs text-muted mb-2">🏷 Batch: ${test.batch_name}</p>` : ''}
               </div>
-              
+
               <div class="divider" style="margin: var(--space-2) 0;"></div>
-              
+
               <div>
                 <div class="grid grid-2 gap-2 mb-3">
-                  <button class="btn btn-outline btn-sm w-full" onclick="showTestMarksEntry(${test.id})" style="padding: var(--space-2) 0;">📝 Enter Marks</button>
-                  <button class="btn btn-outline btn-sm w-full" onclick="showTestImportModal(${test.id})" style="padding: var(--space-2) 0;">📥 Import Excel</button>
+                  <button class="btn btn-outline btn-sm w-full" onclick="showTestMarksEntry(${test.id})" style="display:flex;align-items:center;justify-content:center;gap:5px">
+                    ${Icons?.render?.('marks',{size:14}) || ''} Enter Marks
+                  </button>
+                  <button class="btn btn-outline btn-sm w-full" onclick="showTestImportModal(${test.id})" style="display:flex;align-items:center;justify-content:center;gap:5px">
+                    ${Icons?.render?.('upload',{size:14}) || ''} Import Excel
+                  </button>
                 </div>
-                
+
                 <div class="flex justify-between items-center gap-1">
-                  <button class="btn btn-ghost btn-icon-sm" onclick="showTestWhatsAppModal(${test.id})" title="Share to WhatsApp">💬</button>
-                  <a class="btn btn-ghost btn-icon-sm" href="/api/tests/${test.id}/export/pdf" target="_blank" title="Export PDF Report" download>📄</a>
-                  <a class="btn btn-ghost btn-icon-sm" href="/api/tests/${test.id}/export/excel" target="_blank" title="Export Excel Sheet" download>📊</a>
+                  <button class="btn btn-ghost btn-icon-sm" onclick="showTestWhatsAppModal(${test.id})" title="Share to WhatsApp">${Icons?.render?.('whatsapp',{size:16}) || ''}</button>
+                  <button class="btn btn-ghost btn-icon-sm" onclick="downloadTestPDF(${test.id})" title="Export PDF Report">${Icons?.render?.('pdf',{size:16}) || ''}</button>
+                  <button class="btn btn-ghost btn-icon-sm" onclick="downloadTestExcel(${test.id})" title="Export Excel Sheet">${Icons?.render?.('excel',{size:16}) || ''}</button>
                   <div style="margin-left: auto;" class="flex gap-1">
-                    <button class="btn btn-ghost btn-icon-sm" onclick="showEditTestModal(${test.id})" title="Edit Details">✏️</button>
-                    <button class="btn btn-ghost btn-icon-sm" onclick="confirmDeleteTest(${test.id}, '${test.name}')" title="Delete Test">🗑️</button>
+                    <button class="btn btn-ghost btn-icon-sm" onclick="showEditTestModal(${test.id})" title="Edit Details">${Icons?.render?.('edit',{size:16}) || ''}</button>
+                    <button class="btn btn-ghost btn-icon-sm" onclick="confirmDeleteTest(${test.id}, '${test.name.replace(/'/g, '')}')" title="Delete Test" style="color:var(--danger)">${Icons?.render?.('delete',{size:16}) || ''}</button>
                   </div>
                 </div>
               </div>
@@ -277,7 +325,7 @@ async function showCreateTestModal() {
 
   const selectHTML = subjects.map(sub => `<option value="${sub.id}">${sub.name}</option>`).join('');
 
-  createModal('create-test-modal', '➕ Create New Test',
+  createModal('create-test-modal', `${Icons?.render?.('add',{size:18}) || ''} Create New Test`,
     `<form id="test-form">
       <div class="form-group mb-4">
         <label class="form-label">Test Name <span class="required">*</span></label>
@@ -290,6 +338,14 @@ async function showCreateTestModal() {
             ${selectHTML}
           </select>
         </div>
+        <div class="form-group">
+          <label class="form-label">Batch</label>
+          <select class="form-control" id="test-batch">
+            ${document.getElementById('tests-batch-select')?.innerHTML || '<option value="">— All Batches —</option>'}
+          </select>
+        </div>
+      </div>
+      <div class="form-grid mb-4">
         <div class="form-group">
           <label class="form-label">Maximum Marks <span class="required">*</span></label>
           <input type="number" class="form-control" id="test-max-marks" placeholder="e.g. 25, 30, 50, 100" min="1" value="25" required>
@@ -324,10 +380,239 @@ async function showCreateTestModal() {
       </div>
     </form>`,
     `<button class="btn btn-outline" onclick="closeModal('create-test-modal')">Cancel</button>
-     <button class="btn btn-primary" onclick="saveTest()">💾 Create Test</button>`,
+     <button class="btn btn-primary" onclick="saveTest()" style="display:flex;align-items:center;gap:6px">${Icons?.render?.('save',{size:16}) || ''} Create Test</button>`,
     'modal-md'
   );
+
+  // Bind holiday warning helper
+  (async () => {
+    const dateInput = document.getElementById('test-date');
+    if (dateInput) {
+      const warn = document.createElement('div');
+      warn.className = 'text-xs text-warning mt-1';
+      warn.style.fontWeight = '600';
+      warn.style.display = 'none';
+      dateInput.parentNode.appendChild(warn);
+      
+      const { holidays } = await API.calendarNotes.get().catch(() => ({ holidays: {} }));
+      const check = () => {
+        const val = dateInput.value;
+        if (val && holidays[val]) {
+          warn.innerHTML = `⚠️ Holiday: ${holidays[val]}`;
+          warn.style.display = 'block';
+        } else {
+          warn.style.display = 'none';
+        }
+      };
+      dateInput.addEventListener('change', check);
+      check();
+    }
+  })();
 }
+
+// ─── Create Series Wizard (2-Step) ───────────────────────
+async function showCreateSeriesModal() {
+  if (!_testsStandardId) return;
+  const subjects = await API.subjects.list(_testsStandardId);
+  if (subjects.length === 0) {
+    Toast.warning('No Subjects', 'Please add subjects to this class first from the Boards & Classes tab.');
+    return;
+  }
+
+  // State
+  let step = 1;
+  let seriesTitle = '';
+  let maxMarks = 25;
+  let examMode = 'Offline';
+
+  function buildStep1() {
+    return `
+      <div id="wizard-step-1" class="wizard-step-in">
+        <div style="background:linear-gradient(135deg,var(--bg-elevated),rgba(var(--primary-rgb),0.08));border-radius:var(--radius-lg);padding:16px;margin-bottom:20px;border:1px solid var(--border)">
+          <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:4px">Step 1 of 2</div>
+          <div style="font-size:1rem;font-weight:700;color:var(--text-primary)">Series Details</div>
+          <div style="font-size:0.8rem;color:var(--text-muted)">Name your test series and set the default marks and mode</div>
+        </div>
+        <div class="form-group mb-4">
+          <label class="form-label">Series Title <span class="required">*</span></label>
+          <input type="text" class="form-control" id="series-title" placeholder="e.g. Weekly Test 1, Unit Test 3, Mid-Sem" autofocus>
+          <span class="form-hint">This name will be used for all tests in this series (e.g. &quot;Weekly Test 1 — Maths&quot;)</span>
+        </div>
+        <div class="form-group mb-4">
+          <label class="form-label">Batch</label>
+          <select class="form-control" id="series-batch">
+            ${document.getElementById('tests-batch-select')?.innerHTML || '<option value="">— All Batches —</option>'}
+          </select>
+        </div>
+        <div class="form-grid mb-4">
+          <div class="form-group">
+            <label class="form-label">Max Marks (per subject) <span class="required">*</span></label>
+            <input type="number" class="form-control" id="series-max-marks" value="25" min="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Exam Mode</label>
+            <select class="form-control" id="series-exam-mode">
+              <option value="Offline">Offline (Written)</option>
+              <option value="Online">Online (MCQ)</option>
+              <option value="Hybrid">Hybrid</option>
+            </select>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function buildStep2() {
+    return `
+      <div id="wizard-step-2" class="wizard-step-in">
+        <div style="background:linear-gradient(135deg,var(--bg-elevated),rgba(var(--primary-rgb),0.08));border-radius:var(--radius-lg);padding:16px;margin-bottom:20px;border:1px solid var(--border)">
+          <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:4px">Step 2 of 2 — Series: <strong>${seriesTitle}</strong></div>
+          <div style="font-size:1rem;font-weight:700;color:var(--text-primary)">Select Subjects &amp; Set Dates</div>
+          <div style="font-size:0.8rem;color:var(--text-muted)">Check each subject and assign its test date. Uncheck to skip.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px" id="series-subjects-list">
+          ${subjects.map((sub, i) => `
+            <div class="series-subject-row" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius);transition:border-color 0.15s" id="subrow-${sub.id}">
+              <input type="checkbox" id="sub-chk-${sub.id}" checked style="width:16px;height:16px;cursor:pointer;accent-color:var(--accent)" onchange="seriesSubjectToggle(${sub.id})">
+              <div style="flex:1;font-weight:600;color:var(--text-primary)">${sub.name}</div>
+              <input type="date" class="form-control" id="sub-date-${sub.id}" value="${new Date(Date.now() + (i+1) * 86400000).toISOString().split('T')[0]}" style="width:155px;font-size:0.8rem">
+            </div>`).join('')}
+        </div>
+      </div>`;
+  }
+
+  function renderWizard() {
+    const body = document.getElementById('series-wizard-body');
+    const nextBtn = document.getElementById('series-next-btn');
+    const backBtn = document.getElementById('series-back-btn');
+    if (!body) return;
+    body.innerHTML = step === 1 ? buildStep1() : buildStep2();
+    if (nextBtn) nextBtn.textContent = step === 1 ? 'Next →' : 'Create Series';
+    if (backBtn) backBtn.style.display = step === 2 ? 'inline-flex' : 'none';
+  }
+
+  const overlay = createModal('create-series-modal', `${Icons?.render?.('tests',{size:18}) || ''} Create Test Series`,
+    `<div id="series-wizard-body">${buildStep1()}</div>`,
+    `<button class="btn btn-outline" style="display:none" id="series-back-btn" onclick="seriesWizardBack()">← Back</button>
+     <button class="btn btn-outline" onclick="closeModal('create-series-modal')">Cancel</button>
+     <button class="btn btn-primary" id="series-next-btn" onclick="seriesWizardNext()">Next →</button>`,
+    'modal-md'
+  );
+
+  window._seriesWizardStep = 1;
+  window._seriesWizardSubjects = subjects;
+  window.seriesWizardNext = async function() {
+    if (window._seriesWizardStep === 1) {
+      seriesTitle = (document.getElementById('series-title')?.value || '').trim();
+      maxMarks = parseFloat(document.getElementById('series-max-marks')?.value || '25');
+      examMode = document.getElementById('series-exam-mode')?.value || 'Offline';
+      if (!seriesTitle) { Toast.warning('Title Required', 'Please enter a series title.'); return; }
+      if (!maxMarks || maxMarks < 1) { Toast.warning('Invalid Marks', 'Max marks must be at least 1.'); return; }
+      window._seriesWizardStep = 2;
+      window._seriesTitle = seriesTitle;
+      window._seriesMaxMarks = maxMarks;
+      window._seriesExamMode = examMode;
+      window._seriesBatchId = document.getElementById('series-batch')?.value || '';
+      const body = document.getElementById('series-wizard-body');
+      body.innerHTML = buildStep2();
+      document.getElementById('series-next-btn').innerHTML = `${Icons?.render?.('save',{size:15}) || ''} Create Series`;
+      document.getElementById('series-back-btn').style.display = 'inline-flex';
+
+      // Bind holiday warning to each subject input in Step 2
+      (async () => {
+        const { holidays } = await API.calendarNotes.get().catch(() => ({ holidays: {} }));
+        subjects.forEach(s => {
+          const input = document.getElementById(`sub-date-${s.id}`);
+          if (input) {
+            const warn = document.createElement('div');
+            warn.className = 'text-xs text-warning mt-1';
+            warn.style.fontWeight = '600';
+            warn.style.display = 'none';
+            input.parentNode.appendChild(warn);
+            
+            const check = () => {
+              const val = input.value;
+              if (val && holidays[val]) {
+                warn.innerHTML = `⚠️ Holiday: ${holidays[val]}`;
+                warn.style.display = 'block';
+              } else {
+                warn.style.display = 'none';
+              }
+            };
+            input.addEventListener('change', check);
+            check();
+          }
+        });
+      })();
+    } else {
+      // Step 2 — gather and submit
+      const checked = subjects.filter(s => document.getElementById(`sub-chk-${s.id}`)?.checked);
+      if (checked.length === 0) { Toast.warning('No Subjects', 'Please select at least one subject.'); return; }
+      const btn = document.getElementById('series-next-btn');
+      btn.disabled = true; btn.textContent = 'Creating...';
+
+      // Auto-create or find cycle
+      let cycleId = null;
+      try {
+        const cycles = await API.testCycles.list(_testsStandardId);
+        const existing = cycles.find(c => c.title.trim().toLowerCase() === window._seriesTitle.toLowerCase());
+        if (existing) {
+          cycleId = existing.id;
+        } else {
+          const created = await API.testCycles.create({
+            standard_id: _testsStandardId,
+            title: window._seriesTitle,
+            description: `Auto-created series: ${window._seriesTitle}`
+          });
+          cycleId = created.id;
+        }
+      } catch (e) {
+        console.warn('Could not create cycle:', e.message);
+      }
+
+      const tests = checked.map(s => ({
+        standard_id: _testsStandardId,
+        batch_id: window._seriesBatchId || null,
+        subject_id: s.id,
+        name: `${window._seriesTitle} — ${s.name}`,
+        max_marks: window._seriesMaxMarks,
+        test_date: document.getElementById(`sub-date-${s.id}`)?.value || null,
+        exam_mode: window._seriesExamMode,
+        status: 'Scheduled',
+        notice_generated: 0,
+        cycle_id: cycleId
+      }));
+
+      try {
+        await API.tests.bulkCreate(tests);
+        closeModal('create-series-modal');
+        Toast.success('Series Created!', `${window._seriesTitle} created with ${tests.length} tests.`);
+        await loadTestsForClass(_testsStandardId);
+      } catch (err) {
+        btn.disabled = false; btn.innerHTML = `${Icons?.render?.('save',{size:15}) || ''} Create Series`;
+        Toast.error('Creation Failed', err.message);
+      }
+    }
+  };
+
+  window.seriesWizardBack = function() {
+    window._seriesWizardStep = 1;
+    const body = document.getElementById('series-wizard-body');
+    body.innerHTML = buildStep1();
+    document.getElementById('series-title').value = window._seriesTitle || '';
+    document.getElementById('series-max-marks').value = window._seriesMaxMarks || 25;
+    document.getElementById('series-exam-mode').value = window._seriesExamMode || 'Offline';
+    document.getElementById('series-next-btn').textContent = 'Next →';
+    document.getElementById('series-back-btn').style.display = 'none';
+  };
+
+  window.seriesSubjectToggle = function(subId) {
+    const row = document.getElementById(`subrow-${subId}`);
+    const chk = document.getElementById(`sub-chk-${subId}`);
+    const dateInput = document.getElementById(`sub-date-${subId}`);
+    if (row) row.style.opacity = chk?.checked ? '1' : '0.4';
+    if (dateInput) dateInput.disabled = !chk?.checked;
+  };
+} // end showCreateSeriesModal
 
 async function showEditTestModal(testId) {
   const test = _testsList.find(t => t.id === testId);
@@ -351,6 +636,14 @@ async function showEditTestModal(testId) {
             ${selectHTML}
           </select>
         </div>
+        <div class="form-group">
+          <label class="form-label">Batch</label>
+          <select class="form-control" id="edit-test-batch">
+            ${document.getElementById('tests-batch-select')?.innerHTML.replace(`value="${test.batch_id || ''}"`, `value="${test.batch_id || ''}" selected`) || '<option value="">— All Batches —</option>'}
+          </select>
+        </div>
+      </div>
+      <div class="form-grid mb-4">
         <div class="form-group">
           <label class="form-label">Maximum Marks <span class="required">*</span></label>
           <input type="number" class="form-control" id="edit-test-max-marks" value="${test.max_marks}" min="1" required>
@@ -388,6 +681,31 @@ async function showEditTestModal(testId) {
      <button class="btn btn-primary" onclick="saveTest(${testId})">💾 Save Changes</button>`,
     'modal-md'
   );
+
+  // Bind holiday warning helper
+  (async () => {
+    const dateInput = document.getElementById('edit-test-date');
+    if (dateInput) {
+      const warn = document.createElement('div');
+      warn.className = 'text-xs text-warning mt-1';
+      warn.style.fontWeight = '600';
+      warn.style.display = 'none';
+      dateInput.parentNode.appendChild(warn);
+      
+      const { holidays } = await API.calendarNotes.get().catch(() => ({ holidays: {} }));
+      const check = () => {
+        const val = dateInput.value;
+        if (val && holidays[val]) {
+          warn.innerHTML = `⚠️ Holiday: ${holidays[val]}`;
+          warn.style.display = 'block';
+        } else {
+          warn.style.display = 'none';
+        }
+      };
+      dateInput.addEventListener('change', check);
+      check();
+    }
+  })();
 }
 
 async function saveTest(testId = null) {
@@ -409,6 +727,7 @@ async function saveTest(testId = null) {
 
   const data = {
     standard_id: _testsStandardId,
+    batch_id: getVal(`${prefix}-batch`) ? parseInt(getVal(`${prefix}-batch`)) : null,
     subject_id: parseInt(subject_id),
     name,
     max_marks: parseFloat(max_marks),
@@ -582,43 +901,91 @@ function toggleGridAbsent(studentId) {
 }
 
 function setupGridKeyboardNavigation() {
-  const inputs = $$('.test-marks-input');
+  const tbody = document.querySelector('#test-marks-grid-modal tbody');
+  if (!tbody) return;
+  const rows = Array.from(tbody.querySelectorAll('tr'));
   
-  inputs.forEach(input => {
-    input.addEventListener('keydown', (e) => {
-      const idx = parseInt(input.dataset.idx);
-      let targetIdx = null;
+  const focusInput = (rowIndex, type, direction = 1) => {
+    if (rowIndex < 0 || rowIndex >= rows.length) return;
+    const row = rows[rowIndex];
+    const isElected = row.dataset.isElected === 'true';
+    const studentId = row.dataset.studentId;
+    const input = type === 'marks' 
+      ? document.getElementById(`tm-input-${studentId}`)
+      : document.getElementById(`tm-remarks-${studentId}`);
+      
+    if (isElected && input && !input.disabled) {
+      input.focus();
+      input.select();
+    } else {
+      focusInput(rowIndex + direction, type, direction);
+    }
+  };
 
-      if (e.key === 'Enter' || e.key === 'ArrowDown') {
-        e.preventDefault();
-        targetIdx = idx + 1;
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        targetIdx = idx - 1;
-      }
+  rows.forEach((row, rowIndex) => {
+    const studentId = row.dataset.studentId;
+    const marksInput = document.getElementById(`tm-input-${studentId}`);
+    const remarksInput = document.getElementById(`tm-remarks-${studentId}`);
 
-      if (targetIdx !== null && targetIdx >= 0 && targetIdx < inputs.length) {
-        const nextInput = inputs.find(inp => parseInt(inp.dataset.idx) === targetIdx);
-        if (nextInput && !nextInput.disabled) {
-          nextInput.focus();
-          nextInput.select();
-        } else if (nextInput && nextInput.disabled) {
-          // If disabled, skip it
-          const step = (targetIdx > idx) ? 1 : -1;
-          let searchIdx = targetIdx + step;
-          while (searchIdx >= 0 && searchIdx < inputs.length) {
-            const skipInput = inputs.find(inp => parseInt(inp.dataset.idx) === searchIdx);
-            if (skipInput && !skipInput.disabled) {
-              skipInput.focus();
-              skipInput.select();
-              break;
-            }
-            searchIdx += step;
+    if (marksInput) {
+      marksInput.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown' || e.key === 'Enter') {
+          e.preventDefault();
+          focusInput(rowIndex + 1, 'marks', 1);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          focusInput(rowIndex - 1, 'marks', -1);
+        } else if (e.key === 'Tab') {
+          e.preventDefault();
+          if (e.shiftKey) {
+            focusInput(rowIndex - 1, 'marks', -1);
+          } else {
+            focusInput(rowIndex + 1, 'marks', 1);
+          }
+        } else if (e.key === 'ArrowRight') {
+          focusInput(rowIndex, 'remarks', 1);
+        }
+      });
+    }
+
+    if (remarksInput) {
+      remarksInput.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown' || e.key === 'Enter') {
+          e.preventDefault();
+          focusInput(rowIndex + 1, 'remarks', 1);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          focusInput(rowIndex - 1, 'remarks', -1);
+        } else if (e.key === 'Tab') {
+          e.preventDefault();
+          if (e.shiftKey) {
+            focusInput(rowIndex, 'marks', -1);
+          } else {
+            focusInput(rowIndex + 1, 'marks', 1);
+          }
+        } else if (e.key === 'ArrowLeft') {
+          focusInput(rowIndex, 'marks', -1);
+        }
+      });
+    }
+  });
+
+  // Global Ctrl + S listener inside the modal
+  if (!window._marksSaveShortcutBound) {
+    window._marksSaveShortcutBound = true;
+    window.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 's') {
+        const modal = document.getElementById('test-marks-grid-modal');
+        if (modal && modal.style.display !== 'none') {
+          e.preventDefault();
+          const saveBtn = modal.querySelector('button[onclick^="saveGridMarks"]');
+          if (saveBtn) {
+            saveBtn.click();
           }
         }
       }
     });
-  });
+  }
 }
 
 async function saveGridMarks(testId) {
@@ -978,6 +1345,33 @@ async function showCreateTestCycleModal() {
      <button class="btn btn-primary" onclick="submitTestCycle()">💾 Schedule Exam Cycle</button>`,
     'modal-md'
   );
+
+  // Bind holiday warning to each subject input in the cycle scheduler
+  (async () => {
+    const { holidays } = await API.calendarNotes.get().catch(() => ({ holidays: {} }));
+    subjects.forEach(s => {
+      const input = document.getElementById(`date-${s.id}`);
+      if (input) {
+        const warn = document.createElement('div');
+        warn.className = 'text-xs text-warning mt-1';
+        warn.style.fontWeight = '600';
+        warn.style.display = 'none';
+        input.parentNode.appendChild(warn);
+        
+        const check = () => {
+          const val = input.value;
+          if (val && holidays[val]) {
+            warn.innerHTML = `⚠️ Holiday: ${holidays[val]}`;
+            warn.style.display = 'block';
+          } else {
+            warn.style.display = 'none';
+          }
+        };
+        input.addEventListener('change', check);
+        check();
+      }
+    });
+  })();
 }
 
 async function submitTestCycle() {
@@ -1148,61 +1542,183 @@ async function loadSchoolExamsForClass(standardId) {
 
 async function showAddSchoolExamModal() {
   if (!_testsStandardId) return;
-  const subjects = await API.subjects.list(_testsStandardId);
-  if (subjects.length === 0) {
-    Toast.warning('No Subjects', 'Please add subjects to this class first.');
-    return;
-  }
+  Spinner.show('Loading test cycles...');
+  try {
+    const cycles = await API.testCycles.list(_testsStandardId);
+    const { holidays } = await API.calendarNotes.get().catch(() => ({ holidays: {} }));
+    Spinner.hide();
 
-  const subjectsHTML = subjects.map(sub => `<option value="${sub.id}">${sub.name}</option>`).join('');
+    if (cycles.length === 0) {
+      createModal('add-school-exam-modal', '🏫 Add Aligned School Exam',
+        `<div style="padding: 24px; text-align: center;">
+          <p class="text-warning" style="font-size: 1.2rem; margin-bottom: 8px; font-weight:700;">⚠️ No Coaching Test Series Found</p>
+          <p class="text-muted text-sm mb-4">School exams must align with coaching test series. Please create a grouped test series (cycle) first under the 'Grouped Test Cycles' tab.</p>
+          <button class="btn btn-primary btn-sm" onclick="closeModal('add-school-exam-modal'); switchTestsTab('cycles')">Go to Test Cycles</button>
+        </div>`,
+        `<button class="btn btn-outline" onclick="closeModal('add-school-exam-modal')">Close</button>`,
+        'modal-md'
+      );
+      return;
+    }
 
-  createModal('add-school-exam-modal', '🏫 Add School Exam Schedule',
-    `<form id="school-exam-form">
-      <div class="form-group mb-4">
-        <label class="form-label">School Exam Name <span class="required">*</span></label>
-        <input type="text" class="form-control" id="school-exam-name" placeholder="e.g. Unit Test 1, Semester Exam, Board Exam" required>
-      </div>
-      <div class="form-grid mb-4">
-        <div class="form-group">
-          <label class="form-label">Subject <span class="required">*</span></label>
-          <select class="form-control" id="school-exam-subject" required>
-            ${subjectsHTML}
+    const optionsHTML = cycles.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+
+    createModal('add-school-exam-modal', '🏫 Align School Exam Schedule',
+      `<form id="school-exam-form">
+        <div class="form-group mb-4">
+          <label class="form-label">Select Coaching Test Series / Cycle <span class="required">*</span></label>
+          <select class="form-control" id="school-exam-cycle-select" required>
+            <option value="">— Select a coaching test series —</option>
+            ${optionsHTML}
           </select>
         </div>
-        <div class="form-group">
-          <label class="form-label">School Exam Date <span class="required">*</span></label>
-          <input type="date" class="form-control" id="school-exam-date" value="${new Date().toISOString().split('T')[0]}" required>
+        <div id="school-exam-subjects-container" style="display:none;">
+          <p class="form-section-title">Schedule School Exam Dates</p>
+          <p class="text-xs text-muted mb-3">Enter the school exam date for each subject. Coaching prep tests are shown as reference.</p>
+          <div style="max-height: 350px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; display:flex; flex-direction:column; gap:12px;" id="school-exam-subjects-list">
+            <!-- Dynamic subject inputs -->
+          </div>
         </div>
-      </div>
-    </form>`,
-    `<button class="btn btn-outline" onclick="closeModal('add-school-exam-modal')">Cancel</button>
-     <button class="btn btn-primary" onclick="submitSchoolExam()">💾 Add Exam</button>`,
-    'modal-md'
-  );
+      </form>`,
+      `<button class="btn btn-outline" onclick="closeModal('add-school-exam-modal')">Cancel</button>
+       <button class="btn btn-primary" id="btn-submit-school-exam" onclick="submitSchoolExam()" disabled>💾 Save School Exams</button>`,
+      'modal-lg'
+    );
+
+    const cycleSelect = document.getElementById('school-exam-cycle-select');
+    const container = document.getElementById('school-exam-subjects-container');
+    const list = document.getElementById('school-exam-subjects-list');
+    const submitBtn = document.getElementById('btn-submit-school-exam');
+
+    cycleSelect.addEventListener('change', async () => {
+      const cycleId = cycleSelect.value;
+      if (!cycleId) {
+        container.style.display = 'none';
+        submitBtn.disabled = true;
+        return;
+      }
+      
+      Spinner.show('Loading cycle subjects...');
+      try {
+        const { cycle, tests } = await API.testCycles.get(cycleId);
+        Spinner.hide();
+        
+        container.style.display = 'block';
+        submitBtn.disabled = false;
+        
+        window._currentSchoolExamCycleTitle = cycle.title;
+        window._currentSchoolExamTests = tests;
+        
+        list.innerHTML = tests.map(t => {
+          const formattedCoachingDate = t.test_date ? Format.date(t.test_date) : 'Not Scheduled';
+          return `
+            <div class="school-exam-row bg-surface p-3 rounded" style="border: 1px solid var(--border); display: grid; grid-template-columns: 1.5fr 1fr 1.5fr; gap: 16px; align-items: center;" data-subject-id="${t.subject_id}" data-test-date="${t.test_date || ''}">
+              <div>
+                <div style="font-weight: 700; color: var(--text-primary); font-size: 0.9rem">${t.subject_name}</div>
+                <div class="text-xs text-muted" style="margin-top: 2px">Prep: ${formattedCoachingDate}</div>
+              </div>
+              <div class="text-xs text-muted" style="font-weight: 600;">
+                School Exam Date:
+              </div>
+              <div>
+                <input type="date" class="form-control school-date-input" id="school-date-${t.subject_id}" style="font-size:0.85rem;" data-subject-id="${t.subject_id}">
+                <div id="school-date-warn-${t.subject_id}" class="text-xs text-warning mt-1" style="display:none; font-weight: 600;"></div>
+              </div>
+            </div>`;
+        }).join('');
+        
+        // Bind event listeners for holiday and date warning
+        tests.forEach(t => {
+          const input = document.getElementById(`school-date-${t.subject_id}`);
+          const warn = document.getElementById(`school-date-warn-${t.subject_id}`);
+          if (input && warn) {
+            input.addEventListener('change', () => {
+              const val = input.value;
+              warn.style.display = 'none';
+              warn.innerHTML = '';
+              
+              if (!val) return;
+              
+              const warnings = [];
+              // 1. Holiday Check
+              if (holidays[val]) {
+                warnings.push(`⚠️ Holiday: ${holidays[val]}`);
+              }
+              // 2. Before/On Coaching Prep Test Check
+              if (t.test_date) {
+                const prepDate = new Date(t.test_date);
+                prepDate.setHours(0,0,0,0);
+                const schoolDate = new Date(val);
+                schoolDate.setHours(0,0,0,0);
+                
+                if (schoolDate < prepDate) {
+                  warnings.push(`⚠️ Scheduled BEFORE coaching prep test (${Format.date(t.test_date)})`);
+                } else if (schoolDate.getTime() === prepDate.getTime()) {
+                  warnings.push(`⚠️ Same day as coaching prep test`);
+                }
+              }
+              
+              if (warnings.length > 0) {
+                warn.innerHTML = warnings.join('<br>');
+                warn.style.display = 'block';
+              }
+            });
+          }
+        });
+        
+      } catch (err) {
+        Spinner.hide();
+        Toast.error('Load Subjects Failed', err.message);
+      }
+    });
+
+  } catch (err) {
+    Spinner.hide();
+    Toast.error('Load Failed', err.message);
+  }
 }
 
 async function submitSchoolExam() {
-  const exam_name = getVal('school-exam-name');
-  const subject_id = getVal('school-exam-subject');
-  const exam_date = getVal('school-exam-date');
+  const cycleSelect = document.getElementById('school-exam-cycle-select');
+  const cycleId = cycleSelect.value;
+  if (!cycleId) return;
 
-  if (!exam_name || !subject_id || !exam_date) {
-    Toast.error('Validation Error', 'Please fill all required fields.');
+  const cycleTitle = window._currentSchoolExamCycleTitle;
+  const tests = window._currentSchoolExamTests;
+  if (!tests) return;
+
+  const schoolExamsToSave = [];
+  tests.forEach(t => {
+    const input = document.getElementById(`school-date-${t.subject_id}`);
+    if (input && input.value) {
+      schoolExamsToSave.push({
+        standard_id: _testsStandardId,
+        subject_id: t.subject_id,
+        exam_name: cycleTitle,
+        exam_date: input.value,
+        cycle_id: parseInt(cycleId)
+      });
+    }
+  });
+
+  if (schoolExamsToSave.length === 0) {
+    Toast.warning('No Dates Entered', 'Please enter at least one school exam date.');
     return;
   }
 
+  const btn = document.getElementById('btn-submit-school-exam');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
   try {
-    await API.schoolExams.add({
-      standard_id: _testsStandardId,
-      subject_id: parseInt(subject_id),
-      exam_name,
-      exam_date
-    });
+    await Promise.all(schoolExamsToSave.map(exam => API.schoolExams.add(exam)));
     closeModal('add-school-exam-modal');
-    Toast.success('Exam Added', 'School exam added to timetable.');
+    Toast.success('School Exams Aligned!', `Successfully saved ${schoolExamsToSave.length} school exam dates.`);
     await loadSchoolExamsForClass(_testsStandardId);
   } catch (err) {
-    Toast.error('Failed to Add', err.message);
+    btn.disabled = false;
+    btn.textContent = '💾 Save School Exams';
+    Toast.error('Failed to Align', err.message);
   }
 }
 
@@ -1580,3 +2096,35 @@ window.showAISchedulerModal = showAISchedulerModal;
 window.generateAISchedulePreview = generateAISchedulePreview;
 window.removeAIGeneratedTest = removeAIGeneratedTest;
 window.saveAISchedule = saveAISchedule;
+
+async function downloadTestPDF(testId) {
+  Spinner.show('Generating test PDF report...');
+  try {
+    const tokenRes = await API.export.downloadToken();
+    const token = tokenRes.token;
+    const url = `/api/tests/${testId}/export/pdf?token=${token}`;
+    const a = document.createElement('a');
+    a.href = url; a.download = ''; a.click();
+    setTimeout(() => Spinner.hide(), 2000);
+  } catch (err) {
+    Spinner.hide();
+    Toast.error('Download Failed', err.message);
+  }
+}
+
+async function downloadTestExcel(testId) {
+  Spinner.show('Generating test Excel report...');
+  try {
+    const tokenRes = await API.export.downloadToken();
+    const token = tokenRes.token;
+    const url = `/api/tests/${testId}/export/excel?token=${token}`;
+    const a = document.createElement('a');
+    a.href = url; a.download = ''; a.click();
+    setTimeout(() => Spinner.hide(), 2000);
+  } catch (err) {
+    Spinner.hide();
+    Toast.error('Download Failed', err.message);
+  }
+}
+window.downloadTestPDF = downloadTestPDF;
+window.downloadTestExcel = downloadTestExcel;

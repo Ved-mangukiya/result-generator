@@ -21,6 +21,10 @@ const testCyclesRoutes = require('./routes/testCycles');
 const resetRoutes = require('./routes/reset');
 const schoolExamsRoutes = require('./routes/schoolExams');
 const syncRoutes = require('./routes/sync');
+const promotionsRoutes = require('./routes/promotions');
+const batchesRoutes = require('./routes/batches');
+const tokenService = require('./services/tokenService');
+const calendarNotesRoutes = require('./routes/calendarNotes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -58,6 +62,10 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Auth middleware for API routes
 function requireAuth(req, res, next) {
+  const token = req.query.token;
+  if (token && tokenService.verifyToken(token)) {
+    return next();
+  }
   if (!req.session.adminId) return res.status(401).json({ error: 'Authentication required' });
   next();
 }
@@ -78,6 +86,9 @@ app.use('/api/test-cycles', requireAuth, testCyclesRoutes);
 app.use('/api/reset', requireAuth, resetRoutes);
 app.use('/api/school-exams', requireAuth, schoolExamsRoutes);
 app.use('/api/sync', requireAuth, syncRoutes);
+app.use('/api/promotions', requireAuth, promotionsRoutes);
+app.use('/api/batches', requireAuth, batchesRoutes);
+app.use('/api/calendar-notes', requireAuth, calendarNotesRoutes);
 
 // Dashboard stats
 app.get('/api/dashboard', requireAuth, (req, res) => {

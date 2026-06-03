@@ -5,7 +5,18 @@ const fs = require('fs');
 const { db } = require('../db/database');
 const { generateSinglePDF, generateBulkPDF, buildResultCardHTML } = require('../services/pdfService');
 const { exportClassToExcel } = require('../services/excelService');
+const { generateToken } = require('../services/tokenService');
 const { calculateStudentResult, calculateRanks } = require('../services/gradeService');
+
+// GET /api/export/download-token — get temporary download token
+router.get('/download-token', (req, res) => {
+  try {
+    const token = generateToken(req.session.adminId || 1);
+    res.json({ token });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // GET /api/export/results/:standardId — get computed results for entire class
 router.get('/results/:standardId', (req, res) => {

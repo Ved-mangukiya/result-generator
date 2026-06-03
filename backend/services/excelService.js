@@ -4,6 +4,28 @@ const fs = require('fs');
 const { db } = require('../db/database');
 const { calculateStudentResult, calculateRanks } = require('./gradeService');
 
+function parseDateToISO(val) {
+  if (!val) return '';
+  val = String(val).trim();
+  if (!val) return '';
+  // Check if it's YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+  // Check if it's DD/MM/YYYY or DD-MM-YYYY
+  const dm = val.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (dm) {
+    const d = dm[1].padStart(2, '0');
+    const m = dm[2].padStart(2, '0');
+    const y = dm[3];
+    return `${y}-${m}-${d}`;
+  }
+  // Try JS parsing
+  const d = new Date(val);
+  if (!isNaN(d)) {
+    return d.toISOString().split('T')[0];
+  }
+  return val;
+}
+
 /**
  * Parse uploaded Excel/CSV file and return headers + first few rows for column mapping
  */
@@ -20,7 +42,11 @@ function parseFilePreview(filePath) {
     headers.reduce((obj, h, i) => { obj[h] = row[i] !== undefined ? String(row[i]) : ''; return obj; }, {})
   );
 
-  return { headers, preview, totalRows: rows.length - 1 };
+  const allRows = rows.slice(1).map(row =>
+    headers.reduce((obj, h, i) => { obj[h] = row[i] !== undefined ? String(row[i]) : ''; return obj; }, {})
+  );
+
+  return { headers, preview, allRows, totalRows: rows.length - 1 };
 }
 
 /**
@@ -78,10 +104,10 @@ function importStudentsFromExcel(filePath, standardId, mapping, sortBy = 'first_
         tempRoll,
         mapping.father_name ? (rowObj[mapping.father_name] || '') : '',
         mapping.mother_name ? (rowObj[mapping.mother_name] || '') : '',
-        mapping.dob ? (rowObj[mapping.dob] || '') : '',
+        mapping.dob ? parseDateToISO(rowObj[mapping.dob]) : '',
         mapping.remarks ? (rowObj[mapping.remarks] || '') : '',
         null, // attendance is null
-        mapping.admission_date ? (rowObj[mapping.admission_date] || '') : '',
+        mapping.admission_date ? parseDateToISO(rowObj[mapping.admission_date]) : '',
         mapping.status ? (rowObj[mapping.status] || 'Active') : 'Active',
         mapping.total_fees ? (parseFloat(rowObj[mapping.total_fees]) || 0) : 0
       );

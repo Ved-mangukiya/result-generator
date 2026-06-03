@@ -27,7 +27,7 @@ async function buildResultCardHTML(studentId, templatePath) {
     student = {
       id: 9999,
       standard_id: 1,
-      name: 'Aarav Sharma',
+      name: 'Ananya Sharma',
       roll_number: '21',
       father_name: 'Rajesh Sharma',
       mother_name: 'Sunita Sharma',
@@ -174,7 +174,19 @@ async function buildResultCardHTML(studentId, templatePath) {
     COACHING_LOGO: logoSrc ? `<img src="${logoSrc}" alt="Logo" class="coaching-logo" />` : '<div class="logo-placeholder"></div>',
     STUDENT_NAME: student.name || '',
     STUDENT_ROLL: student.roll_number || '',
-    STUDENT_DOB: settings.show_dob !== 0 ? (student.dob || '—') : '',
+    STUDENT_DOB: (() => {
+      if (settings.show_dob === 0) return '';
+      const dob = student.dob;
+      if (!dob) return '—';
+      try {
+        const d = new Date(dob + (dob.includes('T') ? '' : 'T00:00:00'));
+        if (isNaN(d)) return dob;
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const yyyy = d.getFullYear();
+        return `${dd}/${mm}/${yyyy}`;
+      } catch { return dob; }
+    })(),
     FATHER_NAME: settings.show_parent_names !== 0 ? (student.father_name || '—') : '',
     MOTHER_NAME: settings.show_parent_names !== 0 ? (student.mother_name || '—') : '',
     BOARD_NAME: standard?.board_name || '',

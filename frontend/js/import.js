@@ -239,6 +239,9 @@ async function renderColumnMapping(parseResult, standardId) {
         </div>
       </div>
     </div>
+    
+    <!-- Real-time validation badges and alerts -->
+    <div id="mapping-validation-errors" class="mb-4"></div>
 
     <!-- Preview of first 5 rows -->
     <div class="card mb-4">
@@ -259,6 +262,12 @@ async function renderColumnMapping(parseResult, standardId) {
       <button class="btn btn-outline" onclick="showImportStep(0);document.getElementById('import-step-0').style.display=''">← Back</button>
       <button class="btn btn-primary" id="import-next-btn">Next: Preview →</button>
     </div>`;
+
+  const selects = container.querySelectorAll('.mapping-select');
+  selects.forEach(sel => {
+    sel.addEventListener('change', validateImportData);
+  });
+  validateImportData();
 
   document.getElementById('import-next-btn')?.addEventListener('click', () => {
     executeImportPreview();
@@ -344,6 +353,105 @@ function finishImport() {
 
 function downloadImportTemplate() {
   window.location.href = '/api/import/template';
+}
+
+function validateImportData() {
+  const mapping = buildMapping();
+  const errorsContainer = document.getElementById('mapping-validation-errors');
+  if (!errorsContainer) return;
+  
+  if (!mapping.name) {
+    errorsContainer.innerHTML = `
+      <div class="alert alert-warning" style="display:flex;align-items:center;gap:8px;padding:var(--space-3);background:var(--warning-light);border-left:4px solid var(--warning);border-radius:var(--radius-sm)">
+        <span>⚠️</span>
+        <span style="font-size:0.85rem">Please map the <strong>Student Name</strong> column to enable validation and start importing.</span>
+      </div>`;
+    return;
+  }
+  
+  const warnings = [];
+  const errors = [];
+  
+  const nameCol = mapping.name;
+  const rollCol = mapping.roll_number;
+  const dobCol = mapping.dob;
+  const feesCol = mapping.total_fees;
+  
+  const allRows = _importFileData.allRows || _importFileData.preview || [];
+  
+  const rollSet = new Set();
+  
+  allRows.forEach((row, idx) => {
+    const rowNum = idx + 2; // Header is row 1
+    
+    // Check name
+    if (nameCol && !row[nameCol]) {
+      errors.push(`Row ${rowNum}: Student Name is missing.`);
+    }
+    
+    // Check roll number duplicate
+    if (rollCol && row[rollCol]) {
+      const rollVal = row[rollCol].trim();
+      if (rollVal) {
+        if (rollSet.has(rollVal)) {
+          warnings.push(`Row ${rowNum}: Duplicate Roll Number "${rollVal}" found.`);
+        } else {
+          rollSet.add(rollVal);
+        }
+      }
+    }
+    
+    // Check DOB format
+    if (dobCol && row[dobCol]) {
+      const dobVal = row[dobCol].trim();
+      const isValidDate = /^\d{4}-\d{2}-\d{2}$/.test(dobVal) || 
+                          /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(dobVal) ||
+                          !isNaN(Date.parse(dobVal));
+      if (!isValidDate) {
+        warnings.push(`Row ${rowNum}: Invalid Date of Birth format ("${dobVal}").`);
+      }
+    }
+    
+    // Check Course Fees format
+    if (feesCol && row[feesCol]) {
+      const feeVal = row[feesCol].trim();
+      if (feeVal && isNaN(parseFloat(feeVal))) {
+        warnings.push(`Row ${rowNum}: Non-numeric Total Course Fee ("${feeVal}").`);
+      }
+    }
+  });
+  
+  if (errors.length === 0 && warnings.length === 0) {
+    errorsContainer.innerHTML = `
+      <div class="alert alert-success" style="display:flex;align-items:center;gap:8px;padding:var(--space-3);background:var(--success-light);border-left:4px solid var(--success);border-radius:var(--radius-sm)">
+        <span>✅</span>
+        <span style="font-size:0.85rem">All mapped columns validated successfully. No issues detected in ${allRows.length} rows!</span>
+      </div>`;
+    return;
+  }
+  
+  let html = `<div style="background:var(--bg-elevated); border:1px solid var(--border); border-radius:var(--radius); padding:16px;">
+    <div style="display:flex; align-items:center; justify-content:between; margin-bottom:12px">
+      <div style="display:flex; align-items:center; gap:8px">
+        <span class="badge ${errors.length > 0 ? 'badge-danger' : 'badge-gold'}" style="font-size:0.8rem">
+          ${errors.length > 0 ? '❌ Critical Issues' : '⚠️ Validation Warnings'}
+        </span>
+        <span style="font-size:0.85rem; font-weight:600">
+          Found ${errors.length + warnings.length} issue(s) in your spreadsheet
+        </span>
+      </div>
+    </div>
+    <div style="max-height:150px; overflow-y:auto; font-size:0.8rem; line-height:1.4">`;
+    
+  errors.forEach(e => {
+    html += `<div style="color:var(--danger); margin-bottom:4px; display:flex; gap:6px"><span>•</span><span>${e}</span></div>`;
+  });
+  warnings.forEach(w => {
+    html += `<div style="color:var(--text-primary); opacity:0.85; margin-bottom:4px; display:flex; gap:6px"><span>•</span><span>${w}</span></div>`;
+  });
+  
+  html += `</div></div>`;
+  errorsContainer.innerHTML = html;
 }
 
 window.renderImport = renderImport;

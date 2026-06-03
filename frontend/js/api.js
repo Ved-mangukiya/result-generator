@@ -82,6 +82,14 @@ const API = {
     saveSettings:   (id, data)  => API.put(`/api/standards/${id}/result-settings`, data),
   },
 
+  // ─── Batches ───────────────────────────────────
+  batches: {
+    list:       (standardId)  => API.get(`/api/batches?standard_id=${standardId}`),
+    add:        (data)        => API.post('/api/batches', data),
+    update:     (id, data)    => API.put(`/api/batches/${id}`, data),
+    delete:     (id)          => API.delete(`/api/batches/${id}`),
+  },
+
   // ─── Subjects ──────────────────────────────────────
   subjects: {
     list:       (standardId)       => API.get(`/api/subjects?standard_id=${standardId}`),
@@ -157,6 +165,12 @@ const API = {
     execute: (categories) => API.post('/api/reset', { categories }),
   },
 
+  // ─── Calendar Notes ─────────────────────────────────
+  calendarNotes: {
+    get: () => API.get('/api/calendar-notes'),
+    save: (date, content) => API.post('/api/calendar-notes', { date, content }),
+  },
+
   // ─── Sync ───────────────────────────────────────────
   sync: {
     export: () => API.get('/api/sync/export'),
@@ -178,6 +192,7 @@ const API = {
 
   // ─── Export ──────────────────────────────────────
   export: {
+    downloadToken:  ()                        => API.get('/api/export/download-token'),
     results:        (standardId)              => API.get(`/api/export/results/${standardId}`),
     previewStudent: (studentId, templateId)   => {
       const url = templateId

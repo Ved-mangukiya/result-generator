@@ -441,55 +441,61 @@
         <span class="nav-section-label">Main</span>
 
         <a class="nav-item active" href="#" data-page="dashboard" id="nav-dashboard" role="menuitem">
-          <span class="nav-icon">📊</span>
+          <span class="nav-icon" id="ico-dashboard"></span>
           <span>Dashboard</span>
         </a>
 
         <a class="nav-item" href="#" data-page="boards" id="nav-boards" role="menuitem">
-          <span class="nav-icon">🏛</span>
+          <span class="nav-icon" id="ico-boards"></span>
           <span>Boards &amp; Classes</span>
         </a>
 
         <a class="nav-item" href="#" data-page="students" id="nav-students" role="menuitem">
-          <span class="nav-icon">👥</span>
+          <span class="nav-icon" id="ico-students"></span>
           <span>Admissions &amp; Fees</span>
         </a>
 
         <a class="nav-item" href="#" data-page="tests" id="nav-tests" role="menuitem">
-          <span class="nav-icon">📅</span>
+          <span class="nav-icon" id="ico-tests"></span>
           <span>Test Scheduler</span>
         </a>
 
         <a class="nav-item" href="#" data-page="results" id="nav-results" role="menuitem">
-          <span class="nav-icon">📋</span>
+          <span class="nav-icon" id="ico-results"></span>
           <span>Results Panel</span>
         </a>
 
         <span class="nav-section-label" style="margin-top:var(--space-2)">Utilities</span>
 
         <a class="nav-item" href="#" data-page="reminders" id="nav-reminders" role="menuitem">
-          <span class="nav-icon">🔔</span>
+          <span class="nav-icon" id="ico-reminders"></span>
           <span>Timetable &amp; Reminders</span>
         </a>
 
+        <a class="nav-item" href="#" data-page="promotions" id="nav-promotions" role="menuitem">
+          <span class="nav-icon" id="ico-promotions"></span>
+          <span>Promotions</span>
+          <span style="font-size:0.6rem;font-weight:800;letter-spacing:0.06em;background:linear-gradient(90deg,#d4af37,#f59e0b);color:#1a1a1a;padding:1px 5px;border-radius:9999px;margin-left:4px">NEW</span>
+        </a>
+
         <a class="nav-item" href="#" data-page="templates" id="nav-templates" role="menuitem">
-          <span class="nav-icon">🎨</span>
+          <span class="nav-icon" id="ico-templates"></span>
           <span>Templates</span>
         </a>
 
         <a class="nav-item" href="#" data-page="import" id="nav-import" role="menuitem">
-          <span class="nav-icon">📥</span>
+          <span class="nav-icon" id="ico-import"></span>
           <span>Import Excel</span>
         </a>
       </div>
 
       <div class="sidebar-footer">
         <a class="nav-item" href="#" data-page="settings" id="nav-settings" role="menuitem">
-          <span class="nav-icon">⚙</span>
+          <span class="nav-icon" id="ico-settings"></span>
           <span>Settings</span>
         </a>
         <button class="nav-item w-full" id="logout-btn" style="text-align:left;">
-          <span class="nav-icon">🚪</span>
+          <span class="nav-icon" id="ico-logout"></span>
           <span>Sign Out</span>
         </button>
       </div>
@@ -499,6 +505,9 @@
     <div id="main-wrapper">
       <!-- Top Bar -->
       <header id="topbar">
+        <button class="btn-ghost btn-icon" id="sidebar-toggle" style="display:none; width: 36px; height: 36px; align-items: center; justify-content: center; border-radius: var(--radius); border: 1px solid var(--border);" aria-label="Toggle Navigation Sidebar">
+          ☰
+        </button>
         <div>
           <div class="topbar-title" id="topbar-title">Dashboard</div>
           <div class="topbar-breadcrumb" id="topbar-breadcrumb">
@@ -558,7 +567,11 @@
     </div>
   </div>
 
+  <!-- Chart.js for comparison charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
   <!-- JavaScript -->
+  <script src="/js/icons.js"></script>
   <script src="/js/utils.js"></script>
   <script src="/js/api.js"></script>
   <script src="/js/auth.js"></script>
@@ -571,7 +584,24 @@
   <script src="/js/import.js"></script>
   <script src="/js/settings.js"></script>
   <script src="/js/reminders.js"></script>
+  <script src="/js/promotions.js"></script>
   <script src="/js/app.js"></script>
+
+  <!-- Inject SVG icons into sidebar nav after all scripts load -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const navIcons = {
+        'ico-dashboard': 'dashboard', 'ico-boards': 'boards', 'ico-students': 'students',
+        'ico-tests': 'tests', 'ico-results': 'results', 'ico-reminders': 'reminders',
+        'ico-promotions': 'promotions', 'ico-templates': 'templates', 'ico-import': 'import',
+        'ico-settings': 'settings', 'ico-logout': 'logout'
+      };
+      Object.entries(navIcons).forEach(([id, icon]) => {
+        const el = document.getElementById(id);
+        if (el && window.Icons) el.innerHTML = Icons.render(icon, { size: 18 });
+      });
+    });
+  </script>
 
 </body>
 

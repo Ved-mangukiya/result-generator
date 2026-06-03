@@ -208,9 +208,10 @@ async function loadStandards(boardId) {
                 </div>
               </div>
               <div class="flex gap-2">
+                <button class="btn btn-outline btn-sm" onclick="showBatchesPanel(${s.id}, '${s.display_name.replace(/'/g, "\\'")}')">🏷 Batches</button>
                 <button class="btn btn-outline btn-sm" onclick="showSubjectsPanel(${s.id})">📖 Subjects</button>
                 <button class="btn btn-ghost btn-sm" onclick="Router.navigate('students', {standardId:${s.id}})">👥 Students</button>
-                <button class="btn btn-ghost btn-icon-sm" onclick="confirmDeleteStandard(${s.id}, '${s.display_name}')">🗑</button>
+                <button class="btn btn-ghost btn-icon-sm" onclick="confirmDeleteStandard(${s.id}, '${s.display_name.replace(/'/g, "\\'")}')">🗑</button>
               </div>
             </div>
           </div>`).join('')}
@@ -797,6 +798,79 @@ window.confirmDeleteBoard = confirmDeleteBoard;
 window.showAddStandardModal = showAddStandardModal;
 window.addStandard = addStandard;
 window.confirmDeleteStandard = confirmDeleteStandard;
+
+// ─── Batches Management ───────────────────────────────────
+async function showBatchesPanel(standardId, standardName) {
+  try {
+    const batches = await API.batches.list(standardId);
+    createModal('batches-modal', `🏷 Batches — ${standardName}`,
+      `<div class="flex justify-between items-center mb-4">
+        <p class="text-sm text-secondary">${batches.length} batch${batches.length !== 1 ? 'es' : ''} configured</p>
+        <button class="btn btn-primary btn-sm" onclick="showAddBatchModal(${standardId}, '${standardName}')">➕ Add Batch</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Batch Name</th><th>Actions</th></tr></thead>
+          <tbody id="batches-table-body">
+            ${batches.length === 0 ? '<tr><td colspan="2" style="text-align:center;padding:var(--space-6);color:var(--text-muted)">No batches configured. Tests apply to all students by default.</td></tr>' :
+              batches.map(b => `<tr>
+                <td class="td-primary">${b.name}</td>
+                <td class="td-actions" style="width:100px">
+                  <button class="btn btn-ghost btn-icon-sm" onclick="confirmDeleteBatch(${b.id}, '${b.name.replace(/'/g, "\\'")}', ${standardId}, '${standardName.replace(/'/g, "\\'")}')" title="Delete">🗑</button>
+                </td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`,
+      `<button class="btn btn-outline" onclick="closeModal('batches-modal')">Close</button>`,
+      'modal-md'
+    );
+  } catch (err) {
+    Toast.error('Error', err.message);
+  }
+}
+window.showBatchesPanel = showBatchesPanel;
+
+function showAddBatchModal(standardId, standardName) {
+  createModal('add-batch-modal', '➕ Add Batch',
+    `<div class="form-group mb-4">
+      <label class="form-label">Batch Name <span class="required">*</span></label>
+      <input type="text" class="form-control" id="batch-name" placeholder="e.g. Morning Batch">
+    </div>`,
+    `<button class="btn btn-outline" onclick="closeModal('add-batch-modal')">Cancel</button>
+     <button class="btn btn-primary" onclick="addBatch(${standardId}, '${standardName}')">Add Batch</button>`,
+    'modal-sm'
+  );
+}
+window.showAddBatchModal = showAddBatchModal;
+
+async function addBatch(standardId, standardName) {
+  const name = document.getElementById('batch-name').value.trim();
+  if (!name) { Toast.error('Required', 'Batch name is required.'); return; }
+  try {
+    await API.batches.add({ standard_id: standardId, name });
+    closeModal('add-batch-modal');
+    Toast.success('Batch Added', name);
+    showBatchesPanel(standardId, standardName);
+  } catch (err) {
+    Toast.error('Add Failed', err.message);
+  }
+}
+window.addBatch = addBatch;
+
+async function confirmDeleteBatch(id, name, standardId, standardName) {
+  const ok = await Confirm.show(`Delete "${name}"?`, 'Students and tests assigned to this batch will revert to "All Batches".', 'Delete Batch');
+  if (!ok) return;
+  try {
+    await API.batches.delete(id);
+    Toast.success('Batch Deleted', name);
+    showBatchesPanel(standardId, standardName);
+  } catch (err) {
+    Toast.error('Delete Failed', err.message);
+  }
+}
+window.confirmDeleteBatch = confirmDeleteBatch;
+
 function stdSelectAll(check) {
   const checkboxes = document.querySelectorAll('#std-subjects-checklist input[type="checkbox"]');
   checkboxes.forEach(cb => { cb.checked = check; });
