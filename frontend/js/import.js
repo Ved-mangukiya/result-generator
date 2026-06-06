@@ -40,12 +40,12 @@ async function renderImport() {
           </div>
           <div class="file-upload-area" id="import-drop-zone" style="max-width:500px">
             <input type="file" id="import-file-input" accept=".xlsx,.xls,.csv" onchange="handleImportFile(this)">
-            <div class="file-upload-icon">📊</div>
+            <div class="file-upload-icon">${Icons?.render?.('excel',{size:32}) || ''}</div>
             <p class="file-upload-text">Drop your Excel or CSV file here</p>
             <p class="file-upload-hint">Supported: .xlsx, .xls, .csv · Max 20MB</p>
           </div>
           <div class="mt-5">
-            <p class="text-sm text-secondary mb-2" style="font-weight:600">📋 Expected Excel Format Specimen:</p>
+            <p class="text-sm text-secondary mb-2" style="font-weight:600;display:flex;align-items:center;gap:6px">${Icons?.render?.('excel',{size:16}) || ''} Expected Excel Format Specimen:</p>
             <div class="table-wrap mb-4" style="overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius-sm)">
               <table style="width:max-content; border-collapse:collapse; font-size:0.75rem; background:var(--bg-elevated)">
                 <thead>
@@ -75,7 +75,7 @@ async function renderImport() {
               </table>
             </div>
             <button class="btn btn-sm" onclick="downloadImportTemplate()" style="background:#16a34a; color:white; border:none; display:flex; align-items:center; gap:6px; font-weight:600; padding:var(--space-2) var(--space-3)">
-              📥 Download Excel Template
+              ${Icons?.render?.('download',{size:14}) || ''} Download Excel Template
             </button>
           </div>
         </div>
@@ -132,7 +132,7 @@ async function handleImportFile(input) {
   _importStandardId = parseInt(standardId);
   
   const dropZone = document.getElementById('import-drop-zone');
-  dropZone.innerHTML = `<div class="file-upload-icon animate-pulse">📊</div><p class="file-upload-text">Parsing file...</p>`;
+  dropZone.innerHTML = `<div class="file-upload-icon animate-pulse">${Icons?.render?.('excel',{size:32}) || ''}</div><p class="file-upload-text">Parsing file...</p>`;
   
   try {
     const formData = new FormData();
@@ -142,14 +142,14 @@ async function handleImportFile(input) {
     _importFileData = result;
     
     dropZone.innerHTML = `
-      <div class="file-upload-icon">✅</div>
+      <div class="file-upload-icon" style="color:var(--success);display:flex;align-items:center;justify-content:center">${Icons?.render?.('check',{size:32}) || ''}</div>
       <p class="file-upload-text" style="color:var(--success)"><strong>${file.name}</strong> parsed successfully</p>
       <p class="file-upload-hint">${result.totalRows} rows · ${result.headers.length} columns detected</p>`;
     
     showImportStep(1);
     await renderColumnMapping(result, standardId);
   } catch (err) {
-    dropZone.innerHTML = `<div class="file-upload-icon">❌</div><p style="color:var(--danger)">${err.message}</p>`;
+    dropZone.innerHTML = `<div class="file-upload-icon" style="color:var(--danger);display:flex;align-items:center;justify-content:center">${Icons?.render?.('warning',{size:32}) || ''}</div><p style="color:var(--danger)">${err.message}</p>`;
     Toast.error('Parse Failed', err.message);
   }
 }
@@ -332,7 +332,7 @@ async function executeImportPreview() {
     
     Toast.success('Import Complete', `${result.imported} students imported successfully!`);
   } catch (err) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">❌</div><h3>Import Failed</h3><p>${err.message}</p></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">${Icons?.render?.('warning',{size:32}) || ''}</div><h3>Import Failed</h3><p>${err.message}</p></div>`;
     Toast.error('Import Failed', err.message);
   }
 }

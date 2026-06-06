@@ -166,6 +166,28 @@ window.showApp = function(me) {
   const targetPage = window._initialPage || 'dashboard';
   Router.navigate(targetPage);
   window._initialPage = null;
+
+  // Auto JSON backup check (every 48 hours)
+  try {
+    const lastBackup = localStorage.getItem('last_auto_download_backup');
+    const now = Date.now();
+    const interval = 48 * 60 * 60 * 1000; // 48 hours
+    if (!lastBackup || now - parseInt(lastBackup) >= interval) {
+      console.log('[Backup] Triggering client-side automated JSON backup download...');
+      const a = document.createElement('a');
+      a.href = '/api/sync/export';
+      const d = new Date();
+      const filename = `tuition_erp_backup_${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}.json`;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      localStorage.setItem('last_auto_download_backup', String(now));
+    }
+  } catch (e) {
+    console.error('Auto backup check failed:', e);
+  }
 };
 
 window.Router = Router;
+

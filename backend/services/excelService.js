@@ -8,6 +8,19 @@ function parseDateToISO(val) {
   if (!val) return '';
   val = String(val).trim();
   if (!val) return '';
+  
+  // Check if it's a numeric Excel serial date
+  if (/^\d{5}(\.\d+)?$/.test(val)) {
+    const serial = parseFloat(val);
+    const d = new Date((serial - 25569) * 86400000);
+    if (!isNaN(d)) {
+      const yyyy = d.getUTCFullYear();
+      const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const dd = String(d.getUTCDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+  }
+
   // Check if it's YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
   // Check if it's DD/MM/YYYY or DD-MM-YYYY
@@ -88,12 +101,38 @@ function importStudentsFromExcel(filePath, standardId, mapping, sortBy = 'first_
       const row = dataRows[i];
       const rowObj = headers.reduce((obj, h, idx) => { obj[h] = row[idx] !== undefined ? String(row[idx]).trim() : ''; return obj; }, {});
 
-      const name = mapping.name ? (rowObj[mapping.name] || '') : '';
+      let name = mapping.name ? (rowObj[mapping.name] || '') : '';
+      let father_name = mapping.father_name ? (rowObj[mapping.father_name] || '') : '';
 
       if (!name) {
         skipped++;
         continue;
       }
+
+      // Format student name to FirstName.FatherName.Surname
+      let firstName = '';
+      let fName = father_name ? father_name.trim() : '';
+      let lName = '';
+
+      if (name.includes('.')) {
+        const parts = name.split('.');
+        firstName = parts[0] || '';
+        if (parts[1]) fName = parts[1];
+        if (parts[2]) lName = parts[2];
+      } else {
+        const parts = name.trim().split(/\s+/);
+        firstName = parts[0] || '';
+        if (parts.length > 2) {
+          if (!fName) {
+            fName = parts.slice(1, parts.length - 1).join(' ');
+          }
+          lName = parts[parts.length - 1] || '';
+        } else if (parts.length === 2) {
+          lName = parts[1] || '';
+        }
+      }
+      name = `${firstName.trim()}.${fName.trim()}.${lName.trim()}`;
+      father_name = fName.trim();
 
       // Assign a temporary unique roll number for insertion
       const tempRoll = `TEMP_IMP_${Date.now()}_${i}`;
@@ -102,7 +141,7 @@ function importStudentsFromExcel(filePath, standardId, mapping, sortBy = 'first_
         standardId,
         name,
         tempRoll,
-        mapping.father_name ? (rowObj[mapping.father_name] || '') : '',
+        father_name,
         mapping.mother_name ? (rowObj[mapping.mother_name] || '') : '',
         mapping.dob ? parseDateToISO(rowObj[mapping.dob]) : '',
         mapping.remarks ? (rowObj[mapping.remarks] || '') : '',
@@ -145,17 +184,23 @@ function importStudentsFromExcel(filePath, standardId, mapping, sortBy = 'first_
     allStudents.sort((a, b) => {
       let valA = '';
       let valB = '';
+      
+      const getParts = (nameStr) => {
+        if (nameStr.includes('.')) return nameStr.split('.');
+        return nameStr.trim().split(/\s+/);
+      };
+
       if (sortBy === 'surname') {
-        const partsA = a.name.trim().split(/\s+/);
-        const partsB = b.name.trim().split(/\s+/);
+        const partsA = getParts(a.name);
+        const partsB = getParts(b.name);
         valA = partsA.length > 1 ? partsA[partsA.length - 1] : a.name;
         valB = partsB.length > 1 ? partsB[partsB.length - 1] : b.name;
       } else if (sortBy === 'father_name') {
-        valA = a.father_name || '';
-        valB = b.father_name || '';
+        valA = a.father_name || getParts(a.name)[1] || '';
+        valB = b.father_name || getParts(b.name)[1] || '';
       } else { // first_name / default
-        valA = a.name || '';
-        valB = b.name || '';
+        valA = getParts(a.name)[0] || a.name;
+        valB = getParts(b.name)[0] || b.name;
       }
       return valA.localeCompare(valB, undefined, { sensitivity: 'base', numeric: true });
     });
@@ -173,14 +218,22 @@ function importStudentsFromExcel(filePath, standardId, mapping, sortBy = 'first_
 /**
  * Export class results to Excel
  */
-function exportClassToExcel(standardId, outputPath) {
+function exportClassToExcel(standardId, outputPath, batchId = null) {
   const standard = db.prepare(`
     SELECT s.*, b.name as board_name, b.id as board_id_val, b.short_name as board_short
     FROM standards s JOIN boards b ON s.board_id = b.id WHERE s.id = ?
   `).get(standardId);
 
   const subjects = db.prepare('SELECT * FROM subjects WHERE standard_id = ? ORDER BY sort_order').all(standardId);
-  const students = db.prepare('SELECT * FROM students WHERE standard_id = ? ORDER BY roll_number').all(standardId);
+  
+  let studentsQuery = 'SELECT * FROM students WHERE standard_id = ?';
+  const studentsParams = [standardId];
+  if (batchId) {
+    studentsQuery += ' AND batch_id = ?';
+    studentsParams.push(batchId);
+  }
+  studentsQuery += ' ORDER BY roll_number';
+  const students = db.prepare(studentsQuery).all(...studentsParams);
 
   const { calculateStudentResult, calculateRanks } = require('./gradeService');
 

@@ -74,4 +74,84 @@ router.delete('/payments/:paymentId', (req, res) => {
   res.json({ success: true });
 });
 
+// ══════════════════════════════════════════════════════════════════════════════
+//   FEE PDF DOWNLOADS
+// ══════════════════════════════════════════════════════════════════════════════
+
+// GET /api/fees/student/:studentId/ledger-pdf
+router.get('/student/:studentId/ledger-pdf', async (req, res) => {
+  try {
+    const { generateStudentLedgerPDF } = require('../services/feesPdfService');
+    const { filename, outputPath } = await generateStudentLedgerPDF(parseInt(req.params.studentId));
+
+    const student = db.prepare('SELECT name FROM students WHERE id = ?').get(req.params.studentId);
+    const coaching = db.prepare('SELECT name FROM coaching_profile').get() || {};
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = String(now.getHours()).padStart(2,'0') + '-' + String(now.getMinutes()).padStart(2,'0');
+    const coachingClean = (coaching.name || 'Coaching').replace(/[^a-zA-Z0-9]/g,'_');
+    const studentClean  = (student?.name || 'Student').replace(/[^a-zA-Z0-9]/g,'_');
+    const dlName = `${coachingClean}_${studentClean}_FeeLedger_${dateStr}_${timeStr}.pdf`;
+
+    res.download(outputPath, dlName, err => {
+      if (err) console.error('Ledger PDF download error:', err);
+      try { require('fs').unlinkSync(outputPath); } catch(e) {}
+    });
+  } catch (err) {
+    console.error('Ledger PDF error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/fees/payments/:paymentId/receipt-pdf
+router.get('/payments/:paymentId/receipt-pdf', async (req, res) => {
+  try {
+    const { generatePaymentReceiptPDF } = require('../services/feesPdfService');
+    const { filename, outputPath } = await generatePaymentReceiptPDF(parseInt(req.params.paymentId));
+
+    const payment = db.prepare('SELECT * FROM fee_payments WHERE id = ?').get(req.params.paymentId);
+    const student  = payment ? db.prepare('SELECT name FROM students WHERE id = ?').get(payment.student_id) : null;
+    const coaching = db.prepare('SELECT name FROM coaching_profile').get() || {};
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const coachingClean = (coaching.name || 'Coaching').replace(/[^a-zA-Z0-9]/g,'_');
+    const studentClean  = (student?.name || 'Student').replace(/[^a-zA-Z0-9]/g,'_');
+    const dlName = `${coachingClean}_Receipt_${studentClean}_${String(req.params.paymentId).padStart(4,'0')}_${dateStr}.pdf`;
+
+    res.download(outputPath, dlName, err => {
+      if (err) console.error('Receipt PDF download error:', err);
+      try { require('fs').unlinkSync(outputPath); } catch(e) {}
+    });
+  } catch (err) {
+    console.error('Receipt PDF error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/fees/standard/:standardId/bulk-ledger-pdf
+router.get('/standard/:standardId/bulk-ledger-pdf', async (req, res) => {
+  try {
+    const { generateBulkLedgerPDF } = require('../services/feesPdfService');
+    const { filename, outputPath } = await generateBulkLedgerPDF(parseInt(req.params.standardId));
+
+    const standard = db.prepare('SELECT display_name FROM standards WHERE id = ?').get(req.params.standardId);
+    const coaching  = db.prepare('SELECT name FROM coaching_profile').get() || {};
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = String(now.getHours()).padStart(2,'0') + '-' + String(now.getMinutes()).padStart(2,'0');
+    const coachingClean = (coaching.name || 'Coaching').replace(/[^a-zA-Z0-9]/g,'_');
+    const stdClean      = (standard?.display_name || 'Class').replace(/[^a-zA-Z0-9]/g,'_');
+    const dlName = `${coachingClean}_${stdClean}_BulkFeeLedger_${dateStr}_${timeStr}.pdf`;
+
+    res.download(outputPath, dlName, err => {
+      if (err) console.error('Bulk ledger PDF download error:', err);
+      try { require('fs').unlinkSync(outputPath); } catch(e) {}
+    });
+  } catch (err) {
+    console.error('Bulk ledger PDF error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
+

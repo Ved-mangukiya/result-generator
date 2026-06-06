@@ -1,0 +1,1389 @@
+{
+  "admin": [
+    {
+      "id": 1,
+      "email": "admin@result.local",
+      "password_hash": "$2a$10$/56thXxEXhuFER2cCYoJmerAlAyyGkP1fO1sqAexf3neTwztQvGUm",
+      "created_at": "2026-06-01 06:34:09"
+    }
+  ],
+  "coaching_profile": [
+    {
+      "id": 1,
+      "name": "Physics Wallah",
+      "tagline": "Center for Excellence",
+      "logo_path": "uploads/logos/logo_1780671965173.jpg",
+      "address": "",
+      "phone": "+919574423139",
+      "website": "www.physicswallah.com",
+      "primary_color": "#1a1a2e",
+      "onboarding_complete": 1,
+      "updated_at": "2026-06-05 15:06:05",
+      "weekly_tests_count": 40,
+      "has_midsem": 1,
+      "has_final": 1,
+      "signature_path": "uploads/signatures/signature_1780671965207.png",
+      "signatory_name": "Ved Mangukiya",
+      "signatory_title": "Director",
+      "alternate_phone": "+919574423139",
+      "email": "vedmangukiya05@gmail.com",
+      "established_year": 1998,
+      "registration_no": "",
+      "registration_authority": "",
+      "exam_mode_default": "Offline",
+      "passing_percentage": 33,
+      "grading_format": "State Scale",
+      "eval_style": "Manual",
+      "notice_lead_days": 3
+    }
+  ],
+  "boards": [
+    {
+      "id": 21,
+      "name": "Primary School Section",
+      "short_name": "School",
+      "is_custom": 1,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 22,
+      "name": "HSC Higher Secondary",
+      "short_name": "HSC",
+      "is_custom": 1,
+      "created_at": "2026-06-05 15:06:05"
+    }
+  ],
+  "grade_scales": [
+    {
+      "id": 139,
+      "board_id": 21,
+      "label": "A1",
+      "min_pct": 90,
+      "max_pct": 100,
+      "color": "#1a7a2e",
+      "result_status": "A1",
+      "sort_order": 0
+    },
+    {
+      "id": 140,
+      "board_id": 21,
+      "label": "A2",
+      "min_pct": 80,
+      "max_pct": 89,
+      "color": "#2d9e47",
+      "result_status": "A2",
+      "sort_order": 1
+    },
+    {
+      "id": 141,
+      "board_id": 21,
+      "label": "B1",
+      "min_pct": 70,
+      "max_pct": 79,
+      "color": "#4caf69",
+      "result_status": "B1",
+      "sort_order": 2
+    },
+    {
+      "id": 142,
+      "board_id": 21,
+      "label": "B2",
+      "min_pct": 60,
+      "max_pct": 69,
+      "color": "#7cc48b",
+      "result_status": "B2",
+      "sort_order": 3
+    },
+    {
+      "id": 143,
+      "board_id": 21,
+      "label": "C1",
+      "min_pct": 50,
+      "max_pct": 59,
+      "color": "#f0a500",
+      "result_status": "C1",
+      "sort_order": 4
+    },
+    {
+      "id": 144,
+      "board_id": 21,
+      "label": "C2",
+      "min_pct": 40,
+      "max_pct": 49,
+      "color": "#f5bc42",
+      "result_status": "C2",
+      "sort_order": 5
+    },
+    {
+      "id": 145,
+      "board_id": 21,
+      "label": "D",
+      "min_pct": 33,
+      "max_pct": 39,
+      "color": "#e07b39",
+      "result_status": "D",
+      "sort_order": 6
+    },
+    {
+      "id": 146,
+      "board_id": 21,
+      "label": "E",
+      "min_pct": 0,
+      "max_pct": 32,
+      "color": "#d32f2f",
+      "result_status": "Fail",
+      "sort_order": 7
+    },
+    {
+      "id": 147,
+      "board_id": 22,
+      "label": "A1",
+      "min_pct": 90,
+      "max_pct": 100,
+      "color": "#1a7a2e",
+      "result_status": "A1",
+      "sort_order": 0
+    },
+    {
+      "id": 148,
+      "board_id": 22,
+      "label": "A2",
+      "min_pct": 80,
+      "max_pct": 89,
+      "color": "#2d9e47",
+      "result_status": "A2",
+      "sort_order": 1
+    },
+    {
+      "id": 149,
+      "board_id": 22,
+      "label": "B1",
+      "min_pct": 70,
+      "max_pct": 79,
+      "color": "#4caf69",
+      "result_status": "B1",
+      "sort_order": 2
+    },
+    {
+      "id": 150,
+      "board_id": 22,
+      "label": "B2",
+      "min_pct": 60,
+      "max_pct": 69,
+      "color": "#7cc48b",
+      "result_status": "B2",
+      "sort_order": 3
+    },
+    {
+      "id": 151,
+      "board_id": 22,
+      "label": "C1",
+      "min_pct": 50,
+      "max_pct": 59,
+      "color": "#f0a500",
+      "result_status": "C1",
+      "sort_order": 4
+    },
+    {
+      "id": 152,
+      "board_id": 22,
+      "label": "C2",
+      "min_pct": 40,
+      "max_pct": 49,
+      "color": "#f5bc42",
+      "result_status": "C2",
+      "sort_order": 5
+    },
+    {
+      "id": 153,
+      "board_id": 22,
+      "label": "D",
+      "min_pct": 33,
+      "max_pct": 39,
+      "color": "#e07b39",
+      "result_status": "D",
+      "sort_order": 6
+    },
+    {
+      "id": 154,
+      "board_id": 22,
+      "label": "E",
+      "min_pct": 0,
+      "max_pct": 32,
+      "color": "#d32f2f",
+      "result_status": "Fail",
+      "sort_order": 7
+    }
+  ],
+  "standards": [
+    {
+      "id": 39,
+      "board_id": 21,
+      "standard_number": 1,
+      "stream": "General",
+      "display_name": "Class 1",
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 40,
+      "board_id": 21,
+      "standard_number": 2,
+      "stream": "General",
+      "display_name": "Class 2",
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 41,
+      "board_id": 21,
+      "standard_number": 3,
+      "stream": "General",
+      "display_name": "Class 3",
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 42,
+      "board_id": 21,
+      "standard_number": 4,
+      "stream": "General",
+      "display_name": "Class 4",
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 43,
+      "board_id": 21,
+      "standard_number": 5,
+      "stream": "General",
+      "display_name": "Class 5",
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 44,
+      "board_id": 21,
+      "standard_number": 6,
+      "stream": "General",
+      "display_name": "Class 6",
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 45,
+      "board_id": 21,
+      "standard_number": 7,
+      "stream": "General",
+      "display_name": "Class 7",
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 46,
+      "board_id": 21,
+      "standard_number": 8,
+      "stream": "General",
+      "display_name": "Class 8",
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 47,
+      "board_id": 21,
+      "standard_number": 9,
+      "stream": "General",
+      "display_name": "Class 9",
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 48,
+      "board_id": 21,
+      "standard_number": 10,
+      "stream": "General",
+      "display_name": "Class 10",
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 49,
+      "board_id": 22,
+      "standard_number": 11,
+      "stream": "Commerce",
+      "display_name": "Class 11 Commerce",
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 50,
+      "board_id": 22,
+      "standard_number": 12,
+      "stream": "Commerce",
+      "display_name": "Class 12 Commerce",
+      "created_at": "2026-06-05 15:06:05"
+    }
+  ],
+  "subjects": [
+    {
+      "id": 180,
+      "standard_id": 39,
+      "name": "English",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 1,
+      "sort_order": 0
+    },
+    {
+      "id": 181,
+      "standard_id": 39,
+      "name": "Hindi",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 1,
+      "sort_order": 1
+    },
+    {
+      "id": 182,
+      "standard_id": 39,
+      "name": "Mathematics",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 2
+    },
+    {
+      "id": 183,
+      "standard_id": 39,
+      "name": "Environmental Studies (EVS)",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 3
+    },
+    {
+      "id": 184,
+      "standard_id": 40,
+      "name": "English",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 1,
+      "sort_order": 0
+    },
+    {
+      "id": 185,
+      "standard_id": 40,
+      "name": "Hindi",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 1,
+      "sort_order": 1
+    },
+    {
+      "id": 186,
+      "standard_id": 40,
+      "name": "Mathematics",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 2
+    },
+    {
+      "id": 187,
+      "standard_id": 40,
+      "name": "Environmental Studies (EVS)",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 3
+    },
+    {
+      "id": 188,
+      "standard_id": 41,
+      "name": "English",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 1,
+      "sort_order": 0
+    },
+    {
+      "id": 189,
+      "standard_id": 41,
+      "name": "Hindi",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 1,
+      "sort_order": 1
+    },
+    {
+      "id": 190,
+      "standard_id": 41,
+      "name": "Mathematics",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 2
+    },
+    {
+      "id": 191,
+      "standard_id": 41,
+      "name": "Environmental Studies (EVS)",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 3
+    },
+    {
+      "id": 192,
+      "standard_id": 42,
+      "name": "English",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 1,
+      "sort_order": 0
+    },
+    {
+      "id": 193,
+      "standard_id": 42,
+      "name": "Hindi",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 1,
+      "sort_order": 1
+    },
+    {
+      "id": 194,
+      "standard_id": 42,
+      "name": "Mathematics",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 2
+    },
+    {
+      "id": 195,
+      "standard_id": 42,
+      "name": "Environmental Studies (EVS)",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 3
+    },
+    {
+      "id": 196,
+      "standard_id": 43,
+      "name": "English",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 1,
+      "sort_order": 0
+    },
+    {
+      "id": 197,
+      "standard_id": 43,
+      "name": "Hindi",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 1,
+      "sort_order": 1
+    },
+    {
+      "id": 198,
+      "standard_id": 43,
+      "name": "Mathematics",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 2
+    },
+    {
+      "id": 199,
+      "standard_id": 43,
+      "name": "Environmental Studies (EVS)",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 3
+    },
+    {
+      "id": 200,
+      "standard_id": 44,
+      "name": "English",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 1,
+      "sort_order": 0
+    },
+    {
+      "id": 201,
+      "standard_id": 44,
+      "name": "Hindi",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 1,
+      "sort_order": 1
+    },
+    {
+      "id": 202,
+      "standard_id": 44,
+      "name": "Mathematics",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 2
+    },
+    {
+      "id": 203,
+      "standard_id": 44,
+      "name": "Science",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 3
+    },
+    {
+      "id": 204,
+      "standard_id": 44,
+      "name": "Social Science",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 4
+    },
+    {
+      "id": 205,
+      "standard_id": 45,
+      "name": "English",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 1,
+      "sort_order": 0
+    },
+    {
+      "id": 206,
+      "standard_id": 45,
+      "name": "Hindi",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 1,
+      "sort_order": 1
+    },
+    {
+      "id": 207,
+      "standard_id": 45,
+      "name": "Mathematics",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 2
+    },
+    {
+      "id": 208,
+      "standard_id": 45,
+      "name": "Science",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 3
+    },
+    {
+      "id": 209,
+      "standard_id": 45,
+      "name": "Social Science",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 4
+    },
+    {
+      "id": 210,
+      "standard_id": 46,
+      "name": "English",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 1,
+      "sort_order": 0
+    },
+    {
+      "id": 211,
+      "standard_id": 46,
+      "name": "Hindi",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 1,
+      "sort_order": 1
+    },
+    {
+      "id": 212,
+      "standard_id": 46,
+      "name": "Mathematics",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 2
+    },
+    {
+      "id": 213,
+      "standard_id": 46,
+      "name": "Science",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 3
+    },
+    {
+      "id": 214,
+      "standard_id": 46,
+      "name": "Social Science",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 4
+    },
+    {
+      "id": 215,
+      "standard_id": 47,
+      "name": "English",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 1,
+      "sort_order": 0
+    },
+    {
+      "id": 216,
+      "standard_id": 47,
+      "name": "Hindi",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 1,
+      "sort_order": 1
+    },
+    {
+      "id": 217,
+      "standard_id": 47,
+      "name": "Mathematics",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 2
+    },
+    {
+      "id": 218,
+      "standard_id": 47,
+      "name": "Science",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 3
+    },
+    {
+      "id": 219,
+      "standard_id": 47,
+      "name": "Social Science",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 4
+    },
+    {
+      "id": 220,
+      "standard_id": 48,
+      "name": "English",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 1,
+      "sort_order": 0
+    },
+    {
+      "id": 221,
+      "standard_id": 48,
+      "name": "Hindi",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 1,
+      "sort_order": 1
+    },
+    {
+      "id": 222,
+      "standard_id": 48,
+      "name": "Mathematics",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 2
+    },
+    {
+      "id": 223,
+      "standard_id": 48,
+      "name": "Science",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 3
+    },
+    {
+      "id": 224,
+      "standard_id": 48,
+      "name": "Social Science",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 4
+    },
+    {
+      "id": 225,
+      "standard_id": 49,
+      "name": "English",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 1,
+      "sort_order": 0
+    },
+    {
+      "id": 226,
+      "standard_id": 49,
+      "name": "Accountancy",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 1
+    },
+    {
+      "id": 227,
+      "standard_id": 49,
+      "name": "Business Studies",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 2
+    },
+    {
+      "id": 228,
+      "standard_id": 49,
+      "name": "Economics",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 3
+    },
+    {
+      "id": 229,
+      "standard_id": 49,
+      "name": "Statistics",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 4
+    },
+    {
+      "id": 230,
+      "standard_id": 50,
+      "name": "English",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 1,
+      "sort_order": 0
+    },
+    {
+      "id": 231,
+      "standard_id": 50,
+      "name": "Accountancy",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 1
+    },
+    {
+      "id": 232,
+      "standard_id": 50,
+      "name": "Business Studies",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 2
+    },
+    {
+      "id": 233,
+      "standard_id": 50,
+      "name": "Economics",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 3
+    },
+    {
+      "id": 234,
+      "standard_id": 50,
+      "name": "Statistics",
+      "max_marks": 100,
+      "marks_type": "total",
+      "internal_max": 0,
+      "external_max": 100,
+      "is_compulsory": 1,
+      "is_language": 0,
+      "sort_order": 4
+    }
+  ],
+  "students": [
+    {
+      "id": 57,
+      "standard_id": 50,
+      "name": "VED Mangukiya",
+      "roll_number": "1",
+      "father_name": "maheshbhai",
+      "mother_name": "varshaben",
+      "dob": "2009-01-08",
+      "photo_path": "uploads/photos/photo_1780749856781.jpg",
+      "remarks": "",
+      "attendance_pct": null,
+      "created_at": "2026-06-05 15:07:18",
+      "admission_date": "2026-06-05",
+      "status": "Active",
+      "total_fees": 25000,
+      "paid_fees": 5000,
+      "elective_subjects": "{\"enrolledSubjectIds\":[230,231,232,233,234]}",
+      "batch_id": 4
+    }
+  ],
+  "marks": [],
+  "test_cycles": [
+    {
+      "id": 53,
+      "standard_id": 39,
+      "title": "Weekly Test",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 54,
+      "standard_id": 39,
+      "title": "Mid Sem",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 55,
+      "standard_id": 39,
+      "title": "Sem",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 56,
+      "standard_id": 39,
+      "title": "Final",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 57,
+      "standard_id": 40,
+      "title": "Weekly Test",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 58,
+      "standard_id": 40,
+      "title": "Mid Sem",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 59,
+      "standard_id": 40,
+      "title": "Sem",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 60,
+      "standard_id": 40,
+      "title": "Final",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 61,
+      "standard_id": 41,
+      "title": "Weekly Test",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 62,
+      "standard_id": 41,
+      "title": "Mid Sem",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 63,
+      "standard_id": 41,
+      "title": "Sem",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 64,
+      "standard_id": 41,
+      "title": "Final",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 65,
+      "standard_id": 42,
+      "title": "Weekly Test",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 66,
+      "standard_id": 42,
+      "title": "Mid Sem",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 67,
+      "standard_id": 42,
+      "title": "Sem",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 68,
+      "standard_id": 42,
+      "title": "Final",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 69,
+      "standard_id": 43,
+      "title": "Weekly Test",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 70,
+      "standard_id": 43,
+      "title": "Mid Sem",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 71,
+      "standard_id": 43,
+      "title": "Sem",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 72,
+      "standard_id": 43,
+      "title": "Final",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 73,
+      "standard_id": 44,
+      "title": "Weekly Test",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 74,
+      "standard_id": 44,
+      "title": "Mid Sem",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 75,
+      "standard_id": 44,
+      "title": "Sem",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 76,
+      "standard_id": 44,
+      "title": "Final",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 77,
+      "standard_id": 45,
+      "title": "Weekly Test",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 78,
+      "standard_id": 45,
+      "title": "Mid Sem",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 79,
+      "standard_id": 45,
+      "title": "Sem",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 80,
+      "standard_id": 45,
+      "title": "Final",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 81,
+      "standard_id": 46,
+      "title": "Weekly Test",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 82,
+      "standard_id": 46,
+      "title": "Mid Sem",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 83,
+      "standard_id": 46,
+      "title": "Sem",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 84,
+      "standard_id": 46,
+      "title": "Final",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 85,
+      "standard_id": 47,
+      "title": "Weekly Test",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 86,
+      "standard_id": 47,
+      "title": "Mid Sem",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 87,
+      "standard_id": 47,
+      "title": "Sem",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 88,
+      "standard_id": 47,
+      "title": "Final",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 89,
+      "standard_id": 48,
+      "title": "Weekly Test",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 90,
+      "standard_id": 48,
+      "title": "Mid Sem",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 91,
+      "standard_id": 48,
+      "title": "Sem",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 92,
+      "standard_id": 48,
+      "title": "Final",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 93,
+      "standard_id": 49,
+      "title": "Weekly Practice Test",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 94,
+      "standard_id": 49,
+      "title": "Unit Test 1",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 95,
+      "standard_id": 49,
+      "title": "Mid-Term Exam",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 96,
+      "standard_id": 49,
+      "title": "Preliminary Exam",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 97,
+      "standard_id": 49,
+      "title": "Final Board Exam",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 98,
+      "standard_id": 50,
+      "title": "Weekly Practice Test",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 99,
+      "standard_id": 50,
+      "title": "Unit Test 1",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 100,
+      "standard_id": 50,
+      "title": "Mid-Term Exam",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 101,
+      "standard_id": 50,
+      "title": "Preliminary Exam",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    },
+    {
+      "id": 102,
+      "standard_id": 50,
+      "title": "Final Board Exam",
+      "max_marks": 100,
+      "created_at": "2026-06-05 15:06:05"
+    }
+  ],
+  "tests": [],
+  "test_marks": [],
+  "fee_payments": [
+    {
+      "id": 6,
+      "student_id": 57,
+      "amount": 5000,
+      "payment_date": "2026-06-05",
+      "payment_method": "Cash",
+      "remarks": "Initial Admission Payment",
+      "created_at": "2026-06-05 15:07:18"
+    }
+  ],
+  "result_card_settings": [],
+  "school_exams": [],
+  "batches": [
+    {
+      "id": 3,
+      "standard_id": 50,
+      "name": "morning batch",
+      "created_at": "2026-06-05 15:06:32"
+    },
+    {
+      "id": 4,
+      "standard_id": 50,
+      "name": "evening batch",
+      "created_at": "2026-06-05 15:06:36"
+    }
+  ],
+  "calendar_notes": [
+    {
+      "id": 1,
+      "note_date": "2026-06-30",
+      "content": "result announce and parents teacher meeting",
+      "created_at": "2026-06-03 13:53:34"
+    }
+  ]
+}

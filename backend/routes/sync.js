@@ -19,7 +19,9 @@ router.get('/export', (req, res) => {
       test_marks: db.prepare('SELECT * FROM test_marks').all(),
       fee_payments: db.prepare('SELECT * FROM fee_payments').all(),
       result_card_settings: db.prepare('SELECT * FROM result_card_settings').all(),
-      school_exams: db.prepare('SELECT * FROM school_exams').all()
+      school_exams: db.prepare('SELECT * FROM school_exams').all(),
+      batches: db.prepare('SELECT * FROM batches').all(),
+      calendar_notes: db.prepare('SELECT * FROM calendar_notes').all()
     };
     res.json(data);
   } catch (err) {
@@ -37,8 +39,8 @@ router.post('/import', (req, res) => {
       // Clear tables in dependency order
       const tables = [
         'school_exams', 'result_card_settings', 'fee_payments', 'test_marks',
-        'tests', 'test_cycles', 'marks', 'students', 'subjects', 'standards',
-        'grade_scales', 'boards', 'coaching_profile', 'admin'
+        'tests', 'test_cycles', 'marks', 'students', 'subjects', 'batches', 'standards',
+        'grade_scales', 'boards', 'coaching_profile', 'admin', 'calendar_notes'
       ];
       
       tables.forEach(t => {
@@ -71,6 +73,8 @@ router.post('/import', (req, res) => {
       if (Array.isArray(data.fee_payments)) data.fee_payments.forEach(r => insertRow('fee_payments', r));
       if (Array.isArray(data.result_card_settings)) data.result_card_settings.forEach(r => insertRow('result_card_settings', r));
       if (Array.isArray(data.school_exams)) data.school_exams.forEach(r => insertRow('school_exams', r));
+      if (Array.isArray(data.batches)) data.batches.forEach(r => insertRow('batches', r));
+      if (Array.isArray(data.calendar_notes)) data.calendar_notes.forEach(r => insertRow('calendar_notes', r));
     });
 
     importTransaction();

@@ -99,8 +99,13 @@ async function buildResultCardHTML(studentId, templatePath) {
 
   const result = calculateStudentResult(student, subjects, marksMap, standard.board_id_val);
 
-  // Get rank
-  let allStudents = db.prepare('SELECT * FROM students WHERE standard_id = ?').all(standard.id);
+  // Get rank (only within student's batch if they belong to one)
+  let allStudents;
+  if (student.batch_id !== null && studentId !== 'mock') {
+    allStudents = db.prepare('SELECT * FROM students WHERE standard_id = ? AND batch_id = ?').all(standard.id, student.batch_id);
+  } else {
+    allStudents = db.prepare('SELECT * FROM students WHERE standard_id = ?').all(standard.id);
+  }
   let rank = '1';
   if (allStudents.length > 0 && studentId !== 'mock') {
     const allResults = allStudents.map(s => {
@@ -179,7 +184,17 @@ async function buildResultCardHTML(studentId, templatePath) {
       const dob = student.dob;
       if (!dob) return '—';
       try {
-        const d = new Date(dob + (dob.includes('T') ? '' : 'T00:00:00'));
+        const dobStr = String(dob).trim();
+        if (/^\d{5}(\.\d+)?$/.test(dobStr)) {
+          const serial = parseFloat(dobStr);
+          const d = new Date((serial - 25569) * 86400000);
+          if (isNaN(d)) return dob;
+          const dd = String(d.getUTCDate()).padStart(2, '0');
+          const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+          const yyyy = d.getUTCFullYear();
+          return `${dd}/${mm}/${yyyy}`;
+        }
+        const d = new Date(dobStr + (dobStr.includes('T') ? '' : 'T00:00:00'));
         if (isNaN(d)) return dob;
         const dd = String(d.getDate()).padStart(2, '0');
         const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -277,7 +292,7 @@ async function generateSinglePDF(studentId, templatePath) {
       path: outputPath,
       format: paperFormat,
       printBackground: true,
-      margin: { top: '10mm', bottom: '10mm', left: '10mm', right: '10mm' }
+      margin: { top: '0', right: '0', bottom: '0', left: '0' }
     });
   } finally {
     await browser.close();
@@ -289,7 +304,7 @@ async function generateSinglePDF(studentId, templatePath) {
 /**
  * Generate bulk PDF for all students in a standard (one page per student + cover page)
  */
-async function generateBulkPDF(standardId, templateId = 1) {
+async function generateBulkPDF(standardId, templateId = 1, batchId = null) {
   const settings = db.prepare('SELECT * FROM result_card_settings WHERE standard_id = ?').get(standardId) || {};
   const paperFormat = settings.paper_size === 'A5 Portrait' ? 'A5' : 'A4';
 
@@ -297,7 +312,15 @@ async function generateBulkPDF(standardId, templateId = 1) {
     SELECT s.*, b.name as board_name, b.short_name as board_short
     FROM standards s JOIN boards b ON s.board_id = b.id WHERE s.id = ?
   `).get(standardId);
-  const students = db.prepare('SELECT id FROM students WHERE standard_id = ? ORDER BY CAST(roll_number AS INTEGER) ASC, roll_number ASC').all(standardId);
+  
+  let studentsQuery = 'SELECT id FROM students WHERE standard_id = ?';
+  const studentsParams = [standardId];
+  if (batchId) {
+    studentsQuery += ' AND batch_id = ?';
+    studentsParams.push(batchId);
+  }
+  studentsQuery += ' ORDER BY CAST(roll_number AS INTEGER) ASC, roll_number ASC';
+  const students = db.prepare(studentsQuery).all(...studentsParams);
   const coaching = db.prepare('SELECT * FROM coaching_profile').get() || {};
   const templatePath = path.join(__dirname, `../../templates/template${templateId}.html`);
 
@@ -345,7 +368,7 @@ async function generateBulkPDF(standardId, templateId = 1) {
       const buffer = await page.pdf({
         format: 'A4',
         printBackground: true,
-        margin: { top: '10mm', bottom: '10mm', left: '10mm', right: '10mm' }
+        margin: { top: '0', right: '0', bottom: '0', left: '0' }
       });
       allPages.push(buffer);
     }
@@ -353,7 +376,7 @@ async function generateBulkPDF(standardId, templateId = 1) {
     // For simplicity write last page (ideally we'd merge PDFs; use pdf-lib for full merge)
     // For now, generate a single combined HTML and print
     let combinedHTML = `<html><head><style>
-      @page { margin: 10mm; }
+      @page { margin: 0; }
       .page-break { page-break-after: always; }
     </style></head><body>`;
 
@@ -383,7 +406,7 @@ async function generateBulkPDF(standardId, templateId = 1) {
       path: outputPath,
       format: paperFormat,
       printBackground: true,
-      margin: { top: '10mm', bottom: '10mm', left: '10mm', right: '10mm' }
+      margin: { top: '0', right: '0', bottom: '0', left: '0' }
     });
   } finally {
     await browser.close();
@@ -485,7 +508,7 @@ async function generateReminderPDF(payload) {
       path: outputPath,
       format: 'A4',
       printBackground: true,
-      margin: { top: '10mm', bottom: '10mm', left: '10mm', right: '10mm' }
+      margin: { top: '0', right: '0', bottom: '0', left: '0' }
     });
   } finally {
     await browser.close();
@@ -494,4 +517,12 @@ async function generateReminderPDF(payload) {
   return { filename, outputPath };
 }
 
-module.exports = { generateSinglePDF, generateBulkPDF, buildResultCardHTML, generateReminderPDF };
+async function generateNoticeboardPDF(payload) {
+  return generateReminderPDF({
+    ...payload,
+    type: 'general',
+    title: payload.title || 'Noticeboard Results'
+  });
+}
+
+module.exports = { generateSinglePDF, generateBulkPDF, buildResultCardHTML, generateReminderPDF, generateNoticeboardPDF };

@@ -55,6 +55,30 @@ app.use(session({
 }));
 
 // Serve static files
+// Intercept requests for missing photos/thumbnails and fallback to original
+app.get('/uploads/photos/:filename', (req, res, next) => {
+  const filename = req.params.filename;
+  const filePath = path.join(__dirname, '../uploads/photos', filename);
+  
+  if (fs.existsSync(filePath)) {
+    return next(); // Let static middleware serve it
+  }
+  
+  // If it's a thumbnail request and thumbnail is missing, look for the original
+  if (filename.includes('_thumb.jpg')) {
+    const originalBase = filename.replace('_thumb.jpg', '');
+    const allowedExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.PNG', '.JPG', '.JPEG'];
+    for (const ext of allowedExts) {
+      const origPath = path.join(__dirname, '../uploads/photos', originalBase + ext);
+      if (fs.existsSync(origPath)) {
+        return res.sendFile(origPath);
+      }
+    }
+  }
+  
+  next();
+});
+
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/exports', express.static(path.join(__dirname, '../exports')));
 app.use('/templates', express.static(path.join(__dirname, '../templates')));
@@ -130,6 +154,19 @@ app.get('/api/dashboard', requireAuth, (req, res) => {
     FROM students s
   `).get() || { total_expected: 0, total_collected: 0 };
 
+  // Standard-wise Fee collection summary
+  const standardFees = db.prepare(`
+    SELECT 
+      std.id as standard_id,
+      std.display_name as standard_name,
+      COALESCE(SUM(s.total_fees), 0) as total_expected,
+      COALESCE(SUM(s.paid_fees), 0) as total_collected,
+      (COALESCE(SUM(s.total_fees), 0) - COALESCE(SUM(s.paid_fees), 0)) as total_pending
+    FROM standards std
+    LEFT JOIN students s ON std.id = s.standard_id
+    GROUP BY std.id, std.display_name
+  `).all();
+
   // Class-level pass/fail/distinction stats
   const standards = db.prepare('SELECT s.*, b.id as board_id_val FROM standards s JOIN boards b ON s.board_id = b.id').all();
   const classStats = [];
@@ -154,7 +191,7 @@ app.get('/api/dashboard', requireAuth, (req, res) => {
     classStats.push({ standard_id: std.id, standard_name: std.display_name, total: students.length, pass, fail, distinction });
   }
 
-  res.json({ totalBoards, totalStudents, totalStandards, totalTests, totalCycles, recentActivity, classStats, upcomingTests, pendingMarks, feesSummary });
+  res.json({ totalBoards, totalStudents, totalStandards, totalTests, totalCycles, recentActivity, classStats, upcomingTests, pendingMarks, feesSummary, standardFees });
 });
 
 // SPA fallback — serve index.html for all non-API routes
@@ -204,4 +241,63 @@ Then restart with:  npm run dev
   }
 });
 
+// Automated Backup System (Runs every 48 hours)
+function runAutoBackup() {
+  const { db } = require('./db/database');
+  const backupsDir = path.join(__dirname, '../backups');
+  if (!fs.existsSync(backupsDir)) {
+    fs.mkdirSync(backupsDir, { recursive: true });
+  }
+
+  const lastBackupFile = path.join(__dirname, '../data/last_backup.txt');
+  let lastBackupTime = 0;
+  if (fs.existsSync(lastBackupFile)) {
+    lastBackupTime = parseInt(fs.readFileSync(lastBackupFile, 'utf8')) || 0;
+  }
+
+  const now = Date.now();
+  const intervalMs = 48 * 60 * 60 * 1000; // 48 hours
+
+  if (now - lastBackupTime >= intervalMs) {
+    try {
+      const tables = [
+        'admin', 'coaching_profile', 'boards', 'grade_scales', 'standards',
+        'subjects', 'students', 'marks', 'test_cycles', 'tests',
+        'test_marks', 'fee_payments', 'result_card_settings', 'school_exams',
+        'batches', 'calendar_notes'
+      ];
+      
+      const backupData = {};
+      for (const table of tables) {
+        try {
+          const rows = db.prepare(`SELECT * FROM ${table}`).all();
+          backupData[table] = rows;
+        } catch (e) {
+          // table might not exist
+        }
+      }
+
+      const d = new Date();
+      const YYYY = d.getFullYear();
+      const MM = String(d.getMonth() + 1).padStart(2, '0');
+      const DD = String(d.getDate()).padStart(2, '0');
+      const HH = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      const ss = String(d.getSeconds()).padStart(2, '0');
+      const filename = `backup_${YYYY}-${MM}-${DD}_${HH}-${mm}-${ss}.json`;
+      
+      fs.writeFileSync(path.join(backupsDir, filename), JSON.stringify(backupData, null, 2), 'utf8');
+      fs.writeFileSync(lastBackupFile, String(now), 'utf8');
+      console.log(`[BackupService] Auto backup created successfully: ${filename}`);
+    } catch (err) {
+      console.error('[BackupService] Auto backup failed:', err);
+    }
+  }
+}
+
+// Run backup check at startup and every hour
+setTimeout(runAutoBackup, 3000); // delay 3 seconds on startup
+setInterval(runAutoBackup, 60 * 60 * 1000); // check hourly
+
 module.exports = app;
+

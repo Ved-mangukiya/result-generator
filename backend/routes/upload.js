@@ -3,6 +3,7 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const sharp = require('sharp');
 const { db } = require('../db/database');
 
 const UPLOADS_DIR = path.join(__dirname, '../../uploads');
@@ -84,9 +85,24 @@ router.post('/logo', uploadLogo.single('logo'), (req, res) => {
 });
 
 // POST /api/upload/photo/:studentId
-router.post('/photo/:studentId', uploadPhoto.single('photo'), (req, res) => {
+router.post('/photo/:studentId', uploadPhoto.single('photo'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
   const relativePath = `uploads/photos/${req.file.filename}`;
+
+  // Generate low-res compressed thumbnail
+  try {
+    const originalPath = req.file.path;
+    const ext = path.extname(originalPath);
+    const thumbPath = originalPath.replace(ext, '_thumb.jpg');
+
+    await sharp(originalPath)
+      .resize(150, 150, { fit: 'cover' })
+      .jpeg({ quality: 65 })
+      .toFile(thumbPath);
+  } catch (err) {
+    console.error('Thumbnail generation failed:', err);
+  }
+
   db.prepare('UPDATE students SET photo_path = ? WHERE id = ?').run(relativePath, req.params.studentId);
   res.json({ success: true, path: relativePath, url: `/uploads/photos/${req.file.filename}` });
 });

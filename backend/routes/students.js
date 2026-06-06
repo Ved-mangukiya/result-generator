@@ -1,22 +1,24 @@
 const express = require('express');
 const router = express.Router();
 const { db, logActivity } = require('../db/database');
+const { recalculateOverallMarksForClass } = require('../services/gradeService');
 
 // GET /api/students?standard_id=X&batch_id=Y&search=Z
 router.get('/', (req, res) => {
   const { standard_id, batch_id, search } = req.query;
-  let query = `SELECT s.*, st.display_name as standard_name, b.short_name as board_short
+  let query = `SELECT s.*, st.display_name as standard_name, b.short_name as board_short, bt.name as batch_name
     FROM students s 
     JOIN standards st ON s.standard_id = st.id
-    JOIN boards b ON st.board_id = b.id`;
+    JOIN boards b ON st.board_id = b.id
+    LEFT JOIN batches bt ON s.batch_id = bt.id`;
   const params = [];
 
   if (standard_id) {
     query += ' WHERE s.standard_id = ?';
     params.push(standard_id);
-    if (batch_id) {
-      query += ' AND (s.batch_id = ? OR ? = "")';
-      params.push(batch_id, batch_id);
+    if (batch_id && batch_id !== '' && batch_id !== 'null' && batch_id !== 'undefined') {
+      query += ' AND s.batch_id = ?';
+      params.push(batch_id);
     }
     if (search) {
       query += ' AND (s.name LIKE ? OR s.roll_number LIKE ?)';
@@ -89,8 +91,33 @@ router.get('/:id', (req, res) => {
 
 // POST /api/students
 router.post('/', (req, res) => {
-  const { standard_id, batch_id, name, roll_number, father_name, mother_name, dob, remarks, attendance_pct, admission_date, status, total_fees, elective_subjects } = req.body;
+  let { standard_id, batch_id, name, roll_number, father_name, mother_name, dob, remarks, attendance_pct, admission_date, status, total_fees, elective_subjects } = req.body;
   if (!standard_id || !name) return res.status(400).json({ error: 'standard_id and name required' });
+
+  // Format student name to FirstName.FatherName.Surname
+  let firstName = '';
+  let fName = father_name ? father_name.trim() : '';
+  let lName = '';
+
+  if (name.includes('.')) {
+    const parts = name.split('.');
+    firstName = parts[0] || '';
+    if (parts[1]) fName = parts[1];
+    if (parts[2]) lName = parts[2];
+  } else {
+    const parts = name.trim().split(/\s+/);
+    firstName = parts[0] || '';
+    if (parts.length > 2) {
+      if (!fName) {
+        fName = parts.slice(1, parts.length - 1).join(' ');
+      }
+      lName = parts[parts.length - 1] || '';
+    } else if (parts.length === 2) {
+      lName = parts[1] || '';
+    }
+  }
+  name = `${firstName.trim()}.${fName.trim()}.${lName.trim()}`;
+  father_name = fName.trim();
 
   let roll = roll_number;
   if (!roll) {
@@ -119,6 +146,12 @@ router.post('/', (req, res) => {
       admission_date || '', status || 'Active', parseFloat(total_fees) || 0, JSON.stringify(elective_subjects || [])
     );
   
+  try {
+    recalculateOverallMarksForClass(parseInt(standard_id));
+  } catch(e) {
+    console.error('Error recalculating overall marks on insert:', e);
+  }
+  
   const std = db.prepare('SELECT display_name FROM standards WHERE id = ?').get(standard_id);
   logActivity('STUDENT_ADD', `Enrolled student ${name} (Roll: ${roll}) in ${std ? std.display_name : 'Class'}`);
   res.json({ success: true, id: result.lastInsertRowid });
@@ -126,8 +159,33 @@ router.post('/', (req, res) => {
 
 // PUT /api/students/:id
 router.put('/:id', (req, res) => {
-  const { name, roll_number, father_name, mother_name, dob, remarks, attendance_pct, standard_id, batch_id, admission_date, status, total_fees, elective_subjects } = req.body;
+  let { name, roll_number, father_name, mother_name, dob, remarks, attendance_pct, standard_id, batch_id, admission_date, status, total_fees, elective_subjects } = req.body;
   
+  // Format student name to FirstName.FatherName.Surname
+  let firstName = '';
+  let fName = father_name ? father_name.trim() : '';
+  let lName = '';
+
+  if (name.includes('.')) {
+    const parts = name.split('.');
+    firstName = parts[0] || '';
+    if (parts[1]) fName = parts[1];
+    if (parts[2]) lName = parts[2];
+  } else {
+    const parts = name.trim().split(/\s+/);
+    firstName = parts[0] || '';
+    if (parts.length > 2) {
+      if (!fName) {
+        fName = parts.slice(1, parts.length - 1).join(' ');
+      }
+      lName = parts[parts.length - 1] || '';
+    } else if (parts.length === 2) {
+      lName = parts[1] || '';
+    }
+  }
+  name = `${firstName.trim()}.${fName.trim()}.${lName.trim()}`;
+  father_name = fName.trim();
+
   // Check roll number conflict (exclude self)
   const existing = db.prepare('SELECT id FROM students WHERE standard_id = ? AND roll_number = ? AND id != ?').get(standard_id, roll_number, req.params.id);
   if (existing) return res.status(409).json({ error: `Roll number ${roll_number} already exists in this class` });
@@ -137,6 +195,12 @@ router.put('/:id', (req, res) => {
       name, roll_number, father_name || '', mother_name || '', dob || '', remarks || '', attendance_pct || null, standard_id, batch_id || null,
       admission_date || '', status || 'Active', parseFloat(total_fees) || 0, JSON.stringify(elective_subjects || []), req.params.id
     );
+  
+  try {
+    recalculateOverallMarksForClass(parseInt(standard_id));
+  } catch(e) {
+    console.error('Error recalculating overall marks on update:', e);
+  }
   
   logActivity('STUDENT_UPDATE', `Student updated: ${name}`);
   res.json({ success: true });

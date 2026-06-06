@@ -64,7 +64,7 @@ async function renderBoards() {
         <p>Manage exam boards, standards, streams, and subjects</p>
       </div>
       <div class="page-header-actions">
-        <button class="btn btn-primary" onclick="showAddBoardModal()">➕ Add Board</button>
+        <button class="btn btn-primary" onclick="showAddBoardModal()">${Icons?.render?.('add',{size:14}) || ''} Add Board</button>
       </div>
     </div>
 
@@ -76,8 +76,8 @@ async function renderBoards() {
           <span class="badge badge-primary" id="board-count">0</span>
         </div>
         <div id="board-list" style="padding:var(--space-2)">
-          <div class="empty-state" style="padding:var(--space-8)">
-            <div class="animate-pulse" style="font-size:2rem">🏛</div>
+          <div class="empty-state" style="padding:var(--space-6)">
+            <div class="animate-pulse" style="font-size:2rem;display:flex;align-items:center;justify-content:center">${Icons?.render?.('boards',{size:32}) || ''}</div>
             <p class="text-muted text-sm mt-2">Loading...</p>
           </div>
         </div>
@@ -86,7 +86,7 @@ async function renderBoards() {
       <!-- Standards Panel -->
       <div id="standards-panel">
         <div class="empty-state" style="height:400px">
-          <div class="empty-state-icon">🏛</div>
+          <div class="empty-state-icon">${Icons?.render?.('boards',{size:36}) || ''}</div>
           <h3>Select a Board</h3>
           <p>Click any board on the left to view and manage its classes (standards).</p>
         </div>
@@ -105,10 +105,10 @@ async function loadBoardList() {
     if (boards.length === 0) {
       document.getElementById('board-list').innerHTML = `
         <div class="empty-state" style="padding:var(--space-8)">
-          <div class="empty-state-icon">🏛</div>
+          <div class="empty-state-icon">${Icons?.render?.('boards',{size:36}) || ''}</div>
           <h3>No Boards Yet</h3>
           <p>Add your first board to get started.</p>
-          <button class="btn btn-primary btn-sm" onclick="showAddBoardModal()">➕ Add Board</button>
+          <button class="btn btn-primary btn-sm" onclick="showAddBoardModal()">${Icons?.render?.('add',{size:14}) || ''} Add Board</button>
         </div>`;
       return;
     }
@@ -122,7 +122,7 @@ async function loadBoardList() {
           <div style="font-weight:600;font-size:0.8125rem;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${b.name}</div>
           ${b.is_custom ? '<div class="text-xs text-muted">Custom Board</div>' : ''}
         </div>
-        <button class="btn btn-ghost btn-icon-sm" onclick="event.stopPropagation();confirmDeleteBoard(${b.id}, '${b.name}')" title="Delete Board">🗑</button>
+        <button class="btn btn-ghost btn-icon-sm" onclick="event.stopPropagation();confirmDeleteBoard(${b.id}, '${b.name}')" title="Delete Board">${Icons?.render?.('delete',{size:14}) || ''}</button>
       </div>`).join('');
     
     if (_selectedBoardId) selectBoard(_selectedBoardId);
@@ -159,15 +159,15 @@ async function selectBoard(boardId) {
             <p class="text-xs text-muted">${board.short_name}</p>
           </div>
           <div class="flex gap-2">
-            <button class="btn btn-outline btn-sm" onclick="showGradeEditor(${boardId}, '${board.name}')">📊 Grade Scale</button>
-            <button class="btn btn-primary btn-sm" onclick="showAddStandardModal(${boardId})">➕ Add Class</button>
+            <button class="btn btn-outline btn-sm" onclick="showGradeEditor(${boardId}, '${board.name}')">${Icons?.render?.('chart',{size:14}) || ''} Grade Scale</button>
+            <button class="btn btn-primary btn-sm" onclick="showAddStandardModal(${boardId})">${Icons?.render?.('add',{size:14}) || ''} Add Class</button>
           </div>
         </div>
       </div>
 
       <div id="standards-list">
         <div class="empty-state" style="height:300px">
-          <div class="animate-pulse">📚</div>
+          <div class="animate-pulse" style="display:flex;align-items:center;justify-content:center">${Icons?.render?.('boards',{size:32}) || ''}</div>
           <p class="text-muted text-sm mt-2">Loading classes...</p>
         </div>
       </div>
@@ -184,10 +184,10 @@ async function loadStandards(boardId) {
     if (standards.length === 0) {
       container.innerHTML = `
         <div class="empty-state" style="height:300px">
-          <div class="empty-state-icon">📚</div>
+          <div class="empty-state-icon">${Icons?.render?.('boards',{size:36}) || ''}</div>
           <h3>No Classes Yet</h3>
           <p>Add standards (1st to 12th) for this board to manage students and subjects.</p>
-          <button class="btn btn-primary" onclick="showAddStandardModal(${boardId})">➕ Add Class</button>
+          <button class="btn btn-primary" onclick="showAddStandardModal(${boardId})">${Icons?.render?.('add',{size:14}) || ''} Add Class</button>
         </div>`;
       return;
     }
@@ -208,10 +208,10 @@ async function loadStandards(boardId) {
                 </div>
               </div>
               <div class="flex gap-2">
-                <button class="btn btn-outline btn-sm" onclick="showBatchesPanel(${s.id}, '${s.display_name.replace(/'/g, "\\'")}')">🏷 Batches</button>
-                <button class="btn btn-outline btn-sm" onclick="showSubjectsPanel(${s.id})">📖 Subjects</button>
-                <button class="btn btn-ghost btn-sm" onclick="Router.navigate('students', {standardId:${s.id}})">👥 Students</button>
-                <button class="btn btn-ghost btn-icon-sm" onclick="confirmDeleteStandard(${s.id}, '${s.display_name.replace(/'/g, "\\'")}')">🗑</button>
+                <button class="btn btn-outline btn-sm" onclick="showBatchesPanel(${s.id}, '${s.display_name.replace(/'/g, "\\'")}')">${Icons?.render?.('filter',{size:14}) || ''} Batches</button>
+                <button class="btn btn-outline btn-sm" onclick="showSubjectsPanel(${s.id})">${Icons?.render?.('templates',{size:14}) || ''} Subjects</button>
+                <button class="btn btn-ghost btn-sm" onclick="Router.navigate('students', {standardId:${s.id}})">${Icons?.render?.('students',{size:14}) || ''} Students</button>
+                <button class="btn btn-ghost btn-icon-sm" onclick="confirmDeleteStandard(${s.id}, '${s.display_name.replace(/'/g, "\\'")}')">${Icons?.render?.('delete',{size:14}) || ''}</button>
               </div>
             </div>
           </div>`).join('')}
@@ -222,7 +222,7 @@ async function loadStandards(boardId) {
 }
 
 function showAddBoardModal() {
-  createModal('add-board-modal', '➕ Add Board',
+  createModal('add-board-modal', `${Icons?.render?.('add',{size:16}) || ''} Add Board`,
     `<div class="form-group mb-4">
       <label class="form-label">Choose from Pre-loaded Boards</label>
       <select class="form-control" id="add-board-select">
@@ -293,7 +293,7 @@ async function confirmDeleteBoard(id, name) {
       _selectedBoardId = null;
       document.getElementById('standards-panel').innerHTML = `
         <div class="empty-state" style="height:400px">
-          <div class="empty-state-icon">🏛</div>
+          <div class="empty-state-icon">${Icons?.render?.('boards',{size:36}) || ''}</div>
           <h3>Select a Board</h3>
           <p>Click any board on the left to view its classes.</p>
         </div>`;
@@ -309,7 +309,7 @@ function showAddStandardModal(boardId) {
   const stdOptions = Array.from({length:12}, (_,i) => `<option value="${i+1}">${Format.ordinal(i+1)} Standard</option>`).join('');
   const streamOptions = _streams.map(s => `<option value="${s}">${s}</option>`).join('');
   
-  createModal('add-std-modal', '➕ Add Class (Standard)',
+  createModal('add-std-modal', `${Icons?.render?.('add',{size:16}) || ''} Add Class (Standard)`,
     `<div class="form-grid mb-4">
       <div class="form-group">
         <label class="form-label">Standard <span class="required">*</span></label>
@@ -339,7 +339,7 @@ function showAddStandardModal(boardId) {
 
       <!-- Inline custom subject adder -->
       <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
-        <label class="form-label" style="font-size:0.75rem;margin-bottom:4px">➕ Add a custom subject to this class:</label>
+        <label class="form-label" style="font-size:0.75rem;margin-bottom:4px">${Icons?.render?.('add',{size:12}) || ''} Add a custom subject to this class:</label>
         <div style="display:flex;gap:8px;position:relative">
           <div style="flex:1;position:relative">
             <input type="text" id="std-custom-subj-name" class="form-control" placeholder="Subject name (type or pick suggestion)" autocomplete="off"
@@ -467,7 +467,7 @@ async function showSubjectsPanel(standardId) {
   createModal('subjects-modal', `📖 Subjects — ${standard.display_name}`,
     `<div class="flex justify-between items-center mb-4">
       <p class="text-sm text-secondary">${subjects.length} subject${subjects.length !== 1 ? 's' : ''} configured</p>
-      <button class="btn btn-primary btn-sm" onclick="showAddSubjectModal(${standardId})">➕ Add Subject</button>
+      <button class="btn btn-primary btn-sm" onclick="showAddSubjectModal(${standardId})">${Icons?.render?.('add',{size:14}) || ''} Add Subject</button>
     </div>
     <div class="table-wrap">
       <table>
@@ -483,8 +483,8 @@ async function showSubjectsPanel(standardId) {
               <td>${s.is_compulsory ? '<span class="text-success">✓</span>' : '<span class="text-muted">—</span>'}</td>
               <td>${s.is_language ? '<span class="badge badge-warning">Lang</span>' : '—'}</td>
               <td class="td-actions">
-                <button class="btn btn-ghost btn-icon-sm" onclick="showEditSubjectModal(${s.id}, ${standardId})" title="Edit">✏</button>
-                <button class="btn btn-ghost btn-icon-sm" onclick="confirmDeleteSubject(${s.id}, '${s.name}', ${standardId})" title="Delete">🗑</button>
+                <button class="btn btn-ghost btn-icon-sm" onclick="showEditSubjectModal(${s.id}, ${standardId})" title="Edit">${Icons?.render?.('edit',{size:14}) || ''}</button>
+                <button class="btn btn-ghost btn-icon-sm" onclick="confirmDeleteSubject(${s.id}, '${s.name}', ${standardId})" title="Delete">${Icons?.render?.('delete',{size:14}) || ''}</button>
               </td>
             </tr>`).join('')}
         </tbody>
@@ -495,7 +495,7 @@ async function showSubjectsPanel(standardId) {
 }
 
 function showAddSubjectModal(standardId) {
-  createModal('add-subject-modal', '➕ Add Subject',
+  createModal('add-subject-modal', `${Icons?.render?.('add',{size:16}) || ''} Add Subject`,
     `<div class="form-group mb-4" style="position:relative">
       <label class="form-label">Subject Name <span class="required">*</span></label>
       <input type="text" class="form-control" id="subj-name" placeholder="e.g. Mathematics, Physics" autocomplete="off"
@@ -588,7 +588,7 @@ async function showEditSubjectModal(subjectId, standardId) {
     const s = subjects.find(sub => sub.id === subjectId);
     if (!s) { Toast.error('Not Found', 'Subject not found.'); return; }
     
-    createModal('edit-subject-modal', '✏ Edit Subject',
+    createModal('edit-subject-modal', `${Icons?.render?.('edit',{size:16}) || ''} Edit Subject`,
       `<div class="form-group mb-4">
         <label class="form-label">Subject Name <span class="required">*</span></label>
         <input type="text" class="form-control" id="edit-subj-name" placeholder="e.g. Mathematics, Physics" value="${s.name}">
@@ -665,7 +665,7 @@ async function showGradeEditor(boardId, boardName) {
 
   const copyHTML = otherBoards.length > 0
     ? `<div style="display:flex; gap:10px; align-items:center; margin-bottom:15px; background:rgba(138, 109, 59, 0.05); padding:10px; border-radius:var(--radius); border:1px solid rgba(138, 109, 59, 0.15)">
-        <label class="form-label" style="margin-bottom:0; font-size:0.8rem; font-weight:600; color:var(--text-secondary)">📋 Copy scale from another board: </label>
+        <label class="form-label" style="margin-bottom:0; font-size:0.8rem; font-weight:600; color:var(--text-secondary)">${Icons?.render?.('copy',{size:14}) || ''} Copy scale from another board: </label>
         <select class="form-control" id="copy-grade-board-select" style="width:180px; height:32px; padding:0 8px; font-size:0.8rem">
           <option value="">— Select Board —</option>
           ${otherBoards.map(b => `<option value="${b.id}">${b.short_name}</option>`).join('')}
@@ -688,11 +688,11 @@ async function showGradeEditor(boardId, boardName) {
         <input type="color" value="${g.color}" data-field="color" style="width:40px;height:36px;border:none;border-radius:var(--radius);cursor:pointer">
       </td>
       <td style="padding:var(--space-2) var(--space-3)">
-        <button class="btn btn-ghost btn-icon-sm" onclick="this.closest('tr').remove()">🗑</button>
+        <button class="btn btn-ghost btn-icon-sm" onclick="this.closest('tr').remove()">${Icons?.render?.('delete',{size:14}) || ''}</button>
       </td>
     </tr>`).join('');
   
-  createModal('grade-editor', `📊 Grade Scale — ${boardName}`,
+  createModal('grade-editor', `${Icons?.render?.('chart',{size:16}) || ''} Grade Scale — ${boardName}`,
     `${copyHTML}
     <div class="table-wrap">
       <table>
@@ -702,9 +702,9 @@ async function showGradeEditor(boardId, boardName) {
         <tbody id="grade-rows">${rows}</tbody>
       </table>
     </div>
-    <button class="btn btn-outline btn-sm mt-4" onclick="addGradeRow()">➕ Add Grade</button>`,
+    <button class="btn btn-outline btn-sm mt-4" onclick="addGradeRow()">${Icons?.render?.('add',{size:14}) || ''} Add Grade</button>`,
     `<button class="btn btn-outline" onclick="closeModal('grade-editor')">Cancel</button>
-     <button class="btn btn-primary" onclick="saveGrades(${boardId})">💾 Save Grade Scale</button>`,
+     <button class="btn btn-primary" onclick="saveGrades(${boardId})">${Icons?.render?.('save',{size:14}) || ''} Save Grade Scale</button>`,
     'modal-lg'
   );
 }
@@ -739,7 +739,7 @@ async function copyGradeScaleFromBoard() {
             <input type="color" value="${g.color}" data-field="color" style="width:40px;height:36px;border:none;border-radius:var(--radius);cursor:pointer">
           </td>
           <td style="padding:var(--space-2) var(--space-3)">
-            <button class="btn btn-ghost btn-icon-sm" onclick="this.closest('tr').remove()">🗑</button>
+            <button class="btn btn-ghost btn-icon-sm" onclick="this.closest('tr').remove()">${Icons?.render?.('delete',{size:14}) || ''}</button>
           </td>
         </tr>`).join('');
       Toast.success('Grade Scale Loaded', 'Click "Save Grade Scale" to persist changes.');
@@ -765,7 +765,7 @@ function addGradeRow() {
       <input type="color" value="#4caf69" data-field="color" style="width:40px;height:36px;border:none;border-radius:var(--radius);cursor:pointer">
     </td>
     <td style="padding:var(--space-2) var(--space-3)">
-      <button class="btn btn-ghost btn-icon-sm" onclick="this.closest('tr').remove()">🗑</button>
+      <button class="btn btn-ghost btn-icon-sm" onclick="this.closest('tr').remove()">${Icons?.render?.('delete',{size:14}) || ''}</button>
     </td>`;
   tbody.appendChild(row);
 }
@@ -803,10 +803,10 @@ window.confirmDeleteStandard = confirmDeleteStandard;
 async function showBatchesPanel(standardId, standardName) {
   try {
     const batches = await API.batches.list(standardId);
-    createModal('batches-modal', `🏷 Batches — ${standardName}`,
+    createModal('batches-modal', `${Icons?.render?.('filter',{size:16}) || ''} Batches — ${standardName}`,
       `<div class="flex justify-between items-center mb-4">
         <p class="text-sm text-secondary">${batches.length} batch${batches.length !== 1 ? 'es' : ''} configured</p>
-        <button class="btn btn-primary btn-sm" onclick="showAddBatchModal(${standardId}, '${standardName}')">➕ Add Batch</button>
+        <button class="btn btn-primary btn-sm" onclick="showAddBatchModal(${standardId}, '${standardName}')">${Icons?.render?.('add',{size:14}) || ''} Add Batch</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -816,7 +816,7 @@ async function showBatchesPanel(standardId, standardName) {
               batches.map(b => `<tr>
                 <td class="td-primary">${b.name}</td>
                 <td class="td-actions" style="width:100px">
-                  <button class="btn btn-ghost btn-icon-sm" onclick="confirmDeleteBatch(${b.id}, '${b.name.replace(/'/g, "\\'")}', ${standardId}, '${standardName.replace(/'/g, "\\'")}')" title="Delete">🗑</button>
+                  <button class="btn btn-ghost btn-icon-sm" onclick="confirmDeleteBatch(${b.id}, '${b.name.replace(/'/g, "\\'")}', ${standardId}, '${standardName.replace(/'/g, "\\'")}')" title="Delete">${Icons?.render?.('delete',{size:14}) || ''}</button>
                 </td>
               </tr>`).join('')}
           </tbody>
@@ -832,7 +832,7 @@ async function showBatchesPanel(standardId, standardName) {
 window.showBatchesPanel = showBatchesPanel;
 
 function showAddBatchModal(standardId, standardName) {
-  createModal('add-batch-modal', '➕ Add Batch',
+  createModal('add-batch-modal', `${Icons?.render?.('add',{size:16}) || ''} Add Batch`,
     `<div class="form-group mb-4">
       <label class="form-label">Batch Name <span class="required">*</span></label>
       <input type="text" class="form-control" id="batch-name" placeholder="e.g. Morning Batch">

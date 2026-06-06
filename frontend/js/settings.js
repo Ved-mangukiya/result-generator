@@ -22,7 +22,7 @@ async function renderSettings() {
       <!-- Coaching Profile -->
       <div class="card">
         <div class="card-header">
-          <h3>🏫 Coaching Profile</h3>
+          <h3>${Icons?.render?.('school',{size:18}) || ''} Coaching Profile</h3>
           <p class="text-xs text-muted">Appears on all result cards</p>
         </div>
         <div class="card-body">
@@ -33,11 +33,11 @@ async function renderSettings() {
               <div id="logo-preview-wrap" style="width:80px;height:80px;border:2px dashed var(--border-medium);border-radius:var(--radius-lg);overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--bg-surface)">
                 ${profile.logo_path
                   ? `<img src="/${profile.logo_path}" style="width:100%;height:100%;object-fit:contain;padding:4px" id="logo-img">`
-                  : `<span style="font-size:2rem">🏫</span>`}
+                  : `${Icons?.render?.('school',{size:32}) || ''}`}
               </div>
               <div>
                 <label class="btn btn-outline btn-sm" style="cursor:pointer">
-                  📷 Upload Logo
+                  ${Icons?.render?.('upload',{size:14}) || ''} Upload Logo
                   <input type="file" accept="image/*" style="display:none" onchange="uploadLogo(this)">
                 </label>
                 <p class="text-xs text-muted mt-2">PNG, JPG · Max 5MB</p>
@@ -154,7 +154,7 @@ async function renderSettings() {
               </div>
               <div>
                 <label class="btn btn-outline btn-sm" style="cursor:pointer">
-                  ✍️ Upload Signature
+                  ${Icons?.render?.('edit',{size:14}) || ''} Upload Signature
                   <input type="file" accept="image/*" style="display:none" onchange="uploadSignatureImg(this)">
                 </label>
                 <p class="text-xs text-muted mt-2">PNG with transparent background recommended · Max 5MB</p>
@@ -162,7 +162,7 @@ async function renderSettings() {
             </div>
           </div>
           
-          <button class="btn btn-primary w-full" onclick="saveCoachingProfile()">💾 Save Profile</button>
+          <button class="btn btn-primary w-full" onclick="saveCoachingProfile()">${Icons?.render?.('save',{size:14}) || ''} Save Profile</button>
         </div>
       </div>
 
@@ -183,13 +183,13 @@ async function renderSettings() {
               <label class="form-label">Confirm New Password</label>
               <input type="password" class="form-control" id="s-confirm-pass" placeholder="Repeat new password">
             </div>
-            <button class="btn btn-primary" onclick="changePassword()">🔑 Change Password</button>
+            <button class="btn btn-primary" onclick="changePassword()">${Icons?.render?.('settings',{size:14}) || ''} Change Password</button>
           </div>
         </div>
 
         <div class="card mb-4" id="sync-settings-card">
           <div class="card-header">
-            <h3>☁️ Cloud Synchronization & Backups</h3>
+            <h3>${Icons?.render?.('refresh',{size:18}) || ''} Cloud Synchronization &amp; Backups</h3>
             <p class="text-xs text-muted">Keep your website data securely synced or backed up</p>
           </div>
           <div class="card-body">
@@ -199,11 +199,11 @@ async function renderSettings() {
             
             <div style="display:flex; flex-direction:column; gap:10px" class="mb-4">
               <button class="btn btn-outline w-full flex items-center justify-center gap-2" onclick="performCloudSyncExport()">
-                📥 Export & Download Backup JSON
+                ${Icons?.render?.('download',{size:14}) || ''} Export &amp; Download Backup JSON
               </button>
               
               <label class="btn btn-outline w-full flex items-center justify-center gap-2" style="cursor:pointer; margin-bottom:0">
-                📤 Upload & Restore Backup JSON
+                ${Icons?.render?.('upload',{size:14}) || ''} Upload &amp; Restore Backup JSON
                 <input type="file" accept=".json" style="display:none" onchange="performCloudSyncImport(this)">
               </label>
             </div>
@@ -215,7 +215,7 @@ async function renderSettings() {
         </div>
 
         <div class="card mb-4">
-          <div class="card-header"><h3>ℹ️ System Info</h3></div>
+          <div class="card-header"><h3>${Icons?.render?.('info',{size:18}) || ''} System Info</h3></div>
           <div class="card-body">
             <div style="display:flex;flex-direction:column;gap:var(--space-3)">
               <div class="flex justify-between">
@@ -239,7 +239,7 @@ async function renderSettings() {
         </div>
 
         <div class="card">
-          <div class="card-header"><h3>⚙️ Reset Data Center</h3></div>
+          <div class="card-header"><h3>${Icons?.render?.('delete',{size:18}) || ''} Reset Data Center</h3></div>
           <div class="card-body">
             <p class="text-xs text-muted mb-4">Select categories to clear from the database. This action is permanent and cannot be undone.</p>
             
@@ -263,7 +263,7 @@ async function renderSettings() {
             
             <div class="flex gap-2">
               <button class="btn btn-outline btn-sm" onclick="performSelectiveReset()">Perform Selective Reset</button>
-              <button class="btn btn-danger btn-sm" onclick="showMasterResetWarning()">⚠️ Master Reset</button>
+              <button class="btn btn-danger btn-sm" onclick="showMasterResetWarning()">${Icons?.render?.('warning',{size:14}) || ''} Master Reset</button>
             </div>
           </div>
         </div>
@@ -375,9 +375,9 @@ let _masterResetTimer = null;
 function showMasterResetWarning() {
   let seconds = 10;
   
-  createModal('master-reset-warning-modal', '🚨 DANGER: Master Factory Reset',
+  createModal('master-reset-warning-modal', `${Icons?.render?.('warning',{size:18}) || ''} DANGER: Master Factory Reset`,
     `<div style="text-align:center; padding: var(--space-4)">
-      <span style="font-size:3rem">⚠️</span>
+      <div style="font-size:3rem">${Icons?.render?.('warning',{size:48}) || ''}</div>
       <h3 style="color:var(--danger); margin-top:var(--space-2); font-weight:800">You are about to delete ALL data!</h3>
       <p style="color:var(--text-secondary); margin-top:var(--space-3); line-height:1.6">
         This will permanently erase all boards, classes, subjects, students, marks, fee transactions, and logs. Your session will be terminated and you must re-onboard.

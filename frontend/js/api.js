@@ -104,10 +104,11 @@ const API = {
 
   // ─── Students ──────────────────────────────────
   students: {
-    list:       (standardId, search) => {
+    list:       (standardId, batchId, search) => {
       let url = '/api/students';
       const params = [];
       if (standardId) params.push(`standard_id=${standardId}`);
+      if (batchId) params.push(`batch_id=${batchId}`);
       if (search) params.push(`search=${encodeURIComponent(search)}`);
       if (params.length) url += '?' + params.join('&');
       return API.get(url);
@@ -125,7 +126,11 @@ const API = {
 
   // ─── Tests ─────────────────────────────────────
   tests: {
-    list:        (standardId)   => API.get(`/api/tests?standard_id=${standardId}`),
+    list:        (standardId, batchId)   => {
+      let url = `/api/tests?standard_id=${standardId}`;
+      if (batchId) url += `&batch_id=${batchId}`;
+      return API.get(url);
+    },
     add:         (data)         => API.post('/api/tests', data),
     bulkAdd:     (tests)        => API.post('/api/tests/bulk', { tests }),
     update:      (id, data)     => API.put(`/api/tests/${id}`, data),
@@ -155,7 +160,7 @@ const API = {
   testCycles: {
     list:    (standardId) => API.get(`/api/test-cycles?standard_id=${standardId}`),
     get:     (id)         => API.get(`/api/test-cycles/${id}`),
-    results: (id)         => API.get(`/api/test-cycles/${id}/results`),
+    results: (id, batchId)         => API.get(`/api/test-cycles/${id}/results${batchId ? `?batch_id=${batchId}` : ''}`),
     create:  (data)       => API.post('/api/test-cycles', data),
     delete:  (id)         => API.delete(`/api/test-cycles/${id}`),
   },
@@ -193,7 +198,7 @@ const API = {
   // ─── Export ──────────────────────────────────────
   export: {
     downloadToken:  ()                        => API.get('/api/export/download-token'),
-    results:        (standardId)              => API.get(`/api/export/results/${standardId}`),
+    results:        (standardId, batchId)     => API.get(`/api/export/results/${standardId}${batchId ? `?batch_id=${batchId}` : ''}`),
     previewStudent: (studentId, templateId)   => {
       const url = templateId
         ? `/api/export/preview/${studentId}/template/${templateId}`
@@ -201,11 +206,16 @@ const API = {
       return fetch(url, { credentials: 'same-origin' }).then(r => r.text());
     },
     pdfSingle:      (studentId, templateId)   => `/api/export/pdf/single/${studentId}/download${templateId ? `?template_id=${templateId}` : ''}`,
-    pdfBulk:        (standardId, templateId)  => `/api/export/pdf/bulk/${standardId}/download${templateId ? `?template_id=${templateId}` : ''}`,
-    excel:          (standardId)              => `/api/export/excel/${standardId}/download`,
+    pdfBulk:        (standardId, templateId, batchId)  => `/api/export/pdf/bulk/${standardId}/download?template_id=${templateId || ''}${batchId ? `&batch_id=${batchId}` : ''}`,
+    excel:          (standardId, batchId)              => `/api/export/excel/${standardId}/download${batchId ? `?batch_id=${batchId}` : ''}`,
     reminderPDF:    (data)                    => API.post('/api/export/reminder-pdf', data),
     noticeboardPDF: (data)                    => API.post('/api/export/noticeboard-pdf', data),
-  }
+  },
+  // ─── Promotions ──────────────────────────────────
+  promotions: {
+    getData: (standardId, cycleId) => API.get(`/api/promotions/data?standard_id=${standardId}&cycle_id=${cycleId}`),
+  },
+
 };
 
 window.API = API;

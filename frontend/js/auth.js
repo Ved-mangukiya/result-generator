@@ -8,15 +8,26 @@ let _obCurrentStep = 0;
 const OB_TOTAL_STEPS = 6;
 
 async function initAuth() {
-  // Try to restore session
+  // Show loader briefly on initial page load for returning sessions
+  if (window.ApexLoader) {
+    window.ApexLoader.show();
+  }
+  
   try {
     const me = await API.auth.me();
     if (me && me.onboarding_complete) {
-      showApp(me);
+      // Hide loader after 2s and show app
+      setTimeout(() => {
+        if (window.ApexLoader) window.ApexLoader.hide();
+        showApp(me);
+      }, 2200);
     } else if (me) {
+      if (window.ApexLoader) window.ApexLoader.hide();
       showOnboarding();
     }
   } catch {
+    // Not logged in — hide loader, show login
+    if (window.ApexLoader) window.ApexLoader.hide();
     showLoginPage();
   }
   
@@ -31,7 +42,25 @@ function showLoginPage() {
   hide('app');
   hide('onboarding-overlay');
   hide('spinner-overlay');
+  // Hide loader if visible
+  const loader = document.getElementById('apex-loader');
+  if (loader) loader.style.display = 'none';
   show('login-page');
+  // Reset form
+  const form = document.getElementById('login-form');
+  if (form) form.reset();
+  const errEl = document.getElementById('login-error');
+  if (errEl) errEl.classList.add('hidden');
+
+  // Reset login button and spinner state
+  const btn = document.getElementById('login-btn');
+  const btnText = document.getElementById('login-btn-text');
+  const spinner = document.getElementById('login-spinner');
+  const arrow = document.getElementById('login-arrow');
+  if (btn) btn.disabled = false;
+  if (btnText) btnText.textContent = 'Sign In to Dashboard';
+  if (spinner) spinner.classList.add('hidden');
+  if (arrow) arrow.style.display = '';
 }
 
 function showApp(me) {
@@ -43,7 +72,7 @@ function showApp(me) {
   document.getElementById('topbar-admin-email').textContent = email.split('@')[0];
   document.getElementById('admin-avatar-initials').textContent = email[0].toUpperCase();
   
-  document.getElementById('app').style.display = 'flex';
+  showFlex('app');
   
   // Load coaching profile for sidebar
   API.coaching.get().then(profile => {
@@ -52,12 +81,11 @@ function showApp(me) {
     }
     if (profile?.logo_path) {
       const thumb = document.getElementById('sidebar-logo-thumb');
-      thumb.innerHTML = `<img src="${profile.logo_path}" alt="Logo">`;
+      thumb.innerHTML = `<img src="/${profile.logo_path}" alt="Logo" style="width:100%;height:100%;object-fit:contain;border-radius:4px">`;
     }
   }).catch(() => {});
   
-  // Navigate to dashboard
-  if (window.Router) window.Router.navigate('dashboard');
+  // Navigation is handled uniquely by app.js showApp override
 }
 
 function showOnboarding() {
@@ -65,7 +93,7 @@ function showOnboarding() {
   hide('app');
   _obCurrentStep = 0;
   showOBStep(0);
-  document.getElementById('onboarding-overlay').style.display = 'flex';
+  showFlex('onboarding-overlay');
   
   // Init color swatches
   initColorSwatches(
@@ -245,37 +273,37 @@ async function finishOnboarding() {
       await API.upload.signature(form).catch(() => {});
     }
     
-    Toast.success('Setup Complete!', 'Welcome to Apex Tuition ERP 🎓');
+    Toast.success('Setup Complete!', 'Welcome to Apex Tuition ERP');
     
     const me = await API.auth.me();
     showApp(me);
   } catch (err) {
     Toast.error('Save Failed', err.message);
     btn.disabled = false;
-    btn.textContent = '🚀 Get Started';
+    btn.textContent = 'Get Started';
   }
 }
 
 // ─── Login Form ───────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  // Password toggle
-  document.getElementById('toggle-password')?.addEventListener('click', () => {
-    const input = document.getElementById('login-password');
-    input.type = input.type === 'password' ? 'text' : 'password';
-  });
-  
   document.getElementById('login-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const btn = document.getElementById('login-btn');
     const btnText = document.getElementById('login-btn-text');
     const spinner = document.getElementById('login-spinner');
+    const arrow = document.getElementById('login-arrow');
     const errorEl = document.getElementById('login-error');
     
     btn.disabled = true;
-    btnText.textContent = 'Signing In...';
-    show(spinner);
-    hide(errorEl);
+    btnText.textContent = 'Signing In…';
+    if (spinner) spinner.classList.remove('hidden');
+    if (arrow) arrow.style.display = 'none';
+    if (errorEl) errorEl.classList.add('hidden');
+    
+    // Clear error classes
+    document.getElementById('login-email')?.classList.remove('error');
+    document.getElementById('login-password')?.classList.remove('error');
     
     try {
       const result = await API.auth.login(
@@ -283,21 +311,36 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('login-password').value
       );
       
-      if (result.onboarding_complete) {
-        const me = await API.auth.me();
-        showApp(me);
-      } else {
-        showOnboarding();
-      }
+      // Show loader before transitioning
+      hide('login-page');
+      if (window.ApexLoader) window.ApexLoader.show();
+      
+      // Small delay to let loader animate, then load app
+      setTimeout(async () => {
+        try {
+          if (result.onboarding_complete) {
+            const me = await API.auth.me();
+            showApp(me);
+          } else {
+            if (window.ApexLoader) window.ApexLoader.hide();
+            showOnboarding();
+          }
+        } catch(err2) {
+          if (window.ApexLoader) window.ApexLoader.hide();
+          showLoginPage();
+        }
+      }, 1800);
+      
     } catch (err) {
-      document.getElementById('login-error-text').textContent = err.message;
-      show(errorEl);
-      document.getElementById('login-email').classList.add('error');
-      document.getElementById('login-password').classList.add('error');
-    } finally {
+      const errText = document.getElementById('login-error-text');
+      if (errText) errText.textContent = err.message || 'Invalid credentials';
+      if (errorEl) errorEl.classList.remove('hidden');
+      document.getElementById('login-email')?.classList.add('error');
+      document.getElementById('login-password')?.classList.add('error');
       btn.disabled = false;
-      btnText.textContent = 'Sign In';
-      hide(spinner);
+      btnText.textContent = 'Sign In to Dashboard';
+      if (spinner) spinner.classList.add('hidden');
+      if (arrow) arrow.style.display = '';
     }
   });
   
@@ -305,7 +348,8 @@ document.addEventListener('DOMContentLoaded', () => {
   ['login-email', 'login-password'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', () => {
       document.getElementById(id).classList.remove('error');
-      hide('login-error');
+      const errEl = document.getElementById('login-error');
+      if (errEl) errEl.classList.add('hidden');
     });
   });
   
@@ -428,7 +472,7 @@ function populateExamPathsStep() {
     addBtn.type = 'button';
     addBtn.className = 'btn btn-outline btn-sm ob-add-exam-btn';
     addBtn.style.cssText = 'height:32px; padding:0 var(--space-3); font-size:0.75rem';
-    addBtn.textContent = '➕ Add';
+    addBtn.innerHTML = `${Icons?.render?.('add',{size:12}) || ''} Add`;
 
     addBtn.addEventListener('click', () => {
       const val = input.value.trim();

@@ -19,10 +19,10 @@ async function renderTests(params = {}) {
         <p>Record weekly unit tests or schedule complete exam timetables (cycles) across multiple subjects.</p>
       </div>
       <div class="page-header-actions" id="tests-header-actions" style="display:none">
-        <button class="btn btn-outline btn-sm" id="btn-ai-schedule" onclick="showAISchedulerModal()" style="margin-right:8px">
+        <button class="btn btn-outline btn-sm" id="btn-ai-schedule" onclick="showAISchedulerModal()">
           ${Icons?.render?.('ai',{size:14}) || ''} AI Auto-Scheduler
         </button>
-        <button class="btn btn-outline btn-sm" id="btn-create-series" onclick="showCreateSeriesModal()" style="margin-right:8px" title="Create a new test series for all subjects">
+        <button class="btn btn-outline btn-sm" id="btn-create-series" onclick="showCreateSeriesModal()" title="Create a new test series for all subjects">
           ${Icons?.render?.('add',{size:14}) || ''} New Series
         </button>
         <button class="btn btn-primary btn-sm" id="btn-create-test" onclick="triggerTestCreationAction()">
@@ -67,26 +67,32 @@ async function renderTests(params = {}) {
     <!-- Tests List Container -->
     <div id="tests-container">
       <div class="empty-state" style="height:350px">
-        <div class="empty-state-icon">📝</div>
+        <div class="empty-state-icon">${Icons?.render?.('marks',{size:36}) || ''}</div>
         <h3>Select a Class</h3>
         <p>Choose a class from the dropdown above to manage tests.</p>
       </div>
     </div>`;
 
   await loadTestsStandardDropdown();
-  if (_testsStandardId) {
-    document.getElementById('tests-std-select').value = _testsStandardId;
-    await loadTestsTabContent(_testsStandardId);
+  const sel = document.getElementById('tests-std-select');
+  if (sel) {
+    if (_testsStandardId && [...sel.options].some(o => o.value == _testsStandardId)) {
+      sel.value = _testsStandardId;
+      await loadTestsTabContent(_testsStandardId);
+    } else if (sel.options.length > 1) {
+      sel.selectedIndex = 1;
+      await loadTestsTabContent(sel.value);
+    }
   }
 }
 
 async function loadTestsTabContent(standardId) {
   if (!standardId) {
-    document.getElementById('tests-header-actions').style.display = 'none';
-    document.getElementById('tests-tabs').style.display = 'none';
+    hide('tests-header-actions');
+    hide('tests-tabs');
     document.getElementById('tests-container').innerHTML = `
       <div class="empty-state" style="height:350px">
-        <div class="empty-state-icon">📝</div>
+        <div class="empty-state-icon">${Icons?.render?.('marks',{size:36}) || ''}</div>
         <h3>Select a Class</h3>
         <p>Choose a class from the dropdown above to manage tests.</p>
       </div>`;
@@ -94,8 +100,8 @@ async function loadTestsTabContent(standardId) {
   }
   
   _testsStandardId = parseInt(standardId);
-  document.getElementById('tests-header-actions').style.display = 'block';
-  document.getElementById('tests-tabs').style.display = 'flex';
+  show('tests-header-actions');
+  showFlex('tests-tabs');
   
   const batchWrap = document.getElementById('tests-batch-filter-wrap');
   const batchSelect = document.getElementById('tests-batch-select');
@@ -145,15 +151,16 @@ async function switchTestsTab(tab) {
   
   if (btnCreate) {
     if (tab === 'school') {
-      btnCreate.textContent = '➕ Add School Exam';
-      btnCreate.style.display = 'block';
+      btnCreate.innerHTML = `${Icons?.render?.('add',{size:14}) || ''} Add School Exam`;
+      btnCreate.style.display = '';
     } else {
-      btnCreate.textContent = tab === 'individual' ? '➕ Create Test' : '➕ Schedule Test Cycle';
-      btnCreate.style.display = 'block';
+      const text = tab === 'individual' ? 'Create Test' : 'Schedule Test Cycle';
+      btnCreate.innerHTML = `${Icons?.render?.('add',{size:14}) || ''} ${text}`;
+      btnCreate.style.display = '';
     }
   }
   if (btnAI) {
-    btnAI.style.display = tab === 'school' ? 'none' : 'inline-block';
+    btnAI.style.display = tab === 'school' ? 'none' : '';
   }
   
   const container = document.getElementById('tests-container');
@@ -193,10 +200,10 @@ async function loadTestsStandardDropdown() {
 
 async function loadTestsForClass(standardId) {
   if (!standardId) {
-    document.getElementById('tests-header-actions').style.display = 'none';
+    hide('tests-header-actions');
     document.getElementById('tests-container').innerHTML = `
       <div class="empty-state" style="height:350px">
-        <div class="empty-state-icon">📝</div>
+        <div class="empty-state-icon">${Icons?.render?.('marks',{size:36}) || ''}</div>
         <h3>Select a Class</h3>
         <p>Choose a class from the dropdown above to manage small tests.</p>
       </div>`;
@@ -204,12 +211,12 @@ async function loadTestsForClass(standardId) {
   }
 
   _testsStandardId = parseInt(standardId);
-  document.getElementById('tests-header-actions').style.display = 'block';
+  show('tests-header-actions');
 
   const container = document.getElementById('tests-container');
   container.innerHTML = `
     <div class="empty-state">
-      <div class="animate-pulse" style="font-size:2rem">📝</div>
+      <div class="animate-pulse" style="font-size:2rem;display:flex;align-items:center;justify-content:center">${Icons?.render?.('marks',{size:32}) || ''}</div>
       <p class="text-muted text-sm mt-2">Loading tests...</p>
     </div>`;
 
@@ -223,10 +230,10 @@ async function loadTestsForClass(standardId) {
     if (_testsList.length === 0) {
       container.innerHTML = `
         <div class="empty-state" style="height:300px">
-          <div class="empty-state-icon">📋</div>
+          <div class="empty-state-icon">${Icons?.render?.('marks',{size:36}) || ''}</div>
           <h3>No Tests Recorded</h3>
           <p>Create your first test (e.g. 25 marks, 30 marks) to record student marks for this class.</p>
-          <button class="btn btn-primary mt-2" onclick="showCreateTestModal()">➕ Create Test</button>
+          <button class="btn btn-primary mt-2" onclick="showCreateTestModal()">${Icons?.render?.('add',{size:14}) || ''} Create Test</button>
         </div>`;
       return;
     }
@@ -294,7 +301,7 @@ async function loadTestsForClass(standardId) {
     
     staggerAnimateItems(container);
   } catch (err) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><h3>Error Loading Tests</h3><p>${err.message}</p></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">${Icons?.render?.('warning',{size:32}) || ''}</div><h3>Error Loading Tests</h3><p>${err.message}</p></div>`;
     Toast.error('Load Failed', err.message);
   }
 }
@@ -341,7 +348,14 @@ async function showCreateTestModal() {
         <div class="form-group">
           <label class="form-label">Batch</label>
           <select class="form-control" id="test-batch">
-            ${document.getElementById('tests-batch-select')?.innerHTML || '<option value="">— All Batches —</option>'}
+            ${(() => {
+              const currentBatchId = document.getElementById('tests-batch-select')?.value || '';
+              let batchSelectOptions = document.getElementById('tests-batch-select')?.innerHTML || '<option value="">— All Batches —</option>';
+              if (currentBatchId) {
+                batchSelectOptions = batchSelectOptions.replace(`value="${currentBatchId}"`, `value="${currentBatchId}" selected`);
+              }
+              return batchSelectOptions;
+            })()}
           </select>
         </div>
       </div>
@@ -639,7 +653,15 @@ async function showEditTestModal(testId) {
         <div class="form-group">
           <label class="form-label">Batch</label>
           <select class="form-control" id="edit-test-batch">
-            ${document.getElementById('tests-batch-select')?.innerHTML.replace(`value="${test.batch_id || ''}"`, `value="${test.batch_id || ''}" selected`) || '<option value="">— All Batches —</option>'}
+            ${(() => {
+              let editBatchOptions = document.getElementById('tests-batch-select')?.innerHTML || '<option value="">— All Batches —</option>';
+              if (test.batch_id) {
+                editBatchOptions = editBatchOptions.replace(`value="${test.batch_id}"`, `value="${test.batch_id}" selected`);
+              } else {
+                editBatchOptions = editBatchOptions.replace('value=""', 'value="" selected');
+              }
+              return editBatchOptions;
+            })()}
           </select>
         </div>
       </div>
@@ -678,7 +700,7 @@ async function showEditTestModal(testId) {
       </div>
     </form>`,
     `<button class="btn btn-outline" onclick="closeModal('edit-test-modal')">Cancel</button>
-     <button class="btn btn-primary" onclick="saveTest(${testId})">💾 Save Changes</button>`,
+      <button class="btn btn-primary" onclick="saveTest(${testId})">${Icons?.render?.('save',{size:14}) || ''} Save Changes</button>`,
     'modal-md'
   );
 
@@ -784,19 +806,7 @@ async function showTestMarksEntry(testId) {
       const isAbsent = m.is_absent === 1;
       const val = m.obtained_marks !== null ? m.obtained_marks : '';
       
-      const isOptional = test.is_compulsory === 0;
-      let chosenElectiveIds = [];
-      if (m.elective_subjects) {
-        try {
-          const parsed = typeof m.elective_subjects === 'string'
-            ? JSON.parse(m.elective_subjects)
-            : m.elective_subjects;
-          if (Array.isArray(parsed)) {
-            chosenElectiveIds = parsed.map(el => typeof el === 'object' ? el.id : el);
-          }
-        } catch(e) {}
-      }
-      const isElected = !isOptional || chosenElectiveIds.includes(test.subject_id);
+      const isElected = isStudentEnrolled(m, test.subject_id, test.is_compulsory);
 
       const rowStyle = !isElected ? 'style="opacity: 0.55; background: var(--bg-elevated);"' : '';
       
@@ -866,7 +876,7 @@ async function showTestMarksEntry(testId) {
         </table>
       </div>`,
       `<button class="btn btn-outline" onclick="closeModal('test-marks-grid-modal')">Cancel</button>
-       <button class="btn btn-primary" onclick="saveGridMarks(${testId})">💾 Save Test Marks</button>`,
+        <button class="btn btn-primary" onclick="saveGridMarks(${testId})">${Icons?.render?.('save',{size:14}) || ''} Save Test Marks</button>`,
       'modal-xl'
     );
 
@@ -1264,10 +1274,10 @@ async function loadTestCyclesForClass(standardId) {
     if (cycles.length === 0) {
       container.innerHTML = `
         <div class="empty-state" style="height:300px">
-          <div class="empty-state-icon">🗓</div>
+          <div class="empty-state-icon">${Icons?.render?.('calendar',{size:36}) || ''}</div>
           <h3>No Grouped Test Cycles</h3>
           <p>Schedule a complete series/exam cycle (e.g. "Weekly Test Series 1" or "First Semester Midsem") for multiple subjects at once.</p>
-          <button class="btn btn-primary mt-2" onclick="showCreateTestCycleModal()">➕ Schedule Test Cycle</button>
+          <button class="btn btn-primary mt-2" onclick="showCreateTestCycleModal()">${Icons?.render?.('add',{size:14}) || ''} Schedule Test Cycle</button>
         </div>`;
       return;
     }
@@ -1296,8 +1306,8 @@ async function loadTestCyclesForClass(standardId) {
                 <div class="divider" style="margin: var(--space-2) 0;"></div>
                 
                 <div class="flex justify-between items-center mt-2">
-                  <button class="btn btn-outline btn-sm" onclick="viewTestCycleDetails(${c.id})">🔍 View Details</button>
-                  <button class="btn btn-ghost btn-icon-sm" onclick="confirmDeleteTestCycle(${c.id}, '${c.title.replace(/'/g, "\\'")}')" title="Delete Cycle">🗑️</button>
+                  <button class="btn btn-outline btn-sm" onclick="viewTestCycleDetails(${c.id})">${Icons?.render?.('search',{size:14}) || ''} View Details</button>
+                  <button class="btn btn-ghost btn-icon-sm" onclick="confirmDeleteTestCycle(${c.id}, '${c.title.replace(/'/g, "\\'")}')" title="Delete Cycle">${Icons?.render?.('delete',{size:14}) || ''}</button>
                 </div>
               </div>
             </div>
@@ -1305,7 +1315,7 @@ async function loadTestCyclesForClass(standardId) {
         }).join('')}
       </div>`;
   } catch (err) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><h3>Error Loading Cycles</h3><p>${err.message}</p></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">${Icons?.render?.('warning',{size:32}) || ''}</div><h3>Error Loading Cycles</h3><p>${err.message}</p></div>`;
   }
 }
 
@@ -1342,7 +1352,7 @@ async function showCreateTestCycleModal() {
       </div>
     </form>`,
     `<button class="btn btn-outline" onclick="closeModal('create-cycle-modal')">Cancel</button>
-     <button class="btn btn-primary" onclick="submitTestCycle()">💾 Schedule Exam Cycle</button>`,
+      <button class="btn btn-primary" onclick="submitTestCycle()">${Icons?.render?.('save',{size:14}) || ''} Schedule Exam Cycle</button>`,
     'modal-md'
   );
 
@@ -1498,10 +1508,10 @@ async function loadSchoolExamsForClass(standardId) {
     if (exams.length === 0) {
       container.innerHTML = `
         <div class="empty-state" style="height:300px">
-          <div class="empty-state-icon">🏫</div>
+          <div class="empty-state-icon">${Icons?.render?.('school',{size:36}) || ''}</div>
           <h3>No School Exams Logged</h3>
           <p>Add the upcoming school exam timetable for this class. The AI Auto-Scheduler will use this data to automatically align coaching prep tests before school exams!</p>
-          <button class="btn btn-primary mt-2" onclick="showAddSchoolExamModal()">➕ Add School Exam</button>
+          <button class="btn btn-primary mt-2" onclick="showAddSchoolExamModal()">${Icons?.render?.('add',{size:14}) || ''} Add School Exam</button>
         </div>`;
       return;
     }
@@ -1525,7 +1535,7 @@ async function loadSchoolExamsForClass(standardId) {
                   <td style="padding:12px; text-align:left"><span class="badge badge-primary">${e.subject_name}</span></td>
                   <td style="padding:12px">${Format.date(e.exam_date)}</td>
                   <td style="padding:12px">
-                    <button class="btn btn-ghost btn-icon-sm" onclick="confirmDeleteSchoolExam(${e.id}, '${e.exam_name.replace(/'/g, "\\'")}')" title="Delete School Exam">🗑️</button>
+                    <button class="btn btn-ghost btn-icon-sm" onclick="confirmDeleteSchoolExam(${e.id}, '${e.exam_name.replace(/'/g, "\\'")}')" title="Delete School Exam">${Icons?.render?.('delete',{size:14}) || ''}</button>
                   </td>
                 </tr>
               `).join('')}
@@ -1536,7 +1546,7 @@ async function loadSchoolExamsForClass(standardId) {
     
     staggerAnimateItems(container);
   } catch (err) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><h3>Error Loading School Exams</h3><p>${err.message}</p></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">${Icons?.render?.('warning',{size:32}) || ''}</div><h3>Error Loading School Exams</h3><p>${err.message}</p></div>`;
   }
 }
 
@@ -1581,7 +1591,7 @@ async function showAddSchoolExamModal() {
         </div>
       </form>`,
       `<button class="btn btn-outline" onclick="closeModal('add-school-exam-modal')">Cancel</button>
-       <button class="btn btn-primary" id="btn-submit-school-exam" onclick="submitSchoolExam()" disabled>💾 Save School Exams</button>`,
+       <button class="btn btn-primary" id="btn-submit-school-exam" onclick="submitSchoolExam()" disabled>${Icons?.render?.('save',{size:14}) || ''} Save School Exams</button>`,
       'modal-lg'
     );
 
@@ -1717,7 +1727,7 @@ async function submitSchoolExam() {
     await loadSchoolExamsForClass(_testsStandardId);
   } catch (err) {
     btn.disabled = false;
-    btn.textContent = '💾 Save School Exams';
+    btn.innerHTML = `${Icons?.render?.('save',{size:14}) || ''} Save School Exams`;
     Toast.error('Failed to Align', err.message);
   }
 }
@@ -1838,8 +1848,8 @@ async function showAISchedulerModal() {
         </div>
       </div>`,
       `<button class="btn btn-outline" onclick="closeModal('ai-scheduler-modal')">Cancel</button>
-       <button class="btn btn-primary" id="ai-generate-btn" onclick="generateAISchedulePreview()">⚡ Generate Timetable</button>
-       <button class="btn btn-success animate-fade-in" id="ai-save-btn" onclick="saveAISchedule()" style="display:none">💾 Bulk Save Schedule</button>`,
+       <button class="btn btn-primary" id="ai-generate-btn" onclick="generateAISchedulePreview()">${Icons?.render?.('ai',{size:14}) || ''} Generate Timetable</button>
+       <button class="btn btn-success animate-fade-in" id="ai-save-btn" onclick="saveAISchedule()" style="display:none">${Icons?.render?.('save',{size:14}) || ''} Bulk Save Schedule</button>`,
       'modal-lg'
     );
 

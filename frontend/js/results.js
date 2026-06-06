@@ -3,10 +3,11 @@
    ═══════════════════════════════════════════════ */
 
 let _resultsStandardId = null;
+let _resultsBatchId = null;
 let _resultsFinalData = null;
 let _resultsTestCycles = [];
 let _resultsStandaloneTests = [];
-let _activeBoxType = 'final'; // 'final', 'cycle', 'test'
+let _activeBoxType = 'cycle'; // default to 'cycle' or 'test'
 let _activeBoxId = null;
 let _expandedStudents = new Set();
 let _chartInstances = {}; // track Chart.js instances to destroy on re-render
@@ -64,16 +65,23 @@ async function renderResults(params = {}) {
         <div class="flex gap-4 flex-wrap items-center">
           <div class="form-group" style="flex:1;min-width:200px">
             <label class="form-label">Select Class</label>
-            <select class="form-control" id="results-std-select" onchange="loadResultsForClass(this.value)">
+            <select class="form-control" id="results-std-select" onchange="onResultsStandardChange(this.value)">
               <option value="">— Select a class to view results —</option>
             </select>
           </div>
-          <div id="results-actions" class="flex gap-2 flex-wrap" style="margin-top:20px;display:none!important">
-            <button class="btn btn-outline btn-sm" onclick="showResultSettings()">⚙ Card Settings</button>
-            <button class="btn btn-outline btn-sm" id="btn-compare-series" onclick="openCompareSeriesModal()" style="display:none">⚖ Compare Series</button>
-            <button class="btn btn-outline btn-sm" id="btn-compare-students" onclick="openCompareStudentsModal()">👥 Compare Students</button>
-            <button class="btn btn-outline btn-sm" onclick="downloadClassExcel()">📊 Export Excel</button>
-            <button class="btn btn-primary btn-sm" onclick="downloadBulkPDF()">📥 Bulk PDF</button>
+          <div class="form-group" style="flex:1;min-width:200px;display:none" id="results-batch-filter-wrap">
+            <label class="form-label">Select Batch</label>
+            <select class="form-control" id="results-batch-select" onchange="onResultsBatchChange(this.value)">
+              <option value="">— All Batches —</option>
+            </select>
+          </div>
+          <div id="results-actions" class="flex gap-2 flex-wrap" style="margin-top:20px;display:none">
+            <button class="btn btn-outline btn-sm" onclick="showResultSettings()">${Icons?.render?.('settings',{size:14}) || ''} Card Settings</button>
+            <button class="btn btn-outline btn-sm" id="btn-compare-series" onclick="openCompareSeriesModal()" style="display:none">${Icons?.render?.('compare',{size:14}) || ''} Compare Series</button>
+            <button class="btn btn-outline btn-sm" id="btn-compare-students" onclick="openCompareStudentsModal()">${Icons?.render?.('students',{size:14}) || ''} Compare Students</button>
+            <button class="btn btn-outline btn-sm" onclick="showPerformanceInsights()">${Icons?.render?.('chart',{size:14}) || ''} Performance Insights</button>
+            <button class="btn btn-outline btn-sm" onclick="downloadClassExcel()">${Icons?.render?.('excel',{size:14}) || ''} Export Excel</button>
+            <button class="btn btn-primary btn-sm" onclick="downloadBulkPDF()">${Icons?.render?.('pdf',{size:14}) || ''} Bulk PDF</button>
           </div>
         </div>
       </div>
@@ -82,16 +90,22 @@ async function renderResults(params = {}) {
     <!-- Results Container -->
     <div id="results-container">
       <div class="empty-state" style="height:400px">
-        <div class="empty-state-icon">📋</div>
+        <div class="empty-state-icon">${Icons?.render?.('results',{size:48}) || ''}</div>
         <h3>Select a Class</h3>
         <p>Choose a class from the dropdown above to see results and export options.</p>
       </div>
     </div>`;
 
   await loadResultsStandardDropdown();
-  if (_resultsStandardId) {
-    document.getElementById('results-std-select').value = _resultsStandardId;
-    await loadResultsForClass(_resultsStandardId);
+  const sel = document.getElementById('results-std-select');
+  if (sel) {
+    if (_resultsStandardId && [...sel.options].some(o => o.value == _resultsStandardId)) {
+      sel.value = _resultsStandardId;
+      await onResultsStandardChange(_resultsStandardId);
+    } else if (sel.options.length > 1) {
+      sel.selectedIndex = 1;
+      await onResultsStandardChange(sel.value);
+    }
   }
 }
 
@@ -116,27 +130,76 @@ async function loadResultsStandardDropdown() {
   } catch { }
 }
 
+async function onResultsStandardChange(standardId) {
+  _resultsStandardId = standardId ? parseInt(standardId) : null;
+  _resultsBatchId = null; // reset batch selection
+  
+  const batchWrap = document.getElementById('results-batch-filter-wrap');
+  const batchSelect = document.getElementById('results-batch-select');
+  if (batchWrap && batchSelect) {
+    if (_resultsStandardId) {
+      try {
+        const batches = await API.batches.list(_resultsStandardId);
+        if (batches.length > 0) {
+          batchSelect.innerHTML = '<option value="">— All Batches —</option>' + batches.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+          batchWrap.style.display = 'block';
+        } else {
+          batchWrap.style.display = 'none';
+          batchSelect.value = '';
+        }
+      } catch (e) {
+        batchWrap.style.display = 'none';
+        batchSelect.value = '';
+      }
+    } else {
+      batchWrap.style.display = 'none';
+      batchSelect.value = '';
+    }
+  }
+  
+  await loadResultsForClass(_resultsStandardId);
+}
+
+async function onResultsBatchChange(batchId) {
+  _resultsBatchId = batchId ? parseInt(batchId) : null;
+  await loadResultsForClass(_resultsStandardId);
+}
+
 async function loadResultsForClass(standardId) {
   if (!standardId) return;
   _resultsStandardId = parseInt(standardId);
   _expandedStudents.clear();
 
   const container = document.getElementById('results-container');
-  container.innerHTML = `<div class="empty-state"><div class="animate-pulse" style="font-size:2rem">📊</div><p class="text-muted text-sm mt-2">Loading exam cycles and tests...</p></div>`;
+  container.innerHTML = `<div class="empty-state"><div class="animate-pulse" style="font-size:2rem">${Icons?.render?.('chart',{size:32}) || ''}</div><p class="text-muted text-sm mt-2">Loading exam cycles and tests...</p></div>`;
 
   try {
     const actionsEl = document.getElementById('results-actions');
     actionsEl.style.display = 'flex';
 
     const [finalData, testCycles, tests] = await Promise.all([
-      API.export.results(standardId),
+      API.export.results(standardId, _resultsBatchId),
       API.testCycles.list(standardId),
-      API.tests.list(standardId)
+      API.tests.list(standardId, _resultsBatchId)
     ]);
 
     _resultsFinalData = finalData;
     _resultsTestCycles = testCycles;
     _resultsStandaloneTests = tests.filter(t => !t.cycle_id);
+
+    // Default active box type when loading new class results
+    if (_activeBoxType === 'final' || !_activeBoxType) {
+      if (testCycles.length > 0) {
+        _activeBoxType = 'cycle';
+        _activeBoxId = testCycles[0].id;
+      } else if (_resultsStandaloneTests.length > 0) {
+        _activeBoxType = 'test';
+        _activeBoxId = _resultsStandaloneTests[0].id;
+      } else {
+        _activeBoxType = null;
+        _activeBoxId = null;
+      }
+    }
 
     // Show/hide Compare Series button
     const btnSeries = document.getElementById('btn-compare-series');
@@ -144,7 +207,7 @@ async function loadResultsForClass(standardId) {
 
     renderExamBoxes();
   } catch (err) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><h3>Error Loading Results</h3><p>${err.message}</p></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">${Icons?.render?.('warning',{size:32}) || ''}</div><h3>Error Loading Results</h3><p>${err.message}</p></div>`;
     Toast.error('Results Error', err.message);
   }
 }
@@ -157,16 +220,11 @@ function renderExamBoxes() {
   const container = document.getElementById('results-container');
 
   const boxes = [];
-  boxes.push({
-    type: 'final', id: null,
-    icon: '🏆', title: 'Overall Results', subtitle: 'Cumulative Class Results',
-    total: null, completed: null
-  });
 
   _resultsTestCycles.forEach(c => {
     boxes.push({
       type: 'cycle', id: c.id,
-      icon: '🗓', title: c.title,
+      icon: Icons?.render?.('calendar',{size:20}) || '', title: c.title,
       subtitle: `${c.total_tests || 0} Tests · Max ${c.max_marks}m`,
       total: c.total_tests || 0,
       completed: c.completed_tests || 0
@@ -176,7 +234,7 @@ function renderExamBoxes() {
   _resultsStandaloneTests.forEach(t => {
     boxes.push({
       type: 'test', id: t.id,
-      icon: '📑', title: t.name,
+      icon: Icons?.render?.('pdf',{size:20}) || '', title: t.name,
       subtitle: `${t.subject_name} · Max ${t.max_marks}m`,
       total: null, completed: null
     });
@@ -229,20 +287,20 @@ function selectExamBox(type, id) {
 
 async function loadActiveExamTable() {
   const tableContainer = document.getElementById('results-table-container');
-  tableContainer.innerHTML = `<div class="empty-state" style="padding:var(--space-8)"><div class="animate-pulse" style="font-size:1.5rem">📊</div><p class="text-muted text-sm mt-1">Loading results...</p></div>`;
+  tableContainer.innerHTML = `<div class="empty-state" style="padding:var(--space-8)"><div class="animate-pulse" style="font-size:1.5rem">${Icons?.render?.('chart',{size:24}) || ''}</div><p class="text-muted text-sm mt-1">Loading results...</p></div>`;
 
   try {
     if (_activeBoxType === 'final') {
       renderFinalResultsCards();
     } else if (_activeBoxType === 'cycle') {
-      const cycleData = await API.testCycles.results(_activeBoxId);
+      const cycleData = await API.testCycles.results(_activeBoxId, _resultsBatchId);
       renderCycleResultsCards(cycleData);
     } else if (_activeBoxType === 'test') {
       const testData = await API.tests.getMarks(_activeBoxId);
       renderTestResultsTable(testData);
     }
   } catch (err) {
-    tableContainer.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><h3>Error Loading Table</h3><p>${err.message}</p></div>`;
+    tableContainer.innerHTML = `<div class="empty-state"><div class="empty-state-icon">${Icons?.render?.('warning',{size:32}) || ''}</div><h3>Error Loading Table</h3><p>${err.message}</p></div>`;
   }
 }
 
@@ -268,24 +326,24 @@ function renderFinalResultsCards() {
   const statsBar = `
     <div class="results-summary-bar">
       <div class="results-stat-chip">
-        <span class="results-stat-chip-icon">👥</span>
+        <span class="results-stat-chip-icon">${Icons?.render?.('students',{size:16}) || ''}</span>
         <div><div class="results-stat-chip-val">${students.length}</div><div class="results-stat-chip-lbl">Total Students</div></div>
       </div>
       <div class="results-stat-chip">
-        <span class="results-stat-chip-icon">📈</span>
+        <span class="results-stat-chip-icon">${Icons?.render?.('chart',{size:16}) || ''}</span>
         <div><div class="results-stat-chip-val">${avgPct}%</div><div class="results-stat-chip-lbl">Class Average</div></div>
       </div>
       <div class="results-stat-chip">
-        <span class="results-stat-chip-icon">✅</span>
+        <span class="results-stat-chip-icon" style="color:#15803d">${Icons?.render?.('check',{size:16}) || ''}</span>
         <div><div class="results-stat-chip-val" style="color:#15803d">${passCount}</div><div class="results-stat-chip-lbl">Passed</div></div>
       </div>
       <div class="results-stat-chip">
-        <span class="results-stat-chip-icon">❌</span>
+        <span class="results-stat-chip-icon" style="color:#b91c1c">${Icons?.render?.('close',{size:16}) || ''}</span>
         <div><div class="results-stat-chip-val" style="color:#b91c1c">${failCount}</div><div class="results-stat-chip-lbl">Failed</div></div>
       </div>
       ${pendingCount > 0 ? `
       <div class="results-stat-chip">
-        <span class="results-stat-chip-icon">⏳</span>
+        <span class="results-stat-chip-icon" style="color:#b45309">${Icons?.render?.('clock',{size:16}) || ''}</span>
         <div><div class="results-stat-chip-val" style="color:#b45309">${pendingCount}</div><div class="results-stat-chip-lbl">Pending</div></div>
       </div>` : ''}
     </div>`;
@@ -295,20 +353,9 @@ function renderFinalResultsCards() {
     const rankColor = sr.rank === 1 ? '#d4af37' : sr.rank === 2 ? '#9ca3af' : sr.rank === 3 ? '#cd7f32' : 'var(--accent-dark)';
     const isExpanded = _expandedStudents.has(sr.student.id);
 
-    // Build elective IDs
-    let electiveIds = [];
-    if (sr.student.elective_subjects) {
-      try {
-        const parsed = typeof sr.student.elective_subjects === 'string'
-          ? JSON.parse(sr.student.elective_subjects) : sr.student.elective_subjects;
-        if (Array.isArray(parsed)) electiveIds = parsed.map(el => typeof el === 'object' ? el.id : el);
-      } catch(e) {}
-    }
-
     // Subject pills
     const subjectPillsHTML = subjects.map(sub => {
-      const isOptional = sub.is_compulsory === 0;
-      const isSelected = !isOptional || electiveIds.includes(sub.id);
+      const isSelected = isStudentEnrolled(sr.student, sub.id, sub.is_compulsory);
       const subRes = sr.subjectResults?.find(s => s.subject_id === sub.id);
 
       if (!isSelected) {
@@ -379,8 +426,8 @@ function renderFinalResultsCards() {
         <div class="rsc-body ${isExpanded ? 'open' : ''}" id="rsc-body-${sr.student.id}">
           <div class="rsc-subjects-grid">${subjectPillsHTML}</div>
           <div class="rsc-actions-row">
-            <button class="btn btn-ghost btn-sm" onclick="previewStudentCard(${sr.student.id})">👁 Preview Card</button>
-            <button class="btn btn-outline btn-sm" onclick="downloadSinglePDF(${sr.student.id})">📄 Download PDF</button>
+            <button class="btn btn-ghost btn-sm" onclick="previewStudentCard(${sr.student.id})">${Icons?.render?.('eye',{size:14}) || ''} Preview Card</button>
+            <button class="btn btn-outline btn-sm" onclick="downloadSinglePDF(${sr.student.id})">${Icons?.render?.('pdf',{size:14}) || ''} Download PDF</button>
           </div>
         </div>
       </div>`;
@@ -390,8 +437,7 @@ function renderFinalResultsCards() {
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
       <h3 style="font-weight:700;font-size:1rem;">Overall Results — Student Results</h3>
       <div class="flex gap-2 flex-wrap">
-        <button class="btn btn-outline btn-sm" onclick="expandAllStudents()">Expand All ▼</button>
-        <button class="btn btn-outline btn-sm" onclick="collapseAllStudents()">Collapse All ▲</button>
+        <button id="btn-toggle-expand-all" class="btn btn-outline btn-sm" onclick="toggleExpandAllStudents()">Expand All ▼</button>
       </div>
     </div>
     <div class="info-alert mb-4" style="background: var(--primary-light); border-left: 4px solid var(--primary); padding: 12px; border-radius: var(--radius-md); font-size: 0.85rem; line-height: 1.5; color: var(--text-primary);">
@@ -417,28 +463,70 @@ function toggleStudentExpand(studentId) {
   // Update arrow in header
   const btn = card?.querySelector('.rsc-expand-btn');
   if (btn) btn.textContent = _expandedStudents.has(studentId) ? '▲' : '▼';
+
+  // Update toggle button text
+  updateToggleExpandAllButtonText();
 }
 
-function expandAllStudents() {
-  if (!_resultsFinalData?.students) return;
-  _resultsFinalData.students.forEach(sr => {
-    const body = document.getElementById(`rsc-body-${sr.student.id}`);
-    const card = document.getElementById(`rsc-${sr.student.id}`);
-    if (body) { body.classList.add('open'); _expandedStudents.add(sr.student.id); }
-    const btn = card?.querySelector('.rsc-expand-btn');
-    if (btn) btn.textContent = '▲';
+function updateToggleExpandAllButtonText() {
+  const bodies = document.querySelectorAll('.rsc-body');
+  if (bodies.length === 0) return;
+
+  let hasClosed = false;
+  bodies.forEach(body => {
+    if (!body.classList.contains('open')) {
+      hasClosed = true;
+    }
   });
+
+  const btnToggle = document.getElementById('btn-toggle-expand-all');
+  if (btnToggle) {
+    btnToggle.innerHTML = hasClosed ? 'Expand All ▼' : 'Collapse All ▲';
+  }
 }
 
-function collapseAllStudents() {
-  if (!_resultsFinalData?.students) return;
-  _resultsFinalData.students.forEach(sr => {
-    const body = document.getElementById(`rsc-body-${sr.student.id}`);
-    const card = document.getElementById(`rsc-${sr.student.id}`);
-    if (body) { body.classList.remove('open'); _expandedStudents.delete(sr.student.id); }
-    const btn = card?.querySelector('.rsc-expand-btn');
-    if (btn) btn.textContent = '▼';
+function toggleExpandAllStudents() {
+  const bodies = document.querySelectorAll('.rsc-body');
+  if (bodies.length === 0) return;
+
+  let hasClosed = false;
+  bodies.forEach(body => {
+    if (!body.classList.contains('open')) {
+      hasClosed = true;
+    }
   });
+
+  const btnToggle = document.getElementById('btn-toggle-expand-all');
+
+  if (hasClosed) {
+    // Expand all
+    bodies.forEach(body => {
+      body.classList.add('open');
+      const idStr = body.id.replace('rsc-body-', '');
+      const id = isNaN(idStr) ? idStr : parseInt(idStr, 10);
+      _expandedStudents.add(id);
+    });
+    document.querySelectorAll('.rsc-expand-btn').forEach(btn => {
+      btn.textContent = '▲';
+    });
+    if (btnToggle) {
+      btnToggle.innerHTML = 'Collapse All ▲';
+    }
+  } else {
+    // Collapse all
+    bodies.forEach(body => {
+      body.classList.remove('open');
+      const idStr = body.id.replace('rsc-body-', '');
+      const id = isNaN(idStr) ? idStr : parseInt(idStr, 10);
+      _expandedStudents.delete(id);
+    });
+    document.querySelectorAll('.rsc-expand-btn').forEach(btn => {
+      btn.textContent = '▼';
+    });
+    if (btnToggle) {
+      btnToggle.innerHTML = 'Expand All ▼';
+    }
+  }
 }
 
 /* ═══════════════════════════════════════════════
@@ -461,19 +549,19 @@ function renderCycleResultsCards(cycleData) {
   const statsBar = `
     <div class="results-summary-bar">
       <div class="results-stat-chip">
-        <span class="results-stat-chip-icon">👥</span>
+        <span class="results-stat-chip-icon">${Icons?.render?.('students',{size:16}) || ''}</span>
         <div><div class="results-stat-chip-val">${students.length}</div><div class="results-stat-chip-lbl">Students</div></div>
       </div>
       <div class="results-stat-chip">
-        <span class="results-stat-chip-icon">📚</span>
+        <span class="results-stat-chip-icon">${Icons?.render?.('templates',{size:16}) || ''}</span>
         <div><div class="results-stat-chip-val">${tests.length}</div><div class="results-stat-chip-lbl">Subjects</div></div>
       </div>
       <div class="results-stat-chip">
-        <span class="results-stat-chip-icon">📈</span>
+        <span class="results-stat-chip-icon">${Icons?.render?.('chart',{size:16}) || ''}</span>
         <div><div class="results-stat-chip-val">${avgPct}%</div><div class="results-stat-chip-lbl">Class Avg</div></div>
       </div>
       <div class="results-stat-chip">
-        <span class="results-stat-chip-icon">🎯</span>
+        <span class="results-stat-chip-icon">${Icons?.render?.('marks',{size:16}) || ''}</span>
         <div><div class="results-stat-chip-val">${cycle.max_marks}</div><div class="results-stat-chip-lbl">Max Marks</div></div>
       </div>
     </div>`;
@@ -545,8 +633,7 @@ function renderCycleResultsCards(cycleData) {
         <p style="font-size:0.78rem;color:var(--text-muted);margin-top:2px">${tests.length} subjects · Max ${cycle.max_marks} marks</p>
       </div>
       <div class="flex gap-2 flex-wrap">
-        <button class="btn btn-outline btn-sm" onclick="expandAllStudents()">Expand All ▼</button>
-        <button class="btn btn-outline btn-sm" onclick="collapseAllStudents()">Collapse All ▲</button>
+        <button id="btn-toggle-expand-all" class="btn btn-outline btn-sm" onclick="toggleExpandAllStudents()">Expand All ▼</button>
       </div>
     </div>
     ${statsBar}
@@ -582,29 +669,21 @@ function renderTestResultsTable(testData) {
   const statsBar = `
     <div class="results-summary-bar">
       <div class="results-stat-chip">
-        <span class="results-stat-chip-icon">👥</span>
+        <span class="results-stat-chip-icon">${Icons?.render?.('students',{size:16}) || ''}</span>
         <div><div class="results-stat-chip-val">${marks.length}</div><div class="results-stat-chip-lbl">Students</div></div>
       </div>
       <div class="results-stat-chip">
-        <span class="results-stat-chip-icon">📈</span>
+        <span class="results-stat-chip-icon">${Icons?.render?.('chart',{size:16}) || ''}</span>
         <div><div class="results-stat-chip-val">${avgScore}</div><div class="results-stat-chip-lbl">Avg Score</div></div>
       </div>
       <div class="results-stat-chip">
-        <span class="results-stat-chip-icon">✅</span>
+        <span class="results-stat-chip-icon" style="color:#15803d">${Icons?.render?.('check',{size:16}) || ''}</span>
         <div><div class="results-stat-chip-val" style="color:#15803d">${passRate}%</div><div class="results-stat-chip-lbl">Pass Rate</div></div>
       </div>
     </div>`;
 
   const tableRows = marks.map(m => {
-    const isOptional = test.is_compulsory === 0;
-    let chosenElectiveIds = [];
-    if (m.elective_subjects) {
-      try {
-        const parsed = typeof m.elective_subjects === 'string' ? JSON.parse(m.elective_subjects) : m.elective_subjects;
-        if (Array.isArray(parsed)) chosenElectiveIds = parsed.map(el => typeof el === 'object' ? el.id : el);
-      } catch(e) {}
-    }
-    const isElected = !isOptional || chosenElectiveIds.includes(test.subject_id);
+    const isElected = isStudentEnrolled(m, test.subject_id, test.is_compulsory);
 
     if (!isElected) {
       return `<tr style="opacity:0.65;background:var(--bg-elevated);">
@@ -780,7 +859,7 @@ function openCompareSeriesModal() {
 
   const cycleOptions = _resultsTestCycles.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
 
-  createModal('compare-series', '⚖ Compare Test Series',
+  createModal('compare-series', `${Icons?.render?.('compare',{size:16}) || ''} Compare Test Series`,
     `<p style="color:var(--text-secondary);font-size:0.875rem;margin-bottom:20px">
       Compare subject-wise performance between two test cycles. See class averages side-by-side and individual student improvement.
     </p>
@@ -797,7 +876,7 @@ function openCompareSeriesModal() {
     </div>
     <div id="compare-series-result" style="min-height:60px"></div>`,
     `<button class="btn btn-outline" onclick="closeModal('compare-series')">Cancel</button>
-     <button class="btn btn-primary" onclick="runCompareSeriesAnalysis()">📊 Compare Now</button>`,
+     <button class="btn btn-primary" onclick="runCompareSeriesAnalysis()">${Icons?.render?.('compare',{size:14}) || ''} Compare Now</button>`,
     'modal-xl'
   );
 
@@ -815,7 +894,7 @@ async function runCompareSeriesAnalysis() {
 
   if (idA === idB) { Toast.warning('Same Series', 'Please select two different test series.'); return; }
 
-  resultDiv.innerHTML = `<div class="empty-state" style="padding:40px 0"><div class="animate-pulse" style="font-size:1.5rem">📊</div><p class="text-muted text-sm mt-2">Fetching data...</p></div>`;
+  resultDiv.innerHTML = `<div class="empty-state" style="padding:40px 0"><div class="animate-pulse" style="font-size:1.5rem">${Icons?.render?.('chart',{size:24}) || ''}</div><p class="text-muted text-sm mt-2">Fetching data...</p></div>`;
 
   try {
     const [dataA, dataB] = await Promise.all([
@@ -946,7 +1025,7 @@ async function runCompareSeriesAnalysis() {
       });
     }
   } catch (err) {
-    resultDiv.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><h3>Error</h3><p>${err.message}</p></div>`;
+    resultDiv.innerHTML = `<div class="empty-state"><div class="empty-state-icon">${Icons?.render?.('warning',{size:32}) || ''}</div><h3>Error</h3><p>${err.message}</p></div>`;
     Toast.error('Compare Error', err.message);
   }
 }
@@ -970,7 +1049,7 @@ function openCompareStudentsModal() {
       <span class="student-picker-roll">Roll: ${sr.student.roll_number} · Rank #${sr.rank}</span>
     </label>`).join('');
 
-  createModal('compare-students', '👥 Compare Students',
+  createModal('compare-students', `${Icons?.render?.('students',{size:16}) || ''} Compare Students`,
     `<p style="color:var(--text-secondary);font-size:0.875rem;margin-bottom:16px">
       Select 2–4 students to compare their subject-wise marks in detail. Charts will show radar and bar comparisons.
     </p>
@@ -982,7 +1061,7 @@ function openCompareStudentsModal() {
     <p style="font-size:0.75rem;color:var(--text-muted);margin-top:8px" id="picker-selection-count">0 students selected (pick 2–4)</p>
     <div id="compare-students-result" style="min-height:60px;margin-top:20px"></div>`,
     `<button class="btn btn-outline" onclick="closeModal('compare-students')">Cancel</button>
-     <button class="btn btn-primary" onclick="runCompareStudentsAnalysis()">📊 Compare Now</button>`,
+     <button class="btn btn-primary" onclick="runCompareStudentsAnalysis()">${Icons?.render?.('students',{size:14}) || ''} Compare Now</button>`,
     'modal-xl'
   );
 }
@@ -1030,16 +1109,7 @@ async function runCompareStudentsAnalysis() {
 
   // Build elective IDs per student
   const getScore = (sr, sub) => {
-    let electiveIds = [];
-    if (sr.student.elective_subjects) {
-      try {
-        const parsed = typeof sr.student.elective_subjects === 'string'
-          ? JSON.parse(sr.student.elective_subjects) : sr.student.elective_subjects;
-        if (Array.isArray(parsed)) electiveIds = parsed.map(el => typeof el === 'object' ? el.id : el);
-      } catch(e) {}
-    }
-    const isOptional = sub.is_compulsory === 0;
-    const isSelected = !isOptional || electiveIds.includes(sub.id);
+    const isSelected = isStudentEnrolled(sr.student, sub.id, sub.is_compulsory);
     if (!isSelected) return null;
     const subRes = sr.subjectResults?.find(s => s.subject_id === sub.id);
     if (!subRes || subRes.obtained === null || subRes.obtained === undefined) return 0;
@@ -1207,12 +1277,12 @@ async function previewStudentCard(studentId) {
   try {
     const html = await API.export.previewStudent(studentId);
     Spinner.hide();
-    const overlay = createModal('card-preview', '👁 Result Card Preview',
+    const overlay = createModal('card-preview', `${Icons?.render?.('eye',{size:16}) || ''} Result Card Preview`,
       `<div id="preview-viewport-container" style="display:flex;justify-content:center;align-items:center;background:#0f172a;padding:20px;transition:all 0.3s ease;overflow:auto;max-height:700px;border-radius:var(--radius)">
          <iframe id="preview-iframe" style="width:210mm;height:297mm;max-height:650px;background:white;border:none;box-shadow:0 10px 25px rgba(0,0,0,0.5);transition:all 0.3s ease" srcdoc="${html.replace(/"/g, '&quot;')}"></iframe>
        </div>`,
       `<button class="btn btn-outline" onclick="closeModal('card-preview')">Close</button>
-       <button class="btn btn-primary" onclick="downloadSinglePDF(${studentId})">⬇ Download PDF</button>`,
+       <button class="btn btn-primary" onclick="downloadSinglePDF(${studentId})">${Icons?.render?.('download',{size:14}) || ''} Download PDF</button>`,
       'modal-xl'
     );
     overlay.classList.add('modal-fullscreen-overlay');
@@ -1228,7 +1298,7 @@ async function downloadBulkPDF() {
   try {
     const tokenRes = await API.export.downloadToken();
     const token = tokenRes.token;
-    const baseUrl = API.export.pdfBulk(_resultsStandardId);
+    const baseUrl = API.export.pdfBulk(_resultsStandardId, null, _resultsBatchId);
     const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `token=${token}`;
     const a = document.createElement('a');
     a.href = url; a.download = ''; a.click();
@@ -1245,7 +1315,7 @@ async function downloadClassExcel() {
   try {
     const tokenRes = await API.export.downloadToken();
     const token = tokenRes.token;
-    const url = API.export.excel(_resultsStandardId) + `?token=${token}`;
+    const url = API.export.excel(_resultsStandardId, _resultsBatchId) + `?token=${token}`;
     window.location.href = url;
     Toast.success('Downloading', 'Excel export will download shortly.');
   } catch (err) {
@@ -1277,7 +1347,7 @@ async function showResultSettings() {
   const cats = typeof settings.result_categories === 'string'
     ? JSON.parse(settings.result_categories) : settings.result_categories || [];
 
-  createModal('result-settings', '⚙ Result Card Settings',
+  createModal('result-settings', `${Icons?.render?.('settings',{size:16}) || ''} Result Card Settings`,
     `<p class="form-section-title">Display Options</p>
     <div class="grid grid-2 gap-4 mb-6">
       ${[
@@ -1327,7 +1397,7 @@ async function showResultSettings() {
       </div>
     </div>`,
     `<button class="btn btn-outline" onclick="closeModal('result-settings')">Cancel</button>
-     <button class="btn btn-primary" onclick="saveResultSettings(${_resultsStandardId})">💾 Save Settings</button>`,
+     <button class="btn btn-primary" onclick="saveResultSettings(${_resultsStandardId})">${Icons?.render?.('save',{size:14}) || ''} Save Settings</button>`,
     'modal-md'
   );
 }
@@ -1366,400 +1436,127 @@ async function saveResultSettings(standardId) {
   }
 }
 
-/* ═══════════════════════════════════════════════
-   COMPARE STUDENTS
-   ═══════════════════════════════════════════════ */
 
-let _compareStudentsSelected = [];
-
-function openCompareStudentsModal() {
-  if (!_resultsFinalData || !_resultsFinalData.students) {
-    Toast.error('No Data', 'Load a class first.');
-    return;
-  }
-  
-  _compareStudentsSelected = [];
-  
-  createModal('compare-students', '👥 Compare Students',
-    `<div class="form-group mb-4">
-      <label class="form-label">Search Students</label>
-      <input type="text" class="form-control" id="compare-student-search" placeholder="Search by name or roll number..." oninput="filterStudentPicker(this.value)">
-    </div>
-    <div id="compare-students-list" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);padding:10px;margin-bottom:15px;">
-      <!-- Populated dynamically -->
-    </div>
-    <div class="form-group">
-      <label class="form-label">Selected Students (Max 5)</label>
-      <div id="compare-students-selected" class="flex gap-2 flex-wrap" style="min-height:36px;padding:8px;background:var(--bg-surface);border-radius:var(--radius);border:1px dashed var(--border-medium)">
-        <span class="text-muted text-sm">None selected</span>
-      </div>
-    </div>`,
-    `<button class="btn btn-outline" onclick="closeModal('compare-students')">Cancel</button>
-     <button class="btn btn-primary" onclick="runCompareStudentsAnalysis()">📊 Run Analysis</button>`,
-    'modal-md'
-  );
-  
-  filterStudentPicker('');
-}
-
-function filterStudentPicker(search) {
-  const listEl = document.getElementById('compare-students-list');
-  if (!listEl) return;
-  
-  const q = search.toLowerCase();
-  const filtered = _resultsFinalData.students.filter(s => 
-    s.student.name.toLowerCase().includes(q) || 
-    (s.student.roll_number && String(s.student.roll_number).includes(q))
-  );
-  
-  listEl.innerHTML = filtered.map(s => {
-    const isSelected = _compareStudentsSelected.includes(s.student_id);
-    return `
-      <label class="checkbox-container" style="display:flex;align-items:center;padding:6px;border-radius:var(--radius-sm);cursor:pointer;margin:0;background:${isSelected ? 'var(--primary-light)' : 'transparent'}">
-        <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="updateStudentPickerItem(${s.student_id}, this.checked)" ${!isSelected && _compareStudentsSelected.length >= 5 ? 'disabled' : ''}>
-        <span style="flex:1;margin-left:8px;font-size:0.9rem">${s.student.roll_number || '-'} - ${s.student.name}</span>
-      </label>
-    `;
-  }).join('');
-}
-
-function updateStudentPickerItem(studentId, isChecked) {
-  if (isChecked) {
-    if (_compareStudentsSelected.length >= 5) {
-      Toast.warning('Limit Reached', 'You can compare up to 5 students at once.');
-      filterStudentPicker(document.getElementById('compare-student-search').value);
-      return;
-    }
-    _compareStudentsSelected.push(studentId);
-  } else {
-    _compareStudentsSelected = _compareStudentsSelected.filter(id => id !== studentId);
-  }
-  
-  filterStudentPicker(document.getElementById('compare-student-search').value);
-  
-  const selEl = document.getElementById('compare-students-selected');
-  if (_compareStudentsSelected.length === 0) {
-    selEl.innerHTML = '<span class="text-muted text-sm">None selected</span>';
-  } else {
-    selEl.innerHTML = _compareStudentsSelected.map((id, idx) => {
-      const s = _resultsFinalData.students.find(x => x.student_id === id);
-      const color = COMPARE_COLORS[idx % COMPARE_COLORS.length].solid;
-      return `<span class="badge" style="background:${color}20;color:${color};border:1px solid ${color}50">${s.student.name} <span style="cursor:pointer;margin-left:5px;opacity:0.7" onclick="updateStudentPickerItem(${id}, false)">✕</span></span>`;
-    }).join('');
-  }
-}
-
-function runCompareStudentsAnalysis() {
-  if (_compareStudentsSelected.length < 2) {
-    Toast.warning('Need More Students', 'Please select at least 2 students to compare.');
-    return;
-  }
-  
-  closeModal('compare-students');
-  
-  const students = _compareStudentsSelected.map(id => _resultsFinalData.students.find(x => x.student_id === id));
-  const subjects = _resultsFinalData.subjects.filter(s => s.is_compulsory); // Compare compulsory subjects mainly
-  
-  const labels = subjects.map(s => s.name);
-  const datasets = students.map((s, idx) => {
-    const color = COMPARE_COLORS[idx % COMPARE_COLORS.length];
-    const data = subjects.map(subj => {
-      const res = s.subjectResults.find(r => r.subject_id === subj.id);
-      return res ? (res.percentage || 0) : 0;
-    });
-    
-    return {
-      label: s.student.name,
-      data: data,
-      backgroundColor: color.fill,
-      borderColor: color.stroke,
-      pointBackgroundColor: color.solid,
-      borderWidth: 2,
-      fill: true
-    };
-  });
-  
-  createModal('student-analysis-view', '📊 Student Comparison Analysis',
-    `<div class="flex gap-6" style="height:400px;margin-bottom:20px">
-      <div style="flex:1;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:15px;position:relative">
-        <canvas id="studentCompareChart"></canvas>
-      </div>
-      <div style="width:300px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:15px;overflow-y:auto">
-        <h4 style="margin-bottom:15px;color:var(--text-primary)">Overall Stats</h4>
-        ${students.map((s, idx) => {
-          const color = COMPARE_COLORS[idx % COMPARE_COLORS.length].solid;
-          return `
-            <div style="margin-bottom:15px;padding-left:10px;border-left:4px solid ${color}">
-              <div style="font-weight:700;font-size:0.95rem;color:var(--text-primary)">${s.student.name}</div>
-              <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-top:4px;color:var(--text-secondary)">
-                <span>Overall:</span>
-                <span style="font-weight:700">${s.overallPct !== null ? s.overallPct.toFixed(1) + '%' : '-'}</span>
-              </div>
-              <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-top:2px;color:var(--text-secondary)">
-                <span>Rank:</span>
-                <span style="font-weight:700">#${s.rank || '-'}</span>
-              </div>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    </div>
-    
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Subject</th>
-            ${students.map(s => `<th>${s.student.name}</th>`).join('')}
-          </tr>
-        </thead>
-        <tbody>
-          ${subjects.map(subj => {
-            return `<tr>
-              <td class="td-primary" style="font-weight:600">${subj.name}</td>
-              ${students.map(s => {
-                const res = s.subjectResults.find(r => r.subject_id === subj.id);
-                const pct = res && res.percentage !== null ? res.percentage.toFixed(1) : '-';
-                return `<td>${pct}%</td>`;
-              }).join('')}
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
-    </div>`,
-    `<button class="btn btn-primary" onclick="closeModal('student-analysis-view')">Done</button>`,
-    'modal-xl'
-  );
-  
-  setTimeout(() => {
-    const ctx = document.getElementById('studentCompareChart').getContext('2d');
-    if (_chartInstances['compareStudents']) _chartInstances['compareStudents'].destroy();
-    
-    _chartInstances['compareStudents'] = new Chart(ctx, {
-      type: 'radar',
-      data: { labels, datasets },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { position: 'bottom', labels: { color: getComputedStyle(document.body).getPropertyValue('--text-primary') } } },
-        scales: {
-          r: {
-            angleLines: { color: 'rgba(150, 150, 150, 0.2)' },
-            grid: { color: 'rgba(150, 150, 150, 0.2)' },
-            pointLabels: { color: getComputedStyle(document.body).getPropertyValue('--text-primary'), font: { size: 12 } },
-            ticks: { backdropColor: 'transparent', color: 'rgba(150, 150, 150, 0.8)' },
-            suggestedMin: 0,
-            suggestedMax: 100
-          }
-        }
-      }
-    });
-  }, 100);
-}
-
-/* ═══════════════════════════════════════════════
-   COMPARE SERIES
-   ═══════════════════════════════════════════════ */
-
-let _compareSeriesSelected = [];
-
-function openCompareSeriesModal() {
-  if (_resultsTestCycles.length < 2) {
-    Toast.error('Not Enough Cycles', 'You need at least 2 test cycles to compare.');
-    return;
-  }
-  
-  _compareSeriesSelected = [];
-  
-  createModal('compare-series', '⚖ Compare Test Series',
-    `<div class="form-group mb-4">
-      <p class="text-sm text-secondary mb-3">Select exactly 2 test cycles to analyze class progression.</p>
-      <div id="compare-series-list" style="max-height:250px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);padding:10px;">
-        ${_resultsTestCycles.map(c => `
-          <label class="checkbox-container" style="display:flex;align-items:center;padding:8px;border-radius:var(--radius-sm);cursor:pointer;margin:0 0 5px 0;">
-            <input type="checkbox" value="${c.id}" onchange="updateSeriesPickerItem(this)">
-            <span style="flex:1;margin-left:8px;font-size:0.95rem;font-weight:600">${c.title} <span class="text-xs text-muted" style="font-weight:normal;margin-left:6px">(${c.total_tests} Tests)</span></span>
-          </label>
-        `).join('')}
-      </div>
-    </div>`,
-    `<button class="btn btn-outline" onclick="closeModal('compare-series')">Cancel</button>
-     <button class="btn btn-primary" onclick="runCompareSeriesAnalysis()">📊 Run Analysis</button>`,
-    'modal-md'
-  );
-}
-
-function updateSeriesPickerItem(checkbox) {
-  const val = parseInt(checkbox.value);
-  if (checkbox.checked) {
-    if (_compareSeriesSelected.length >= 2) {
-      Toast.warning('Limit Reached', 'You can only compare 2 test series at once.');
-      checkbox.checked = false;
-      return;
-    }
-    _compareSeriesSelected.push(val);
-  } else {
-    _compareSeriesSelected = _compareSeriesSelected.filter(id => id !== val);
-  }
-}
-
-async function runCompareSeriesAnalysis() {
-  if (_compareSeriesSelected.length !== 2) {
-    Toast.warning('Selection Required', 'Please select exactly 2 test cycles.');
-    return;
-  }
-  
-  Spinner.show('Analyzing test cycles...');
-  
-  try {
-    const [cycle1Data, cycle2Data] = await Promise.all([
-      API.testCycles.results(_compareSeriesSelected[0]),
-      API.testCycles.results(_compareSeriesSelected[1])
-    ]);
-    
-    Spinner.hide();
-    closeModal('compare-series');
-    
-    const cycle1 = _resultsTestCycles.find(c => c.id === _compareSeriesSelected[0]);
-    const cycle2 = _resultsTestCycles.find(c => c.id === _compareSeriesSelected[1]);
-    
-    // Find common subjects
-    const subjectsMap = {};
-    _resultsFinalData.subjects.forEach(s => subjectsMap[s.id] = s.name);
-    
-    const commonSubjects = Object.keys(cycle1Data.subjectAverages).filter(sid => cycle2Data.subjectAverages[sid] !== undefined);
-    
-    if (commonSubjects.length === 0) {
-      Toast.error('No Common Subjects', 'These two cycles do not share any common subjects for comparison.');
-      return;
-    }
-    
-    const labels = commonSubjects.map(id => subjectsMap[id] || `Subject ${id}`);
-    const data1 = commonSubjects.map(id => cycle1Data.subjectAverages[id]);
-    const data2 = commonSubjects.map(id => cycle2Data.subjectAverages[id]);
-    
-    createModal('series-analysis-view', '📊 Class Performance Progression',
-      `<div class="flex gap-6" style="height:400px;margin-bottom:20px">
-        <div style="flex:1;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:15px;position:relative">
-          <canvas id="seriesCompareChart"></canvas>
-        </div>
-        <div style="width:300px;background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:15px;overflow-y:auto">
-          <h4 style="margin-bottom:15px;color:var(--text-primary)">Class Average</h4>
-          
-          <div style="margin-bottom:15px;padding-left:10px;border-left:4px solid var(--primary)">
-            <div style="font-weight:700;font-size:0.95rem;color:var(--text-primary)">${cycle1.title}</div>
-            <div style="display:flex;justify-content:space-between;font-size:1.1rem;margin-top:4px;color:var(--text-secondary)">
-              <span>Overall Average:</span>
-              <span style="font-weight:700">${cycle1Data.classAverage.toFixed(1)}%</span>
-            </div>
-          </div>
-          
-          <div style="margin-bottom:15px;padding-left:10px;border-left:4px solid var(--accent)">
-            <div style="font-weight:700;font-size:0.95rem;color:var(--text-primary)">${cycle2.title}</div>
-            <div style="display:flex;justify-content:space-between;font-size:1.1rem;margin-top:4px;color:var(--text-secondary)">
-              <span>Overall Average:</span>
-              <span style="font-weight:700">${cycle2Data.classAverage.toFixed(1)}%</span>
-            </div>
-          </div>
-          
-          <div class="divider" style="margin:15px 0"></div>
-          
-          <div style="text-align:center">
-            <div style="font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em">Progression</div>
-            <div style="font-size:2rem;font-weight:800;color:${cycle2Data.classAverage >= cycle1Data.classAverage ? 'var(--success)' : 'var(--danger)'}">
-              ${cycle2Data.classAverage >= cycle1Data.classAverage ? '↑' : '↓'} ${Math.abs(cycle2Data.classAverage - cycle1Data.classAverage).toFixed(1)}%
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Subject</th>
-              <th>${cycle1.title} Avg</th>
-              <th>${cycle2.title} Avg</th>
-              <th>Delta</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${commonSubjects.map((sid, idx) => {
-              const diff = data2[idx] - data1[idx];
-              const diffColor = diff > 0 ? 'var(--success)' : (diff < 0 ? 'var(--danger)' : 'var(--text-muted)');
-              return `<tr>
-                <td class="td-primary" style="font-weight:600">${subjectsMap[sid] || `Subject ${sid}`}</td>
-                <td>${data1[idx].toFixed(1)}%</td>
-                <td>${data2[idx].toFixed(1)}%</td>
-                <td style="color:${diffColor};font-weight:700">${diff > 0 ? '+' : ''}${diff.toFixed(1)}%</td>
-              </tr>`;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>`,
-      `<button class="btn btn-primary" onclick="closeModal('series-analysis-view')">Done</button>`,
-      'modal-xl'
-    );
-    
-    setTimeout(() => {
-      const ctx = document.getElementById('seriesCompareChart').getContext('2d');
-      if (_chartInstances['compareSeries']) _chartInstances['compareSeries'].destroy();
-      
-      _chartInstances['compareSeries'] = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [
-            {
-              label: cycle1.title,
-              data: data1,
-              backgroundColor: getComputedStyle(document.body).getPropertyValue('--primary'),
-              borderRadius: 4
-            },
-            {
-              label: cycle2.title,
-              data: data2,
-              backgroundColor: getComputedStyle(document.body).getPropertyValue('--accent'),
-              borderRadius: 4
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { position: 'bottom', labels: { color: getComputedStyle(document.body).getPropertyValue('--text-primary') } } },
-          scales: {
-            x: {
-              grid: { color: 'rgba(150, 150, 150, 0.1)' },
-              ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-muted') }
-            },
-            y: {
-              beginAtZero: true,
-              suggestedMax: 100,
-              grid: { color: 'rgba(150, 150, 150, 0.1)' },
-              ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-muted') }
-            }
-          }
-        }
-      });
-    }, 100);
-    
-  } catch (err) {
-    Spinner.hide();
-    Toast.error('Analysis Failed', err.message);
-  }
-}
 
 /* ═══════════════════════════════════════════════
    GLOBAL EXPORTS
    ═══════════════════════════════════════════════ */
 
+function showPerformanceInsights() {
+  if (!_resultsFinalData || !_resultsFinalData.students || _resultsFinalData.students.length === 0) {
+    Toast.warning('No Data', 'No student results loaded.');
+    return;
+  }
+  
+  const students = [..._resultsFinalData.students];
+  const subjects = _resultsFinalData.subjects;
+  
+  // 1. Toppers
+  const sortedByPct = students.filter(s => s.overallPct !== null).sort((a,b) => b.overallPct - a.overallPct);
+  const toppers = sortedByPct.slice(0, 3);
+  const medals = ['🥇', '🥈', '🥉'];
+  
+  // 2. Subject Stats
+  const subjectStats = subjects.map(sub => {
+    let totalScore = 0;
+    let highestScore = 0;
+    let highestScorer = '—';
+    let count = 0;
+    let passCount = 0;
+    
+    students.forEach(sr => {
+      const subRes = sr.subjectResults?.find(s => s.subject_id === sub.id);
+      if (subRes && subRes.obtained !== null && !subRes.is_absent) {
+        const score = subRes.obtained;
+        totalScore += score;
+        count++;
+        
+        if (score > highestScore) {
+          highestScore = score;
+          highestScorer = sr.student.name;
+        }
+        
+        if (subRes.pass_fail !== 'FAIL') {
+          passCount++;
+        }
+      }
+    });
+    
+    const avg = count > 0 ? (totalScore / count).toFixed(1) : '—';
+    const passRate = count > 0 ? Math.round((passCount / count) * 100) : 0;
+    
+    return {
+      name: sub.name,
+      avg,
+      max: sub.max_marks,
+      highest: count > 0 ? `${highestScore} (${highestScorer.split(' ')[0]})` : '—',
+      passRate
+    };
+  });
+  
+  const toppersHTML = toppers.map((t, idx) => `
+    <div class="stat-card hover-lift" style="display:flex;align-items:center;gap:12px;border:1px solid var(--border);padding:12px;background:var(--bg-surface)">
+      <div style="font-size:2rem;line-height:1">${medals[idx]}</div>
+      <div style="flex:1">
+        <div style="font-weight:700;color:var(--text-primary);font-size:0.95rem">${t.student.name}</div>
+        <div class="text-xs text-muted mt-1">Roll Number: ${t.student.roll_number}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:1.1rem;font-weight:800;color:var(--accent)">${t.overallPct.toFixed(1)}%</div>
+        <div class="text-xs text-muted mt-1">Rank #${idx + 1}</div>
+      </div>
+    </div>
+  `).join('');
+  
+  const subjectRowsHTML = subjectStats.map(s => `
+    <tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:10px;font-weight:600;color:var(--text-primary)">${s.name}</td>
+      <td style="padding:10px;text-align:center">${s.avg} / ${s.max}</td>
+      <td style="padding:10px;text-align:center;font-weight:600;color:var(--success)">${s.highest}</td>
+      <td style="padding:10px;text-align:center">
+        <span class="badge ${s.passRate >= 75 ? 'badge-success' : s.passRate >= 50 ? 'badge-warning' : 'badge-danger'}">${s.passRate}%</span>
+      </td>
+    </tr>
+  `).join('');
+  
+  createModal('performance-insights-modal', `Class Performance Insights — ${_resultsFinalData.standard.display_name}`,
+    `<div style="display:flex;flex-direction:column;gap:20px">
+      <div>
+        <h3 style="font-size:0.9rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px">🏆 Class Toppers</h3>
+        <div class="grid grid-3 gap-3">
+          ${toppersHTML || '<div class="text-muted text-sm">No toppers data available.</div>'}
+        </div>
+      </div>
+      
+      <div>
+        <h3 style="font-size:0.9rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px">📚 Subject Performance Stats</h3>
+        <div class="table-wrap">
+          <table style="width:100%;border-collapse:collapse">
+            <thead>
+              <tr style="border-bottom:2px solid var(--border)">
+                <th style="padding:10px;text-align:left">Subject</th>
+                <th style="padding:10px;text-align:center">Average Score</th>
+                <th style="padding:10px;text-align:center">Highest Scorer</th>
+                <th style="padding:10px;text-align:center">Subject Pass Rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${subjectRowsHTML}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`,
+    `<button class="btn btn-primary" onclick="closeModal('performance-insights-modal')">Close</button>`,
+    'modal-lg'
+  );
+}
+
 window.renderResults = renderResults;
 window.loadResultsForClass = loadResultsForClass;
 window.selectExamBox = selectExamBox;
 window.toggleStudentExpand = toggleStudentExpand;
-window.expandAllStudents = expandAllStudents;
-window.collapseAllStudents = collapseAllStudents;
+window.toggleExpandAllStudents = toggleExpandAllStudents;
 window.previewStudentCard = previewStudentCard;
 window.downloadBulkPDF = downloadBulkPDF;
 window.downloadClassExcel = downloadClassExcel;
@@ -1772,3 +1569,4 @@ window.openCompareStudentsModal = openCompareStudentsModal;
 window.updateStudentPickerItem = updateStudentPickerItem;
 window.filterStudentPicker = filterStudentPicker;
 window.runCompareStudentsAnalysis = runCompareStudentsAnalysis;
+window.showPerformanceInsights = showPerformanceInsights;

@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Apex Tuition ERP — Indian Coaching Class Tuition ERP</title>
+  <title>Apex Tuition ERP — Indian Coaching Class Management System</title>
   <meta name="description"
     content="Premium tuition management ERP for Indian coaching classes. Manage admissions, track fees, schedule tests, and generate reminder notices or print-ready result cards.">
 
@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap"
     rel="stylesheet">
 
   <!-- CSS -->
@@ -21,88 +21,1012 @@
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/animations.css">
 
-  <!-- Favicon -->
+  <!-- Favicon SVG -->
   <link rel="icon"
-    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎓%3C/text%3E%3C/svg%3E">
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231B2A4A'/%3E%3Cpath d='M50 20L75 35V55L50 70L25 55V35Z' fill='%23C9A96E' opacity='0.9'/%3E%3Cpath d='M50 20L75 35L50 50L25 35Z' fill='%23E2C98A'/%3E%3C/svg%3E">
+
+  <style>
+    /* ═══════════════════════════════════════════════
+       APEX LOADING SCREEN — SVG-BASED, AESTHETIC
+       ═══════════════════════════════════════════════ */
+
+    :root {
+      --ldr-navy:   #FFFFFF;
+      --ldr-navy2:  #1B2A4A;
+      --ldr-teal:   #2EB8A0;
+      --ldr-teal2:  #1BD9BC;
+      --ldr-teal3:  #25977F;
+      --ldr-gold:   #C9A96E;
+      --ldr-gold2:  #E2C98A;
+      --ldr-cream:  #0B1329;
+      --ldr-cream2: #14213d;
+      --ldr-slate:  #8A96B0;
+      --ldr-slate2: #A5B4FC;
+    }
+
+    #apex-loader {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 9999;
+      overflow: hidden;
+      background: var(--ldr-cream);
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    #apex-loader.fade-out {
+      animation: loaderFadeOut 0.75s cubic-bezier(0.4,0,0.2,1) forwards;
+    }
+
+    @keyframes loaderFadeOut {
+      to { opacity: 0; pointer-events: none; visibility: hidden; }
+    }
+
+    /* Background layers */
+    .ldr-bg { position: absolute; inset: 0; background: var(--ldr-cream); }
+
+    .ldr-grid {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 44px 44px;
+      animation: gridShift 18s linear infinite;
+    }
+
+    @keyframes gridShift {
+      0%   { transform: translate(0,0); }
+      100% { transform: translate(44px, 44px); }
+    }
+
+    /* Ambient orbs */
+    .ldr-orb {
+      position: fixed; border-radius: 50%;
+      pointer-events: none; z-index: 1;
+      filter: blur(70px);
+    }
+    .ldr-orb-1 { width: 420px; height: 420px; background: rgba(46,184,160,0.06); top: -110px; left: -110px; animation: orbA 9s ease-in-out infinite; }
+    .ldr-orb-2 { width: 320px; height: 320px; background: rgba(201,169,110,0.07); bottom: 60px; right: -90px; animation: orbB 11s ease-in-out infinite; }
+    .ldr-orb-3 { width: 220px; height: 220px; background: rgba(27,42,74,0.04); top: 42%; left: 12%; animation: orbC 13s ease-in-out infinite; }
+
+    @keyframes orbA { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(28px,18px) scale(1.07)} 66%{transform:translate(-18px,28px) scale(0.94)} }
+    @keyframes orbB { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-38px,-22px) scale(1.10)} }
+    @keyframes orbC { 0%,100%{transform:translate(0,0)} 50%{transform:translate(48px,-28px)} }
+
+    /* Shooting streaks */
+    .ldr-streak {
+      position: absolute; width: 2px; border-radius: 2px;
+      background: linear-gradient(180deg, transparent, var(--ldr-teal), transparent);
+      opacity: 0;
+      animation: streakFall var(--sd) ease-in var(--sdl) infinite;
+    }
+    @keyframes streakFall {
+      0%   { opacity:0; transform: translateY(-80px) skewX(-7deg); }
+      10%  { opacity:0.45; }
+      90%  { opacity:0.25; }
+      100% { opacity:0; transform: translateY(115vh) skewX(-7deg); }
+    }
+
+    /* Floating SVG particles */
+    .ldr-particle {
+      position: absolute; opacity: 0;
+      animation: particleFloat var(--pd) ease-in-out var(--pdl) infinite;
+      color: var(--ldr-navy); pointer-events: none;
+    }
+    @keyframes particleFloat {
+      0%   { opacity:0; transform: translateY(0) rotate(0deg) scale(0.6); }
+      15%  { opacity:0.14; }
+      70%  { opacity:0.14; transform: translateY(-170px) rotate(18deg) scale(1.1); }
+      100% { opacity:0; transform: translateY(-270px) rotate(28deg) scale(0.8); }
+    }
+
+    /* Center card */
+    .ldr-card {
+      position: relative; z-index: 10;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 0;
+      animation: cardReveal 0.85s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    @keyframes cardReveal {
+      from { opacity:0; transform: translateY(35px) scale(0.95); }
+      to   { opacity:1; transform: translateY(0) scale(1); }
+    }
+
+    /* Logo box */
+    .ldr-logo-wrap {
+      width: 80px; height: 80px;
+      border-radius: 22px;
+      background: linear-gradient(145deg, var(--ldr-navy2), var(--ldr-navy));
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 20px 60px rgba(26,39,68,0.22), 0 0 0 1px rgba(46,184,160,0.18), inset 0 1px 0 rgba(255,255,255,0.07);
+      margin-bottom: 26px;
+      animation: logoPulse 2.6s ease-in-out infinite;
+      position: relative;
+    }
+    .ldr-logo-wrap::after {
+      content:''; position:absolute; inset:-2px;
+      border-radius:24px; border:2px solid transparent;
+      background: conic-gradient(from var(--ca, 0deg), var(--ldr-teal), var(--ldr-gold), #7C5CBF, var(--ldr-teal)) border-box;
+      -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: destination-out; mask-composite: exclude;
+      animation: conicSpin 4s linear infinite;
+    }
+    @property --ca { syntax:'<angle>'; inherits:false; initial-value:0deg; }
+    @keyframes conicSpin { to{ --ca:360deg; } }
+    @keyframes logoPulse {
+      0%,100%{ box-shadow:0 20px 60px rgba(26,39,68,0.22),0 0 0 1px rgba(46,184,160,0.18); }
+      50%    { box-shadow:0 26px 76px rgba(26,39,68,0.32),0 0 0 2px rgba(46,184,160,0.38), 0 0 38px rgba(46,184,160,0.13); }
+    }
+
+    /* Brand */
+    .ldr-brand-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(28px,4.5vw,44px);
+      font-weight: 900; color: var(--ldr-navy);
+      letter-spacing:-0.5px; line-height:1; text-align:center;
+      margin-bottom:5px;
+    }
+    .ldr-brand-title .t-teal { color: var(--ldr-teal); }
+    .ldr-brand-sub {
+      font-size:13px; font-weight:400; color:var(--ldr-slate);
+      text-align:center; letter-spacing:0.3px; margin-bottom:40px;
+      max-width:340px; line-height:1.5;
+    }
+
+    /* Journey timeline */
+    .ldr-journey-wrapper { width: min(580px,90vw); margin-bottom:32px; position:relative; }
+    .ldr-journey-lbl {
+      font-size:9.5px; font-weight:700; letter-spacing:2px;
+      text-transform:uppercase; color:var(--ldr-slate);
+      text-align:center; margin-bottom:18px;
+    }
+    .ldr-journey-track {
+      display:flex; align-items:center;
+      justify-content:space-between; position:relative; padding:0 10px;
+    }
+    .ldr-journey-line {
+      position:absolute; left:10px; right:10px; top:50%;
+      transform:translateY(-50%); height:2px;
+      background:rgba(255,255,255,0.08); border-radius:2px;
+    }
+    .ldr-journey-fill {
+      height:100%; width:0%;
+      background:linear-gradient(90deg,var(--ldr-teal),var(--ldr-gold));
+      border-radius:2px; box-shadow:0 0 8px rgba(46,184,160,0.45);
+      animation:jFill 8s ease-in-out infinite;
+    }
+    @keyframes jFill { 0%{width:0%} 80%{width:100%} 100%{width:100%} }
+
+    .ldr-j-node { position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; gap:7px; }
+    .ldr-j-dot {
+      width:38px; height:38px; border-radius:50%;
+      background:var(--ldr-cream2); border:2px solid rgba(255,255,255,0.08);
+      display:flex; align-items:center; justify-content:center;
+      box-shadow:0 3px 10px rgba(0,0,0,0.3);
+      animation:dotPop var(--jp) cubic-bezier(0.34,1.56,0.64,1) var(--jd) both;
+      position:relative; transition:all 0.4s ease;
+    }
+    @keyframes dotPop { 0%{opacity:0;transform:scale(0) translateY(10px)} 100%{opacity:1;transform:scale(1) translateY(0)} }
+    .ldr-j-dot.active { background:var(--ldr-teal); border-color:var(--ldr-teal); transform:scale(1.15); box-shadow:0 0 0 5px rgba(46,184,160,0.24),0 7px 18px rgba(0,0,0,0.4); }
+    .ldr-j-dot.active::before { content:''; position:absolute; inset:-7px; border-radius:50%; border:2px solid var(--ldr-teal); animation:rippleOut 1.7s ease-out infinite; }
+    @keyframes rippleOut { 0%{opacity:0.8;transform:scale(0.75)} 100%{opacity:0;transform:scale(1.55)} }
+    .ldr-j-dot.done { background:var(--ldr-teal); border-color:var(--ldr-teal2); }
+    .ldr-j-lbl {
+      font-size:9.5px; font-weight:500; color:var(--ldr-slate);
+      text-align:center; white-space:nowrap;
+      opacity:0; animation:lblFade 0.5s ease var(--jd) both;
+    }
+    @keyframes lblFade { to{opacity:1} }
+    .ldr-j-lbl.active { color:white; font-weight:700; }
+    .ldr-j-lbl.done { color:var(--ldr-teal2); }
+
+    /* City SVG scene strip */
+    .ldr-scene {
+      width:min(580px,90vw); height:120px;
+      border-radius:18px; background:var(--ldr-navy);
+      overflow:hidden; position:relative; margin-bottom:28px;
+      box-shadow:0 12px 38px rgba(26,39,68,0.18), inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+    .ldr-scene svg { position:absolute; inset:0; width:100%; height:100%; }
+
+    /* Road dashes animation */
+    .ldr-dash-group { animation: dashMove 1.8s linear infinite; }
+    @keyframes dashMove { from{transform:translateX(0)} to{transform:translateX(-80px)} }
+
+    /* Walking person */
+    .ldr-walker { animation: walkerScroll var(--ws) linear var(--wd) infinite; }
+    @keyframes walkerScroll {
+      0%   { transform:translateX(-50px); opacity:0; }
+      4%   { opacity:1; }
+      96%  { opacity:1; }
+      100% { transform:translateX(620px); opacity:0; }
+    }
+
+    /* Bus */
+    .ldr-bus { animation: busScroll 13s linear 2.5s infinite; }
+    @keyframes busScroll { from{transform:translateX(-80px)} to{transform:translateX(700px)} }
+
+    /* Progress area */
+    .ldr-progress-area { width:min(420px,85vw); display:flex; flex-direction:column; align-items:center; gap:12px; }
+    .ldr-prog-bar-outer { width:100%; height:5px; background:rgba(255,255,255,0.08); border-radius:8px; overflow:hidden; }
+    .ldr-prog-bar-fill {
+      height:100%; width:0%; border-radius:8px;
+      background:linear-gradient(90deg,var(--ldr-teal),var(--ldr-gold));
+      position:relative;
+    }
+    .ldr-prog-bar-fill::after {
+      content:''; position:absolute; top:0; right:0;
+      width:60px; height:100%;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,0.55));
+      animation:shimmer 1.3s ease-in-out infinite;
+    }
+    @keyframes shimmer { 0%{opacity:0;transform:translateX(-40px)} 50%{opacity:1} 100%{opacity:0;transform:translateX(20px)} }
+
+    .ldr-pct {
+      font-family:'Space Mono',monospace; font-size:26px;
+      font-weight:700; color:var(--ldr-navy); letter-spacing:-1px; line-height:1;
+    }
+    .ldr-pct-sign { font-size:14px; color:var(--ldr-slate2); vertical-align:super; font-family:'Space Mono',monospace; }
+    .ldr-status {
+      font-size:12.5px; font-weight:400; color:var(--ldr-slate);
+      letter-spacing:0.2px; text-align:center; min-height:18px; transition:opacity 0.3s ease;
+    }
+
+    /* Module pills */
+    .ldr-pills { display:flex; flex-wrap:wrap; gap:7px; justify-content:center; margin-top:24px; width:min(500px,90vw); }
+    .ldr-pill {
+      display:flex; align-items:center; gap:5px;
+      padding:5px 12px; border-radius:50px;
+      border:1.5px solid rgba(255,255,255,0.10);
+      background:var(--ldr-cream2); font-size:11.5px; font-weight:500;
+      color:var(--ldr-slate); opacity:0; transform:scale(0.86);
+      animation:pillPop 0.5s cubic-bezier(0.34,1.56,0.64,1) var(--pill-d) both;
+      box-shadow:0 2px 8px rgba(0,0,0,0.2);
+      transition:all 0.4s ease;
+    }
+    @keyframes pillPop { to{opacity:1;transform:scale(1)} }
+    .ldr-pill.loaded { border-color:var(--ldr-teal); color:var(--ldr-teal2); background:rgba(46,184,160,0.05); }
+    .ldr-pill-check { font-size:9px; color:var(--ldr-teal); opacity:0; transform:scale(0); transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+    .ldr-pill.loaded .ldr-pill-check { opacity:1; transform:scale(1); }
+
+    /* Corner stats */
+    .ldr-corner-stat { position:fixed; z-index:15; display:flex; flex-direction:column; gap:3px; animation:statIn 1s ease 0.7s both; }
+    @keyframes statIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .ldr-corner-stat.tl { top:22px; left:22px; }
+    .ldr-corner-stat.tr { top:22px; right:22px; align-items:flex-end; }
+    .ldr-cs-num { font-family:'Space Mono',monospace; font-size:22px; font-weight:700; color:var(--ldr-navy); line-height:1; }
+    .ldr-cs-lbl { font-size:9.5px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--ldr-slate); }
+
+    /* Ticker */
+    .ldr-ticker {
+      position:fixed; bottom:0; left:0; right:0; height:36px;
+      background:var(--ldr-navy); display:flex; align-items:center; overflow:hidden; z-index:20;
+    }
+    .ldr-ticker-lbl {
+      flex-shrink:0; padding:0 14px; font-size:9.5px; font-weight:700;
+      letter-spacing:2px; text-transform:uppercase; color:var(--ldr-teal);
+      border-right:1px solid rgba(255,255,255,0.08);
+      white-space:nowrap; height:100%; display:flex; align-items:center;
+    }
+    .ldr-ticker-scroll-wrap { flex:1; overflow:hidden; height:100%; display:flex; align-items:center; position:relative; }
+    .ldr-ticker-inner { display:flex; align-items:center; gap:55px; white-space:nowrap; animation:tickScroll 38s linear infinite; }
+    @keyframes tickScroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+    .ldr-tick-item { display:inline-flex; align-items:center; gap:7px; font-size:11.5px; color:rgba(255,255,255,0.58); }
+    .ldr-tick-dot { width:3.5px; height:3.5px; border-radius:50%; background:var(--ldr-teal3); flex-shrink:0; }
+
+    /* ═══════════════════════════════════════════════
+       LOGIN PAGE — PREMIUM REDESIGN
+       ═══════════════════════════════════════════════ */
+
+    #login-page {
+      position: fixed; inset: 0;
+      display: flex; z-index: 100;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    /* Animated background */
+    .login-bg-layer {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 15% 15%, rgba(201,169,110,0.16) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 80% at 85% 85%, rgba(46,184,160,0.09) 0%, transparent 55%),
+        #FDFAF4;
+    }
+    .login-bg-grid {
+      position:absolute; inset:0;
+      background-image:
+        linear-gradient(rgba(27,42,74,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(27,42,74,0.04) 1px, transparent 1px);
+      background-size:50px 50px;
+    }
+
+    /* Left panel */
+    .login-left {
+      position: relative; z-index: 2;
+      flex: 0 0 45%;
+      display: flex; flex-direction: column;
+      align-items: flex-start; justify-content: center;
+      padding: 60px 56px;
+      background: linear-gradient(145deg, #0F1C35, #1B2A4A 60%, #243357);
+      overflow: hidden;
+    }
+
+    /* Left panel decorative grid */
+    .login-left::before {
+      content:''; position:absolute; inset:0;
+      background-image:
+        linear-gradient(rgba(201,169,110,0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(201,169,110,0.07) 1px, transparent 1px);
+      background-size:40px 40px;
+    }
+
+    /* Left panel glow blobs */
+    .login-left-blob1 {
+      position:absolute; width:350px; height:350px; border-radius:50%;
+      background:radial-gradient(circle,rgba(46,184,160,0.12) 0%,transparent 70%);
+      top:-100px; right:-100px; pointer-events:none;
+    }
+    .login-left-blob2 {
+      position:absolute; width:280px; height:280px; border-radius:50%;
+      background:radial-gradient(circle,rgba(201,169,110,0.10) 0%,transparent 70%);
+      bottom:-80px; left:-60px; pointer-events:none;
+    }
+
+    .login-left-content { position:relative; z-index:2; width:100%; }
+
+    /* Logo mark */
+    .ll-logo {
+      width:56px; height:56px; border-radius:16px;
+      background:linear-gradient(135deg,rgba(201,169,110,0.25),rgba(46,184,160,0.20));
+      border:1px solid rgba(201,169,110,0.35);
+      display:flex; align-items:center; justify-content:center;
+      margin-bottom:28px;
+      backdrop-filter:blur(12px);
+    }
+
+    .ll-title {
+      font-family:'Playfair Display',serif;
+      font-size:clamp(26px,3.2vw,38px);
+      font-weight:900; color:#fff;
+      letter-spacing:-0.5px; line-height:1.1;
+      margin-bottom:12px;
+    }
+    .ll-title span { color:var(--ldr-teal); }
+
+    .ll-sub {
+      font-size:14px; font-weight:400;
+      color:rgba(255,255,255,0.55);
+      line-height:1.65; margin-bottom:40px;
+      max-width:340px;
+    }
+
+    /* Feature list */
+    .ll-features { display:flex; flex-direction:column; gap:14px; margin-bottom:40px; }
+    .ll-feat {
+      display:flex; align-items:center; gap:12px;
+      padding:10px 14px; border-radius:12px;
+      background:rgba(255,255,255,0.04);
+      border:1px solid rgba(255,255,255,0.07);
+      backdrop-filter:blur(8px);
+      animation:featSlide 0.5s ease both;
+    }
+    .ll-feat:nth-child(1){animation-delay:0.1s}
+    .ll-feat:nth-child(2){animation-delay:0.2s}
+    .ll-feat:nth-child(3){animation-delay:0.3s}
+    .ll-feat:nth-child(4){animation-delay:0.4s}
+    @keyframes featSlide { from{opacity:0;transform:translateX(-16px)} to{opacity:1;transform:translateX(0)} }
+
+    .ll-feat-icon {
+      width:34px; height:34px; border-radius:9px;
+      display:flex; align-items:center; justify-content:center;
+      flex-shrink:0;
+    }
+    .ll-feat-icon.teal  { background:rgba(46,184,160,0.18); }
+    .ll-feat-icon.gold  { background:rgba(201,169,110,0.18); }
+    .ll-feat-icon.blue  { background:rgba(91,155,213,0.18); }
+    .ll-feat-icon.green { background:rgba(61,153,112,0.18); }
+
+    .ll-feat-text { font-size:13px; font-weight:500; color:rgba(255,255,255,0.80); line-height:1.4; }
+    .ll-feat-text small { display:block; font-size:11px; color:rgba(255,255,255,0.38); margin-top:1px; }
+
+    /* Tech pills row */
+    .ll-tech-pills { display:flex; flex-wrap:wrap; gap:7px; }
+    .ll-tech-pill {
+      display:flex; align-items:center; gap:5px;
+      padding:4px 10px; border-radius:50px;
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.10);
+      font-size:10.5px; font-weight:600;
+      color:rgba(255,255,255,0.50);
+      letter-spacing:0.3px;
+      transition:all 0.25s ease;
+    }
+    .ll-tech-pill:hover { background:rgba(255,255,255,0.10); color:rgba(255,255,255,0.75); }
+    .ll-tech-pill-dot { width:5px; height:5px; border-radius:50%; background:var(--ldr-teal); }
+
+    /* Data flow animation lines */
+    .ll-dataflow {
+      position:absolute; top:0; right:0; bottom:0; width:2px;
+      overflow:hidden;
+    }
+    .ll-dataflow::after {
+      content:''; position:absolute;
+      width:100%; height:80px;
+      background:linear-gradient(180deg,transparent,rgba(46,184,160,0.6),transparent);
+      animation:dataFlow 3s linear infinite;
+    }
+    @keyframes dataFlow { from{top:-80px} to{top:100%} }
+
+    /* Right panel */
+    .login-right {
+      flex: 1;
+      position:relative; z-index:2;
+      display:flex; align-items:center; justify-content:center;
+      padding:40px 32px;
+    }
+
+    /* Login card */
+    .login-card-new {
+      width:100%; max-width:420px;
+      background:rgba(255,255,255,0.75);
+      backdrop-filter:blur(24px);
+      -webkit-backdrop-filter:blur(24px);
+      border:1px solid rgba(201,169,110,0.30);
+      border-radius:28px;
+      padding:44px 40px;
+      box-shadow:0 24px 72px rgba(27,42,74,0.12), inset 0 1px 0 rgba(255,255,255,0.95);
+      position:relative;
+      animation:cardSlide 0.7s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    @keyframes cardSlide { from{opacity:0;transform:translateY(28px) scale(0.96)} to{opacity:1;transform:translateY(0) scale(1)} }
+
+    /* Animated border gradient */
+    .login-card-new::before {
+      content:''; position:absolute; inset:-1.5px;
+      border-radius:30px;
+      background:conic-gradient(from var(--lca, 0deg), transparent 60%, rgba(201,169,110,0.5) 70%, rgba(46,184,160,0.4) 80%, transparent 90%);
+      z-index:-1;
+      animation:borderSpin 6s linear infinite;
+    }
+    @property --lca { syntax:'<angle>'; inherits:false; initial-value:0deg; }
+    @keyframes borderSpin { to{ --lca:360deg; } }
+
+    .lc-logo {
+      display:flex; flex-direction:column; align-items:center;
+      margin-bottom:28px;
+    }
+    .lc-logo-mark {
+      width:56px; height:56px; border-radius:16px;
+      background:linear-gradient(145deg,#1B2A4A,#243357);
+      display:flex; align-items:center; justify-content:center;
+      box-shadow:0 8px 28px rgba(27,42,74,0.28);
+      margin-bottom:14px;
+    }
+    .lc-brand-name {
+      font-family:'Playfair Display',serif;
+      font-size:20px; font-weight:800;
+      color:#1B2A4A; letter-spacing:-0.3px;
+    }
+    .lc-tagline { font-size:12px; font-weight:400; color:rgba(27,42,74,0.45); margin-top:3px; }
+
+    /* Floating label inputs */
+    .fl-group { position:relative; margin-bottom:18px; }
+    .fl-label {
+      position:absolute; left:14px;
+      top:50%; transform:translateY(-50%);
+      font-size:13.5px; font-weight:400;
+      color:rgba(27,42,74,0.42);
+      pointer-events:none;
+      transition:all 0.22s cubic-bezier(0.4,0,0.2,1);
+      background:transparent; padding:0 4px;
+    }
+    .fl-input {
+      width:100%;
+      padding:18px 14px 8px;
+      background:rgba(255,255,255,0.70);
+      border:1.5px solid rgba(201,169,110,0.28);
+      border-radius:14px;
+      font-size:14px; font-weight:500;
+      color:#1B2A4A; outline:none;
+      transition:all 0.2s ease;
+      font-family:'DM Sans',sans-serif;
+    }
+    .fl-input:focus { border-color:rgba(27,42,74,0.38); background:rgba(255,255,255,0.92); box-shadow:0 0 0 3px rgba(201,169,110,0.16); }
+    .fl-input:focus + .fl-label,
+    .fl-input:not(:placeholder-shown) + .fl-label {
+      top:10px; transform:translateY(0);
+      font-size:10.5px; font-weight:600;
+      color:rgba(27,42,74,0.55); letter-spacing:0.04em; text-transform:uppercase;
+    }
+    .fl-input.error { border-color:rgba(192,68,58,0.50); box-shadow:0 0 0 3px rgba(192,68,58,0.10); }
+    .fl-input.error + .fl-label { color:rgba(192,68,58,0.75); }
+
+    /* Password toggle */
+    .pw-toggle-btn {
+      position:absolute; right:12px; top:50%; transform:translateY(-50%);
+      background:none; border:none; cursor:pointer;
+      color:rgba(27,42,74,0.38); padding:4px;
+      transition:color 0.2s ease; display:flex; align-items:center;
+    }
+    .pw-toggle-btn:hover { color:rgba(27,42,74,0.72); }
+
+    /* Error message */
+    .lc-error {
+      display:flex; align-items:center; gap:7px;
+      padding:10px 14px; border-radius:10px;
+      background:rgba(192,68,58,0.08); border:1px solid rgba(192,68,58,0.22);
+      font-size:12.5px; color:#b03025; margin-bottom:14px;
+    }
+    .lc-error.hidden { display:none; }
+
+    /* Sign in button */
+    .lc-submit-btn {
+      width:100%; padding:15px;
+      background:linear-gradient(135deg,#1B2A4A,#243357);
+      color:white; border:none; border-radius:14px;
+      font-size:14.5px; font-weight:700; font-family:'DM Sans',sans-serif;
+      cursor:pointer; position:relative; overflow:hidden;
+      box-shadow:0 6px 24px rgba(27,42,74,0.32), inset 0 1px 0 rgba(255,255,255,0.12);
+      transition:all 0.3s ease; letter-spacing:0.02em;
+      display:flex; align-items:center; justify-content:center; gap:8px;
+    }
+    .lc-submit-btn:hover { box-shadow:0 10px 36px rgba(27,42,74,0.45); transform:translateY(-2px) scale(1.01); }
+    .lc-submit-btn:active { transform:translateY(0) scale(0.99); }
+    .lc-submit-btn:disabled { opacity:0.6; pointer-events:none; }
+    .lc-submit-btn::after {
+      content:''; position:absolute; inset:-1px;
+      background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.10) 50%,transparent 60%);
+      transform:translateX(-100%); transition:transform 0.5s ease; pointer-events:none;
+    }
+    .lc-submit-btn:hover::after { transform:translateX(100%); }
+
+    /* Submit spinner */
+    .lc-spinner {
+      width:18px; height:18px; border-radius:50%;
+      border:2px solid rgba(255,255,255,0.3);
+      border-top-color:white;
+      animation:spin 0.75s linear infinite;
+    }
+
+    .lc-default-hint {
+      text-align:center; margin-top:14px;
+      font-size:11.5px; color:rgba(27,42,74,0.35);
+    }
+
+    @keyframes spin { to{transform:rotate(360deg)} }
+
+    /* Responsive */
+    @media(max-width:768px) {
+      .login-left { display:none; }
+      .login-right { padding:24px 18px; }
+    }
+  </style>
 </head>
 
 <body>
 
-  <!-- ══════════════════════════════════════════════ -->
-  <!-- LOGIN PAGE                                     -->
-  <!-- ══════════════════════════════════════════════ -->
+  <!-- ═══════════════════════════════════════════════
+       APEX LOADING SCREEN
+  ═══════════════════════════════════════════════ -->
+  <div id="apex-loader" style="display:none;">
+    <div class="ldr-bg"></div>
+    <div class="ldr-grid"></div>
+
+    <!-- Ambient orbs -->
+    <div class="ldr-orb ldr-orb-1"></div>
+    <div class="ldr-orb ldr-orb-2"></div>
+    <div class="ldr-orb ldr-orb-3"></div>
+
+    <!-- Shooting streaks (SVG lines) -->
+    <div id="ldr-streaks"></div>
+
+    <!-- Floating particles (SVG icons) -->
+    <div id="ldr-particles"></div>
+
+    <!-- Corner stats -->
+    <div class="ldr-corner-stat tl">
+      <span class="ldr-cs-num" id="ldr-stu-count">0</span>
+      <span class="ldr-cs-lbl">Students</span>
+    </div>
+    <div class="ldr-corner-stat tr">
+      <span class="ldr-cs-num" id="ldr-test-count">0</span>
+      <span class="ldr-cs-lbl">Tests Graded</span>
+    </div>
+
+    <!-- Center card -->
+    <div class="ldr-card">
+
+      <!-- Logo -->
+      <div class="ldr-logo-wrap">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20 6L34 14V22L20 30L6 22V14Z" fill="#C9A96E" opacity="0.85"/>
+          <path d="M20 6L34 14L20 22L6 14Z" fill="#E2C98A"/>
+          <rect x="18" y="22" width="4" height="9" fill="#C9A96E" opacity="0.7"/>
+          <ellipse cx="20" cy="31" rx="6" ry="2" fill="#C9A96E" opacity="0.5"/>
+        </svg>
+      </div>
+
+      <!-- Brand -->
+      <h1 class="ldr-brand-title">Apex Tuition <span class="t-teal">ERP</span></h1>
+      <p class="ldr-brand-sub">The complete management system for Indian coaching classes</p>
+
+      <!-- Journey timeline -->
+      <div class="ldr-journey-wrapper">
+        <div class="ldr-journey-lbl">Student Journey</div>
+        <div class="ldr-journey-track">
+          <div class="ldr-journey-line"><div class="ldr-journey-fill" id="ldr-jline"></div></div>
+
+          <div class="ldr-j-node" id="ljn0">
+            <div class="ldr-j-dot" style="--jp:0.6s;--jd:0.2s;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" color="#1B2A4A"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </div>
+            <div class="ldr-j-lbl" style="--jd:0.4s;">Admission</div>
+          </div>
+
+          <div class="ldr-j-node" id="ljn1">
+            <div class="ldr-j-dot" style="--jp:0.6s;--jd:0.5s;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" color="#1B2A4A"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            </div>
+            <div class="ldr-j-lbl" style="--jd:0.7s;">Classes</div>
+          </div>
+
+          <div class="ldr-j-node" id="ljn2">
+            <div class="ldr-j-dot" style="--jp:0.6s;--jd:0.8s;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" color="#1B2A4A"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </div>
+            <div class="ldr-j-lbl" style="--jd:1.0s;">Test Cycle</div>
+          </div>
+
+          <div class="ldr-j-node" id="ljn3">
+            <div class="ldr-j-dot" style="--jp:0.6s;--jd:1.1s;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" color="#1B2A4A"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            </div>
+            <div class="ldr-j-lbl" style="--jd:1.3s;">Results</div>
+          </div>
+
+          <div class="ldr-j-node" id="ljn4">
+            <div class="ldr-j-dot" style="--jp:0.6s;--jd:1.4s;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" color="#1B2A4A"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+            </div>
+            <div class="ldr-j-lbl" style="--jd:1.6s;">Rank &amp; Cert</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SVG Night City Scene -->
+      <div class="ldr-scene">
+        <svg viewBox="0 0 580 120" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+          <!-- Sky gradient -->
+          <defs>
+            <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#0A1628"/>
+              <stop offset="40%" stop-color="#152240"/>
+              <stop offset="100%" stop-color="#2A4F7A"/>
+            </linearGradient>
+            <linearGradient id="moonGlow" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+              <stop offset="0%" stop-color="#F5C842"/>
+              <stop offset="100%" stop-color="#F5C842" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <rect width="580" height="120" fill="url(#skyGrad)"/>
+
+          <!-- Stars -->
+          <circle cx="40" cy="12" r="1" fill="white" opacity="0.7"><animate attributeName="opacity" values="0.7;0.2;0.7" dur="2.1s" repeatCount="indefinite"/></circle>
+          <circle cx="110" cy="8" r="1.2" fill="white" opacity="0.5"><animate attributeName="opacity" values="0.5;1;0.5" dur="3.2s" repeatCount="indefinite"/></circle>
+          <circle cx="180" cy="15" r="0.8" fill="white" opacity="0.8"><animate attributeName="opacity" values="0.8;0.3;0.8" dur="1.8s" repeatCount="indefinite"/></circle>
+          <circle cx="240" cy="6" r="1" fill="white" opacity="0.6"><animate attributeName="opacity" values="0.6;0.9;0.6" dur="2.6s" repeatCount="indefinite"/></circle>
+          <circle cx="320" cy="11" r="1.2" fill="white" opacity="0.5"><animate attributeName="opacity" values="0.5;1;0.5" dur="3.8s" repeatCount="indefinite"/></circle>
+          <circle cx="390" cy="7" r="0.9" fill="white" opacity="0.7"><animate attributeName="opacity" values="0.7;0.2;0.7" dur="2.3s" repeatCount="indefinite"/></circle>
+          <circle cx="450" cy="13" r="1" fill="white" opacity="0.6"><animate attributeName="opacity" values="0.6;1;0.6" dur="1.5s" repeatCount="indefinite"/></circle>
+          <circle cx="510" cy="5" r="1.1" fill="white" opacity="0.5"><animate attributeName="opacity" values="0.5;0.9;0.5" dur="4s" repeatCount="indefinite"/></circle>
+          <circle cx="560" cy="9" r="0.8" fill="white" opacity="0.8"><animate attributeName="opacity" values="0.8;0.3;0.8" dur="2.9s" repeatCount="indefinite"/></circle>
+          <circle cx="75" cy="18" r="0.9" fill="white" opacity="0.4"><animate attributeName="opacity" values="0.4;0.8;0.4" dur="3.1s" repeatCount="indefinite"/></circle>
+          <circle cx="145" cy="22" r="0.7" fill="white" opacity="0.5"><animate attributeName="opacity" values="0.5;0.9;0.5" dur="2.4s" repeatCount="indefinite"/></circle>
+          <circle cx="280" cy="19" r="1" fill="white" opacity="0.4"><animate attributeName="opacity" values="0.4;0.9;0.4" dur="3.5s" repeatCount="indefinite"/></circle>
+          <circle cx="420" cy="20" r="0.9" fill="white" opacity="0.6"><animate attributeName="opacity" values="0.6;0.2;0.6" dur="2.7s" repeatCount="indefinite"/></circle>
+
+          <!-- Moon -->
+          <circle cx="500" cy="18" r="10" fill="#F5C842" opacity="0.9">
+            <animate attributeName="cy" values="18;15;18" dur="4s" repeatCount="indefinite"/>
+          </circle>
+          <circle cx="506" cy="14" r="7" fill="#152240" opacity="0.85"/>
+
+          <!-- Buildings silhouette -->
+          <!-- Far buildings -->
+          <rect x="0" y="55" width="45" height="50" rx="2" fill="#0A1A2E"/>
+          <rect x="38" y="62" width="35" height="43" rx="2" fill="#0D1F36"/>
+          <rect x="68" y="47" width="55" height="58" rx="2" fill="#0A1A2E"/>
+          <rect x="118" y="58" width="30" height="47" rx="2" fill="#0C1C33"/>
+          <rect x="142" y="50" width="42" height="55" rx="2" fill="#0A1A2E"/>
+          <rect x="178" y="43" width="60" height="62" rx="2" fill="#0C1C33"/>
+          <rect x="232" y="60" width="32" height="45" rx="2" fill="#0A1A2E"/>
+          <rect x="258" y="50" width="46" height="55" rx="2" fill="#0C1C33"/>
+          <rect x="298" y="40" width="52" height="65" rx="2" fill="#0A1A2E"/>
+          <rect x="344" y="55" width="36" height="50" rx="2" fill="#0D1F36"/>
+          <rect x="374" y="48" width="48" height="57" rx="2" fill="#0A1A2E"/>
+          <rect x="416" y="52" width="40" height="53" rx="2" fill="#0C1C33"/>
+          <rect x="450" y="44" width="55" height="61" rx="2" fill="#0A1A2E"/>
+          <rect x="498" y="57" width="34" height="48" rx="2" fill="#0D1F36"/>
+          <rect x="526" y="51" width="54" height="54" rx="2" fill="#0A1A2E"/>
+
+          <!-- Windows (yellow lights) -->
+          <g fill="#F5C842" opacity="0.75">
+            <rect x="6" y="60" width="4" height="5"/><rect x="14" y="60" width="4" height="5"/>
+            <rect x="6" y="70" width="4" height="5"/><rect x="14" y="70" width="4" height="5"/>
+            <rect x="75" y="52" width="4" height="5"/><rect x="83" y="52" width="4" height="5"/>
+            <rect x="91" y="52" width="4" height="5"/><rect x="75" y="62" width="4" height="5"/>
+            <rect x="91" y="62" width="4" height="5"/>
+            <rect x="149" y="56" width="4" height="5"/><rect x="157" y="56" width="4" height="5"/>
+            <rect x="165" y="56" width="4" height="5"/><rect x="149" y="66" width="4" height="5"/>
+            <rect x="165" y="66" width="4" height="5"/>
+            <rect x="185" y="50" width="4" height="5"/><rect x="193" y="50" width="4" height="5"/>
+            <rect x="201" y="50" width="4" height="5"/><rect x="185" y="60" width="4" height="5"/>
+            <rect x="209" y="50" width="4" height="5"/><rect x="201" y="60" width="4" height="5"/>
+            <rect x="305" y="47" width="4" height="5"/><rect x="313" y="47" width="4" height="5"/>
+            <rect x="321" y="47" width="4" height="5"/><rect x="329" y="47" width="4" height="5"/>
+            <rect x="305" y="57" width="4" height="5"/><rect x="329" y="57" width="4" height="5"/>
+            <rect x="305" y="67" width="4" height="5"/><rect x="321" y="67" width="4" height="5"/>
+            <rect x="381" y="54" width="4" height="5"/><rect x="389" y="54" width="4" height="5"/>
+            <rect x="397" y="54" width="4" height="5"/><rect x="381" y="64" width="4" height="5"/>
+            <rect x="457" y="50" width="4" height="5"/><rect x="465" y="50" width="4" height="5"/>
+            <rect x="473" y="50" width="4" height="5"/><rect x="481" y="50" width="4" height="5"/>
+            <rect x="457" y="60" width="4" height="5"/><rect x="473" y="60" width="4" height="5"/>
+            <rect x="457" y="70" width="4" height="5"/><rect x="465" y="70" width="4" height="5"/>
+          </g>
+          <!-- Blinking windows -->
+          <rect x="22" y="60" width="4" height="5" fill="#F5C842">
+            <animate attributeName="opacity" values="1;0;1" dur="3.2s" repeatCount="indefinite"/>
+          </rect>
+          <rect x="107" y="64" width="4" height="5" fill="#F5C842">
+            <animate attributeName="opacity" values="0;1;0" dur="2.7s" repeatCount="indefinite"/>
+          </rect>
+          <rect x="267" y="56" width="4" height="5" fill="#F5C842">
+            <animate attributeName="opacity" values="1;0;1" dur="4s" repeatCount="indefinite"/>
+          </rect>
+          <rect x="408" y="58" width="4" height="5" fill="#F5C842">
+            <animate attributeName="opacity" values="0;1;0" dur="3.5s" repeatCount="indefinite"/>
+          </rect>
+          <rect x="534" y="57" width="4" height="5" fill="#F5C842">
+            <animate attributeName="opacity" values="1;0;1" dur="2.4s" repeatCount="indefinite"/>
+          </rect>
+
+          <!-- Ground -->
+          <rect x="0" y="103" width="580" height="17" fill="#0D2236"/>
+          <line x1="0" y1="103" x2="580" y2="103" stroke="rgba(46,184,160,0.18)" stroke-width="1"/>
+
+          <!-- Road markings -->
+          <g class="ldr-dash-group">
+            <rect x="0"   y="112" width="36" height="2.5" rx="1.5" fill="rgba(255,255,255,0.18)"/>
+            <rect x="76"  y="112" width="36" height="2.5" rx="1.5" fill="rgba(255,255,255,0.18)"/>
+            <rect x="152" y="112" width="36" height="2.5" rx="1.5" fill="rgba(255,255,255,0.18)"/>
+            <rect x="228" y="112" width="36" height="2.5" rx="1.5" fill="rgba(255,255,255,0.18)"/>
+            <rect x="304" y="112" width="36" height="2.5" rx="1.5" fill="rgba(255,255,255,0.18)"/>
+            <rect x="380" y="112" width="36" height="2.5" rx="1.5" fill="rgba(255,255,255,0.18)"/>
+            <rect x="456" y="112" width="36" height="2.5" rx="1.5" fill="rgba(255,255,255,0.18)"/>
+            <rect x="532" y="112" width="36" height="2.5" rx="1.5" fill="rgba(255,255,255,0.18)"/>
+          </g>
+
+          <!-- Walking student (SVG figure) -->
+          <g class="ldr-walker" style="--ws:10s;--wd:0s;">
+            <circle cx="0" cy="99" r="4" fill="#E2C98A"/>
+            <rect x="-3" y="103" width="6" height="8" rx="1" fill="#2EB8A0"/>
+            <line x1="-3" y1="107" x2="-7" y2="113" stroke="#C9A96E" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="3" y1="107" x2="6" y2="113" stroke="#C9A96E" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="-2" y1="111" x2="-5" y2="118" stroke="#1B2A4A" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="2" y1="111" x2="4" y2="118" stroke="#1B2A4A" stroke-width="1.8" stroke-linecap="round"/>
+            <!-- School bag -->
+            <rect x="3" y="103" width="5" height="6" rx="1" fill="#1B2A4A" opacity="0.7"/>
+          </g>
+
+          <!-- Second walker -->
+          <g class="ldr-walker" style="--ws:13s;--wd:4s; transform:translateX(-50px);">
+            <circle cx="0" cy="98" r="3.5" fill="#F0DFB0"/>
+            <rect x="-2.5" y="102" width="5" height="7" rx="1" fill="#3B82C4"/>
+            <line x1="-2.5" y1="106" x2="-6" y2="112" stroke="#C9A96E" stroke-width="1.6" stroke-linecap="round"/>
+            <line x1="2.5" y1="106" x2="5" y2="112" stroke="#C9A96E" stroke-width="1.6" stroke-linecap="round"/>
+            <line x1="-2" y1="109" x2="-4" y2="116" stroke="#1B2A4A" stroke-width="1.6" stroke-linecap="round"/>
+            <line x1="2" y1="109" x2="3.5" y2="116" stroke="#1B2A4A" stroke-width="1.6" stroke-linecap="round"/>
+          </g>
+
+          <!-- School Bus SVG -->
+          <g class="ldr-bus">
+            <!-- Bus body -->
+            <rect x="-65" y="91" width="55" height="22" rx="4" fill="#F5C842"/>
+            <!-- Windows -->
+            <rect x="-60" y="94" width="10" height="8" rx="2" fill="rgba(100,150,220,0.7)"/>
+            <rect x="-47" y="94" width="10" height="8" rx="2" fill="rgba(100,150,220,0.7)"/>
+            <rect x="-34" y="94" width="10" height="8" rx="2" fill="rgba(100,150,220,0.7)"/>
+            <!-- Front -->
+            <rect x="-22" y="95" width="10" height="7" rx="2" fill="rgba(255,255,255,0.5)"/>
+            <!-- Wheels -->
+            <circle cx="-55" cy="113" r="4" fill="#333"/>
+            <circle cx="-55" cy="113" r="2" fill="#888"/>
+            <circle cx="-22" cy="113" r="4" fill="#333"/>
+            <circle cx="-22" cy="113" r="2" fill="#888"/>
+            <!-- Headlight -->
+            <rect x="-15" y="97" width="5" height="3" rx="1" fill="rgba(255,255,200,0.9)"/>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Progress -->
+      <div class="ldr-progress-area">
+        <div style="display:flex;align-items:baseline;gap:3px;">
+          <span class="ldr-pct" id="ldr-pct-num">0</span>
+          <span class="ldr-pct-sign">%</span>
+        </div>
+        <div class="ldr-prog-bar-outer">
+          <div class="ldr-prog-bar-fill" id="ldr-prog-fill"></div>
+        </div>
+        <div class="ldr-status" id="ldr-status-msg">Initialising system…</div>
+      </div>
+
+      <!-- Module pills (SVG icons) -->
+      <div class="ldr-pills" id="ldr-pills-row">
+        <div class="ldr-pill" style="--pill-d:0.8s;" data-pill="0">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Admission Module <span class="ldr-pill-check">✓</span>
+        </div>
+        <div class="ldr-pill" style="--pill-d:1.0s;" data-pill="1">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Fee Ledger <span class="ldr-pill-check">✓</span>
+        </div>
+        <div class="ldr-pill" style="--pill-d:1.2s;" data-pill="2">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Test Scheduler <span class="ldr-pill-check">✓</span>
+        </div>
+        <div class="ldr-pill" style="--pill-d:1.4s;" data-pill="3">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Auto Grading <span class="ldr-pill-check">✓</span>
+        </div>
+        <div class="ldr-pill" style="--pill-d:1.6s;" data-pill="4">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          PDF Export <span class="ldr-pill-check">✓</span>
+        </div>
+        <div class="ldr-pill" style="--pill-d:1.8s;" data-pill="5">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+          Excel Import <span class="ldr-pill-check">✓</span>
+        </div>
+      </div>
+
+    </div><!-- /ldr-card -->
+
+    <!-- Bottom ticker -->
+    <div class="ldr-ticker">
+      <div class="ldr-ticker-lbl">Did You Know</div>
+      <div class="ldr-ticker-scroll-wrap">
+        <div class="ldr-ticker-inner" id="ldr-ticker-inner"></div>
+      </div>
+    </div>
+
+  </div><!-- /apex-loader -->
+
+
+  <!-- ═══════════════════════════════════════════════
+       LOGIN PAGE
+  ═══════════════════════════════════════════════ -->
   <div id="login-page" style="display:none;">
-    <div class="login-bg"></div>
-    <div class="login-grid"></div>
+    <div class="login-bg-layer"></div>
+    <div class="login-bg-grid"></div>
 
     <!-- Left Panel — Branding -->
     <div class="login-left">
-      <div class="login-brand-logo animate-float">🎓</div>
-      <h1 class="login-brand-title">Apex Tuition ERP</h1>
-      <p class="login-brand-subtitle">
-        The complete tuition management ERP for Indian coaching classes —<br>
-        track admissions, manage fees ledger, schedule tests, and export reminders.
-      </p>
+      <div class="login-left-blob1"></div>
+      <div class="login-left-blob2"></div>
+      <div class="ll-dataflow"></div>
 
-      <div class="login-features">
-        <div class="login-feature-item">
-          <div class="feature-icon">👤</div>
-          <span>Admission Details &amp; Fee Ledger Accounts</span>
+      <div class="login-left-content">
+        <!-- Logo mark -->
+        <div class="ll-logo">
+          <svg width="30" height="30" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 6L34 14V22L20 30L6 22V14Z" fill="#C9A96E" opacity="0.85"/>
+            <path d="M20 6L34 14L20 22L6 14Z" fill="#E2C98A"/>
+          </svg>
         </div>
-        <div class="login-feature-item">
-          <div class="feature-icon">📅</div>
-          <span>Grouped Test cycles &amp; Schedule reminders</span>
+
+        <h1 class="ll-title">Apex Tuition <span>ERP</span></h1>
+        <p class="ll-sub">
+          The complete management system for Indian coaching classes — built for speed, accuracy &amp; scale.
+        </p>
+
+        <!-- Feature list -->
+        <div class="ll-features">
+          <div class="ll-feat">
+            <div class="ll-feat-icon teal">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2EB8A0" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div class="ll-feat-text">
+              Student Admissions &amp; Fee Ledger
+              <small>Profiles, payments, receipts &amp; outstanding tracking</small>
+            </div>
+          </div>
+          <div class="ll-feat">
+            <div class="ll-feat-icon gold">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" stroke-width="2.2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <div class="ll-feat-text">
+              Test Cycles &amp; Schedule Reminders
+              <small>Grouped exam rounds with auto-notice generation</small>
+            </div>
+          </div>
+          <div class="ll-feat">
+            <div class="ll-feat-icon blue">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B9BD5" stroke-width="2.2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <div class="ll-feat-text">
+              Auto Grading, Ranks &amp; Percentile
+              <small>Per-subject marks, bulk Excel import &amp; PDF export</small>
+            </div>
+          </div>
+          <div class="ll-feat">
+            <div class="ll-feat-icon green">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3D9970" stroke-width="2.2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+            </div>
+            <div class="ll-feat-text">
+              Promotions &amp; Awards Generator
+              <small>Beautiful poster PDFs with 6 premium templates</small>
+            </div>
+          </div>
         </div>
-        <div class="login-feature-item">
-          <div class="feature-icon">📊</div>
-          <span>Bulk Excel import &amp; PDF export for entire classes</span>
-        </div>
-        <div class="login-feature-item">
-          <div class="feature-icon">🏆</div>
-          <span>Auto grading, ranks, percentile &amp; result status</span>
+
+        <!-- Tech pills -->
+        <div class="ll-tech-pills">
+          <div class="ll-tech-pill"><div class="ll-tech-pill-dot"></div>Node.js</div>
+          <div class="ll-tech-pill"><div class="ll-tech-pill-dot"></div>SQLite DB</div>
+          <div class="ll-tech-pill"><div class="ll-tech-pill-dot"></div>Puppeteer PDF</div>
+          <div class="ll-tech-pill"><div class="ll-tech-pill-dot"></div>Auto Rank</div>
+          <div class="ll-tech-pill"><div class="ll-tech-pill-dot"></div>Excel Import</div>
+          <div class="ll-tech-pill"><div class="ll-tech-pill-dot"></div>Real-time Sync</div>
         </div>
       </div>
     </div>
 
     <!-- Right Panel — Login Form -->
     <div class="login-right">
-      <div class="login-card">
-        <div style="text-align:center; margin-bottom: var(--space-2)">
-          <div style="font-size:2rem; margin-bottom: var(--space-3)">🎓</div>
-          <h2>Welcome Back</h2>
-          <p class="login-tagline">Sign in to your admin dashboard</p>
+      <div class="login-card-new">
+        <!-- Logo -->
+        <div class="lc-logo">
+          <div class="lc-logo-mark">
+            <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
+              <path d="M20 6L34 14V22L20 30L6 22V14Z" fill="#C9A96E" opacity="0.85"/>
+              <path d="M20 6L34 14L20 22L6 14Z" fill="#E2C98A"/>
+            </svg>
+          </div>
+          <div class="lc-brand-name">Apex Tuition ERP</div>
+          <div class="lc-tagline">Sign in to your admin dashboard</div>
         </div>
 
+        <!-- Error -->
+        <div id="login-error" class="lc-error hidden">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span id="login-error-text">Invalid credentials</span>
+        </div>
+
+        <!-- Form -->
         <form id="login-form">
-          <div class="form-group mb-4">
-            <label class="form-label" for="login-email">Email Address</label>
-            <input type="email" id="login-email" class="form-control" placeholder="admin@result.local" required
-              autocomplete="email">
-          </div>
-          <div class="form-group mb-6">
-            <label class="form-label" for="login-password">Password</label>
-            <div style="position:relative">
-              <input type="password" id="login-password" class="form-control" placeholder="Enter your password" required
-                autocomplete="current-password">
-              <button type="button" id="toggle-password" class="btn-ghost btn-icon"
-                style="position:absolute;right:6px;top:50%;transform:translateY(-50%)"
-                title="Show/hide password">👁</button>
-            </div>
+          <!-- Email -->
+          <div class="fl-group">
+            <input type="email" id="login-email" class="fl-input" placeholder=" " required autocomplete="email">
+            <label class="fl-label" for="login-email">Email Address</label>
           </div>
 
-          <div id="login-error" class="form-error hidden" style="margin-bottom:var(--space-4)">
-            <span>⚠</span> <span id="login-error-text">Invalid credentials</span>
+          <!-- Password -->
+          <div class="fl-group" style="position:relative;">
+            <input type="password" id="login-password" class="fl-input" placeholder=" " required autocomplete="current-password">
+            <label class="fl-label" for="login-password">Password</label>
+            <button type="button" id="toggle-password" class="pw-toggle-btn" title="Show/hide password">
+              <svg id="pw-eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
           </div>
 
-          <button type="submit" id="login-btn" class="btn btn-primary w-full btn-lg">
-            <span id="login-btn-text">Sign In</span>
-            <div id="login-spinner" class="spinner spinner-sm hidden"
-              style="border-color:rgba(255,255,255,0.3);border-top-color:white"></div>
+          <!-- Submit -->
+          <button type="submit" id="login-btn" class="lc-submit-btn">
+            <span id="login-btn-text">Sign In to Dashboard</span>
+            <span id="login-spinner" class="lc-spinner hidden"></span>
+            <svg id="login-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
           </button>
 
-          <p style="text-align:center;margin-top:var(--space-4);font-size:0.75rem;color:var(--text-muted)">
-            Default: admin@result.local / admin123
-          </p>
+          <p class="lc-default-hint">Default: admin@result.local / admin123</p>
         </form>
       </div>
     </div>
@@ -114,7 +1038,9 @@
   <div id="onboarding-overlay" style="display:none;">
     <div class="onboarding-card">
       <div class="onboarding-header">
-        <div style="font-size:2.5rem;margin-bottom:var(--space-3)">🏫</div>
+        <div style="font-size:2.5rem;margin-bottom:var(--space-3)">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
         <h2 id="ob-header-title" style="font-size:1.5rem; font-weight:800; color:var(--text-primary);">Set Up Your Coaching Profile</h2>
         <p id="ob-header-subtitle" style="color:var(--text-secondary); margin-top:4px;">This information will appear on every result card you generate.</p>
       </div>
@@ -182,8 +1108,7 @@
           <div class="form-group">
             <label class="form-label">Select Accent / Swatch Theme</label>
             <div class="color-swatch-grid mt-2">
-              <div class="color-swatch selected" data-color="#7a6130" style="background:#7a6130" title="Gold-Bronze">
-              </div>
+              <div class="color-swatch selected" data-color="#7a6130" style="background:#7a6130" title="Gold-Bronze"></div>
               <div class="color-swatch" data-color="#d4af37" style="background:#d4af37" title="Gold"></div>
               <div class="color-swatch" data-color="#7c1d1d" style="background:#7c1d1d" title="Maroon"></div>
               <div class="color-swatch" data-color="#0f4c2e" style="background:#0f4c2e" title="Emerald"></div>
@@ -196,19 +1121,20 @@
           </div>
         </div>
 
-        <!-- Step 2: Branding Files (Logo & Signature) -->
+        <!-- Step 2: Branding Files -->
         <div id="onboarding-step-2" style="display:none;">
           <p class="form-section-title">Branding Files (Logo &amp; Signature)</p>
           <div class="form-grid mb-4">
             <div class="file-upload-area" id="ob-logo-area" style="padding:var(--space-4)">
               <input type="file" id="ob-logo-file" accept="image/png,image/jpeg,image/jpg,image/webp">
-              <div id="ob-logo-preview"
-                style="display:none;flex-direction:column;align-items:center;gap:var(--space-2)">
+              <div id="ob-logo-preview" style="display:none;flex-direction:column;align-items:center;gap:var(--space-2)">
                 <img id="ob-logo-img" src="" alt="Logo preview" style="max-height:80px;border-radius:var(--radius)">
                 <span class="text-xs text-muted">Click to change Logo</span>
               </div>
               <div id="ob-logo-placeholder">
-                <div class="file-upload-icon" style="font-size:1.5rem">🖼</div>
+                <div class="file-upload-icon" style="font-size:1.5rem">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                </div>
                 <p class="file-upload-text text-sm">Upload institute logo</p>
                 <p class="file-upload-hint text-xs">PNG, JPG · Max 5MB</p>
               </div>
@@ -221,7 +1147,9 @@
                 <span class="text-xs text-muted">Click to change Signature</span>
               </div>
               <div id="ob-sig-placeholder">
-                <div class="file-upload-icon" style="font-size:1.5rem">✍️</div>
+                <div class="file-upload-icon" style="font-size:1.5rem">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                </div>
                 <p class="file-upload-text text-sm">Upload digital signature</p>
                 <p class="file-upload-hint text-xs">PNG (transparent) · Max 5MB</p>
               </div>
@@ -234,13 +1162,12 @@
             </div>
             <div class="form-group">
               <label class="form-label">Designation / Title</label>
-              <input type="text" id="ob-signatory-title" class="form-control" placeholder="e.g. Director, Principal"
-                value="Director">
+              <input type="text" id="ob-signatory-title" class="form-control" placeholder="e.g. Director, Principal" value="Director">
             </div>
           </div>
         </div>
 
-        <!-- Step 3: Exam Configuration & Registration -->
+        <!-- Step 3: Exam Configuration -->
         <div id="onboarding-step-3" style="display:none;">
           <p class="form-section-title">Academic &amp; Registration Setup</p>
           <div class="form-grid mb-4">
@@ -298,7 +1225,7 @@
               <select id="ob-grading-format" class="form-control">
                 <option value="State Scale">State Board Scale (A, B, C, D, Fail)</option>
                 <option value="CBSE Scale">CBSE Style (A1, A2, B1, B2...)</option>
-                <option value="Percentage Only">Percentage & Pass/Fail Status Only</option>
+                <option value="Percentage Only">Percentage &amp; Pass/Fail Status Only</option>
               </select>
             </div>
             <div class="form-group">
@@ -317,76 +1244,36 @@
           </div>
         </div>
 
-        <!-- Step 4: Streams & Standards Taught -->
+        <!-- Step 4: Streams & Standards -->
         <div id="onboarding-step-4" style="display:none;">
           <p class="form-section-title">Streams &amp; Classes Taught</p>
           <p class="text-xs text-muted mb-4" style="line-height:1.5">
             Select which sections, board streams, entrance targets, or professional streams your academy teaches. We
-            will automatically create these classes and default subjects. **This is fully customizable and editable
-            later.**
+            will automatically create these classes and default subjects. **This is fully customizable and editable later.**
           </p>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:var(--space-4)">
-            <div
-              style="grid-column: span 2; font-weight:700; font-size:0.8rem; text-transform:uppercase; color:var(--accent); margin-top:4px;">
-              Individual Standards (1st to 10th)</div>
-            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-              <input type="checkbox" id="ob-stream-class-1" checked> <span>Class 1</span>
-            </label>
-            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-              <input type="checkbox" id="ob-stream-class-2" checked> <span>Class 2</span>
-            </label>
-            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-              <input type="checkbox" id="ob-stream-class-3" checked> <span>Class 3</span>
-            </label>
-            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-              <input type="checkbox" id="ob-stream-class-4" checked> <span>Class 4</span>
-            </label>
-            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-              <input type="checkbox" id="ob-stream-class-5" checked> <span>Class 5</span>
-            </label>
-            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-              <input type="checkbox" id="ob-stream-class-6" checked> <span>Class 6</span>
-            </label>
-            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-              <input type="checkbox" id="ob-stream-class-7" checked> <span>Class 7</span>
-            </label>
-            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-              <input type="checkbox" id="ob-stream-class-8" checked> <span>Class 8</span>
-            </label>
-            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-              <input type="checkbox" id="ob-stream-class-9" checked> <span>Class 9</span>
-            </label>
-            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-              <input type="checkbox" id="ob-stream-class-10" checked> <span>Class 10</span>
-            </label>
+            <div style="grid-column: span 2; font-weight:700; font-size:0.8rem; text-transform:uppercase; color:var(--accent); margin-top:4px;">Individual Standards (1st to 10th)</div>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer"><input type="checkbox" id="ob-stream-class-1" checked> <span>Class 1</span></label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer"><input type="checkbox" id="ob-stream-class-2" checked> <span>Class 2</span></label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer"><input type="checkbox" id="ob-stream-class-3" checked> <span>Class 3</span></label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer"><input type="checkbox" id="ob-stream-class-4" checked> <span>Class 4</span></label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer"><input type="checkbox" id="ob-stream-class-5" checked> <span>Class 5</span></label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer"><input type="checkbox" id="ob-stream-class-6" checked> <span>Class 6</span></label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer"><input type="checkbox" id="ob-stream-class-7" checked> <span>Class 7</span></label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer"><input type="checkbox" id="ob-stream-class-8" checked> <span>Class 8</span></label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer"><input type="checkbox" id="ob-stream-class-9" checked> <span>Class 9</span></label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer"><input type="checkbox" id="ob-stream-class-10" checked> <span>Class 10</span></label>
 
-            <div
-              style="grid-column: span 2; font-weight:700; font-size:0.8rem; text-transform:uppercase; color:var(--accent); margin-top:8px;">
-              Higher & Entrance Streams</div>
-            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-              <input type="checkbox" id="ob-stream-hsc-science"> <span>HSC Science (PCM/PCB)</span>
-            </label>
-            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-              <input type="checkbox" id="ob-stream-hsc-commerce"> <span>HSC Commerce</span>
-            </label>
-            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-              <input type="checkbox" id="ob-stream-hsc-arts"> <span>HSC Arts</span>
-            </label>
-            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-              <input type="checkbox" id="ob-stream-jee"> <span>JEE Main &amp; Advanced</span>
-            </label>
-            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-              <input type="checkbox" id="ob-stream-neet"> <span>NEET Medical</span>
-            </label>
-            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer">
-              <input type="checkbox" id="ob-stream-professional"> <span>Professional Courses</span>
-            </label>
+            <div style="grid-column: span 2; font-weight:700; font-size:0.8rem; text-transform:uppercase; color:var(--accent); margin-top:8px;">Higher &amp; Entrance Streams</div>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer"><input type="checkbox" id="ob-stream-hsc-science"> <span>HSC Science (PCM/PCB)</span></label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer"><input type="checkbox" id="ob-stream-hsc-commerce"> <span>HSC Commerce</span></label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer"><input type="checkbox" id="ob-stream-hsc-arts"> <span>HSC Arts</span></label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer"><input type="checkbox" id="ob-stream-jee"> <span>JEE Main &amp; Advanced</span></label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer"><input type="checkbox" id="ob-stream-neet"> <span>NEET Medical</span></label>
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.875rem; cursor:pointer"><input type="checkbox" id="ob-stream-professional"> <span>Professional Courses</span></label>
           </div>
-          <div
-            style="background:rgba(212, 175, 55, 0.08); border-left:4px solid var(--accent); padding:10px; border-radius:var(--radius)"
-            class="text-xs text-secondary">
-            💡 <strong>Note:</strong> All standards and custom subjects will be seeded in a clean, Indian board pattern
-            structure. You can customize, reorder, delete, or add custom classes at any time.
+          <div style="background:rgba(212,175,55,0.08); border-left:4px solid var(--accent); padding:10px; border-radius:var(--radius)" class="text-xs text-secondary">
+            &#128161; <strong>Note:</strong> All standards and custom subjects will be seeded in a clean, Indian board pattern structure. You can customize, reorder, delete, or add custom classes at any time.
           </div>
         </div>
 
@@ -394,13 +1281,10 @@
         <div id="onboarding-step-5" style="display:none;">
           <p class="form-section-title">Academic Exam Path Planner</p>
           <p class="text-xs text-muted mb-3" style="line-height:1.5">
-            Review and customize the recommended exam/test cycles (exam paths) for each selected stream. You can add
-            custom exams (e.g. Unit Test 1) or delete existing ones. These cycles will group tests and marks for result
-            reporting.
+            Review and customize the recommended exam/test cycles (exam paths) for each selected stream. You can add custom exams or delete existing ones.
           </p>
           <div id="ob-exam-paths-container"
             style="max-height:280px; overflow-y:auto; padding-right:6px; display:flex; flex-direction:column; gap:12px">
-            <!-- Dynamically populated exam paths tag grids -->
           </div>
         </div>
       </div>
@@ -420,7 +1304,12 @@
     <!-- Sidebar -->
     <nav id="sidebar" role="navigation" aria-label="Main navigation">
       <div class="sidebar-header">
-        <div class="sidebar-logo">🎓</div>
+        <div class="sidebar-logo">
+          <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
+            <path d="M20 6L34 14V22L20 30L6 22V14Z" fill="#C9A96E" opacity="0.85"/>
+            <path d="M20 6L34 14L20 22L6 14Z" fill="#E2C98A"/>
+          </svg>
+        </div>
         <div>
           <div class="sidebar-brand-name">Apex Tuition ERP</div>
           <div class="sidebar-brand-sub">Admin Panel</div>
@@ -429,7 +1318,9 @@
 
       <div class="sidebar-coaching-name">
         <div class="coaching-chip">
-          <div class="coaching-chip-logo" id="sidebar-logo-thumb">🏫</div>
+          <div class="coaching-chip-logo" id="sidebar-logo-thumb">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          </div>
           <div class="coaching-chip-text">
             <div class="name" id="sidebar-coaching-name">Coaching Institute</div>
             <div class="sub">Active Profile</div>
@@ -506,19 +1397,19 @@
       <!-- Top Bar -->
       <header id="topbar">
         <button class="btn-ghost btn-icon" id="sidebar-toggle" style="display:none; width: 36px; height: 36px; align-items: center; justify-content: center; border-radius: var(--radius); border: 1px solid var(--border);" aria-label="Toggle Navigation Sidebar">
-          ☰
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
         <div>
           <div class="topbar-title" id="topbar-title">Dashboard</div>
           <div class="topbar-breadcrumb" id="topbar-breadcrumb">
-            <span>Result Generator</span>
+            <span>Apex Tuition ERP</span>
             <span>›</span>
             <span id="breadcrumb-current">Dashboard</span>
           </div>
         </div>
         <div class="topbar-actions">
-          <button class="btn btn-outline btn-sm" id="topbar-quick-add" title="Quick Add Student">
-            ➕ Add Student
+          <button class="btn btn-outline btn-sm" id="topbar-quick-add" title="Quick Add Student" style="display:inline-flex; align-items:center; gap:6px;">
+            <span id="ico-quick-add"></span> Add Student
           </button>
           <div class="topbar-admin-chip">
             <div class="admin-avatar" id="admin-avatar-initials">A</div>
@@ -541,24 +1432,27 @@
   <!-- Toast Container -->
   <div id="toast-container" role="alert" aria-live="assertive"></div>
 
-  <!-- Spinner Overlay (for PDF generation etc.) -->
+  <!-- Spinner Overlay -->
   <div id="spinner-overlay" class="spinner-overlay" style="display:none;">
-    <div class="orbit-loader">
-      <div class="dot" style="top:50%;left:calc(100% - 10px);transform:translateY(-50%)"></div>
-      <div class="dot" style="top:0;left:calc(50% - 5px)"></div>
-      <div class="dot" style="bottom:0;left:calc(50% - 5px)"></div>
+    <div class="spinner-overlay-card">
+      <div class="orbit-loader">
+        <div class="dot" style="top:50%;left:calc(100% - 10px);transform:translateY(-50%)"></div>
+        <div class="dot" style="top:0;left:calc(50% - 5px)"></div>
+        <div class="dot" style="bottom:0;left:calc(50% - 5px)"></div>
+      </div>
+      <p class="spinner-text" id="spinner-text">Generating PDF, please wait...</p>
     </div>
-    <p class="spinner-text" id="spinner-text">Generating PDF, please wait...</p>
   </div>
 
   <!-- Global Confirm Dialog -->
   <div id="confirm-overlay" class="modal-overlay" style="display:none;">
     <div class="modal confirm-dialog">
       <div class="modal-body" style="text-align:center;padding:var(--space-8)">
-        <div class="confirm-icon" id="confirm-icon">⚠️</div>
+        <div class="confirm-icon" id="confirm-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9a7228" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
         <h3 id="confirm-title">Are you sure?</h3>
-        <p style="color:var(--text-secondary);margin-top:var(--space-2);font-size:0.875rem" id="confirm-message">This
-          action cannot be undone.</p>
+        <p style="color:var(--text-secondary);margin-top:var(--space-2);font-size:0.875rem" id="confirm-message">This action cannot be undone.</p>
       </div>
       <div class="modal-footer" style="justify-content:center;">
         <button class="btn btn-outline" id="confirm-cancel-btn">Cancel</button>
@@ -567,7 +1461,19 @@
     </div>
   </div>
 
-  <!-- Chart.js for comparison charts -->
+  <!-- Animated bg scene (for app pages) -->
+  <div class="bg-scene" aria-hidden="true">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div class="blob blob-4"></div>
+    <div class="blob blob-5"></div>
+    <div class="bg-grid"></div>
+    <div class="bg-noise"></div>
+    <div class="bg-scan"></div>
+  </div>
+
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
   <!-- JavaScript -->
@@ -587,20 +1493,241 @@
   <script src="/js/promotions.js"></script>
   <script src="/js/app.js"></script>
 
-  <!-- Inject SVG icons into sidebar nav after all scripts load -->
+  <!-- Loader JS + Sign-in transitions -->
   <script>
+    /* ══════════════════════════════════════════════
+       LOADER ENGINE
+    ══════════════════════════════════════════════ */
+    const LOADER_DURATION = 7000;
+
+    const LOADER_STATUS = [
+      "Initialising system…",
+      "Loading admission records…",
+      "Syncing fee ledger accounts…",
+      "Building test cycle schedules…",
+      "Computing ranks & percentiles…",
+      "Preparing PDF export engine…",
+      "Importing Excel templates…",
+      "Calibrating auto-grading algorithms…",
+      "Loading student profiles…",
+      "Finalising dashboard data…",
+      "Setting up your workspace…",
+      "Ready! Welcome to Apex Tuition ERP"
+    ];
+
+    const LOADER_FACTS = [
+      "Coaching classes in India educate over 7 crore students every year",
+      "Regular test cycles improve student performance by up to 40%",
+      "Digital fee management reduces collection errors by over 90%",
+      "Auto-grading saves teachers an average of 6 hours per week",
+      "Students who receive timely result reminders attend 35% more classes",
+      "India has over 1 lakh registered coaching institutes",
+      "Batch-based scheduling improves classroom utilisation by 25%",
+      "PDF progress reports increase parent engagement by 3×",
+      "Excel bulk import cuts data entry time from hours to minutes",
+      "Percentile-based ranking motivates 68% of students to improve",
+      "Rank tracking over multiple tests predicts board exam performance with 82% accuracy",
+      "Apex ERP supports unlimited batches, subjects, and test types"
+    ];
+
+    const JOURNEY_STEPS = [0, 1.5, 3, 4.8, 6];
+    const MODULE_TIMES = [0.8, 1.8, 2.8, 4.0, 5.2, 6.2];
+
+    // SVG-based math symbols and study icons
+    const PARTICLE_SVGS = [
+      `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>`,
+      `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`,
+      `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.8"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+      `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
+      `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
+      `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>`,
+      `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(46,184,160,0.35)" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+      `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`,
+    ];
+
+    function initLoader() {
+      const loader = document.getElementById('apex-loader');
+      loader.style.display = 'flex';
+
+      // Build particles
+      const pf = document.getElementById('ldr-particles');
+      for (let i = 0; i < 22; i++) {
+        const d = document.createElement('div');
+        d.className = 'ldr-particle';
+        d.innerHTML = PARTICLE_SVGS[i % PARTICLE_SVGS.length];
+        d.style.setProperty('--pd', (4 + Math.random() * 6) + 's');
+        d.style.setProperty('--pdl', (Math.random() * 6) + 's');
+        d.style.left = (2 + Math.random() * 96) + '%';
+        d.style.bottom = (5 + Math.random() * 30) + '%';
+        pf.appendChild(d);
+      }
+
+      // Build streaks
+      const sf = document.getElementById('ldr-streaks');
+      const streakPositions = [8, 22, 38, 55, 70, 85, 94];
+      streakPositions.forEach((left, i) => {
+        const s = document.createElement('div');
+        s.className = 'ldr-streak';
+        s.style.setProperty('--sd', (3 + Math.random() * 5) + 's');
+        s.style.setProperty('--sdl', (i * 0.8) + 's');
+        s.style.left = left + '%';
+        s.style.height = (40 + Math.random() * 55) + 'px';
+        sf.appendChild(s);
+      });
+
+      // Build ticker
+      const ti = document.getElementById('ldr-ticker-inner');
+      const doubleFacts = [...LOADER_FACTS, ...LOADER_FACTS];
+      doubleFacts.forEach(fact => {
+        const item = document.createElement('div');
+        item.className = 'ldr-tick-item';
+        item.innerHTML = `<span class="ldr-tick-dot"></span>${fact}<span style="color:rgba(255,255,255,0.18);font-size:16px;margin-left:8px">·</span>`;
+        ti.appendChild(item);
+      });
+
+      // Counter animations
+      animateCounter(document.getElementById('ldr-stu-count'), 1247, LOADER_DURATION * 0.85);
+      animateCounter(document.getElementById('ldr-test-count'), 38920, LOADER_DURATION * 0.90);
+
+      // Progress
+      runProgress();
+
+      // Journey activations
+      JOURNEY_STEPS.forEach((sec, i) => {
+        setTimeout(() => activateJourneyNode(i), sec * 1000);
+      });
+
+      // Pills
+      const pills = document.querySelectorAll('.ldr-pill');
+      MODULE_TIMES.forEach((sec, i) => {
+        setTimeout(() => { if (pills[i]) pills[i].classList.add('loaded'); }, sec * 1000);
+      });
+    }
+
+    function animateCounter(el, target, duration) {
+      let start = null;
+      function step(ts) {
+        if (!start) start = ts;
+        const p = Math.min((ts - start) / duration, 1);
+        const e = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.floor(e * target).toLocaleString('en-IN');
+        if (p < 1) requestAnimationFrame(step);
+        else el.textContent = target.toLocaleString('en-IN');
+      }
+      requestAnimationFrame(step);
+    }
+
+    function runProgress() {
+      const fill = document.getElementById('ldr-prog-fill');
+      const pctEl = document.getElementById('ldr-pct-num');
+      const statusEl = document.getElementById('ldr-status-msg');
+      const startTime = performance.now();
+      let msgIdx = 0;
+
+      const KF = [
+        {t:0.00,p:0},{t:0.15,p:22},{t:0.35,p:45},{t:0.55,p:63},
+        {t:0.72,p:79},{t:0.88,p:91},{t:1.00,p:100}
+      ];
+
+      function getPct(norm) {
+        for (let i = 1; i < KF.length; i++) {
+          if (norm <= KF[i].t) {
+            const prev = KF[i-1], curr = KF[i];
+            const segT = (norm - prev.t) / (curr.t - prev.t);
+            const ease = segT < 0.5 ? 2*segT*segT : 1 - Math.pow(-2*segT+2,2)/2;
+            return prev.p + (curr.p - prev.p) * ease;
+          }
+        }
+        return 100;
+      }
+
+      function tick(now) {
+        const elapsed = now - startTime;
+        const norm = Math.min(elapsed / LOADER_DURATION, 1);
+        const pct = getPct(norm);
+        pctEl.textContent = Math.round(pct);
+        fill.style.width = pct + '%';
+
+        const targetIdx = Math.floor((pct / 100) * (LOADER_STATUS.length - 1));
+        if (targetIdx !== msgIdx) {
+          msgIdx = targetIdx;
+          statusEl.style.opacity = '0';
+          setTimeout(() => { statusEl.textContent = LOADER_STATUS[msgIdx]; statusEl.style.opacity = '1'; }, 200);
+        }
+
+        if (norm < 1) requestAnimationFrame(tick);
+        else {
+          pctEl.textContent = '100';
+          fill.style.width = '100%';
+          setTimeout(finishLoader, 500);
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+
+    function activateJourneyNode(idx) {
+      document.querySelectorAll('.ldr-j-node').forEach((n, i) => {
+        const dot = n.querySelector('.ldr-j-dot');
+        const lbl = n.querySelector('.ldr-j-lbl');
+        if (i < idx) { dot.classList.add('done'); dot.classList.remove('active'); lbl.classList.add('done'); lbl.classList.remove('active'); }
+        else if (i === idx) { dot.classList.add('active'); dot.classList.remove('done'); lbl.classList.add('active'); lbl.classList.remove('done'); }
+      });
+    }
+
+    function finishLoader() {
+      document.querySelectorAll('.ldr-j-node').forEach(n => {
+        n.querySelector('.ldr-j-dot').classList.replace('active','done');
+        n.querySelector('.ldr-j-lbl').classList.replace('active','done');
+      });
+      document.querySelectorAll('.ldr-pill').forEach(p => p.classList.add('loaded'));
+
+      const loader = document.getElementById('apex-loader');
+      loader.classList.add('fade-out');
+      setTimeout(() => { loader.style.display = 'none'; }, 780);
+    }
+
+    /* ══════════════════════════════════════════════
+       LOGIN PAGE — Enhanced form behaviour
+    ══════════════════════════════════════════════ */
     document.addEventListener('DOMContentLoaded', () => {
       const navIcons = {
         'ico-dashboard': 'dashboard', 'ico-boards': 'boards', 'ico-students': 'students',
         'ico-tests': 'tests', 'ico-results': 'results', 'ico-reminders': 'reminders',
         'ico-promotions': 'promotions', 'ico-templates': 'templates', 'ico-import': 'import',
-        'ico-settings': 'settings', 'ico-logout': 'logout'
+        'ico-settings': 'settings', 'ico-logout': 'logout', 'ico-quick-add': 'add'
       };
       Object.entries(navIcons).forEach(([id, icon]) => {
         const el = document.getElementById(id);
         if (el && window.Icons) el.innerHTML = Icons.render(icon, { size: 18 });
       });
+
+      // Password toggle
+      document.getElementById('toggle-password')?.addEventListener('click', () => {
+        const inp = document.getElementById('login-password');
+        const icon = document.getElementById('pw-eye-icon');
+        if (inp.type === 'password') {
+          inp.type = 'text';
+          icon.innerHTML = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>`;
+        } else {
+          inp.type = 'password';
+          icon.innerHTML = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+        }
+      });
+
+      // Clear errors on input
+      ['login-email','login-password'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', () => {
+          document.getElementById(id).classList.remove('error');
+          document.getElementById('login-error').classList.add('hidden');
+        });
+      });
     });
+
+    /* Expose loader control to auth.js */
+    window.ApexLoader = {
+      show: initLoader,
+      hide: finishLoader
+    };
   </script>
 
 </body>

@@ -18,8 +18,8 @@ async function renderDashboard() {
         <p id="dash-greeting">Overview of your coaching institute</p>
       </div>
       <div class="page-header-actions">
-        <button class="btn btn-outline btn-sm" onclick="Router.navigate('import')">📥 Import Excel</button>
-        <button class="btn btn-primary btn-sm" onclick="Router.navigate('students')">➕ Add Student</button>
+        <button class="btn btn-outline btn-sm" onclick="Router.navigate('import')">${Icons?.render?.('import',{size:14}) || ''} Import Excel</button>
+        <button class="btn btn-primary btn-sm" onclick="Router.navigate('students')">${Icons?.render?.('add',{size:14}) || ''} Add Student</button>
       </div>
     </div>
 
@@ -32,7 +32,7 @@ async function renderDashboard() {
     <div class="card mb-6" id="dashboard-checklist-card">
       <div class="card-header" style="background: rgba(255, 255, 255, 0.01); border-bottom: 1px solid var(--border)">
         <div class="flex items-center gap-2">
-          <span style="font-size:1.1rem;">🚀</span>
+          <span>${Icons?.render?.('dashboard',{size:18}) || ''}</span>
           <h3>Getting Started Checklist</h3>
         </div>
         <span class="badge badge-gold" id="checklist-progress-badge">0/4 Complete</span>
@@ -46,7 +46,7 @@ async function renderDashboard() {
     <div class="card mb-6 animate-fade-in" id="dashboard-calendar-card">
       <div class="card-header flex justify-between items-center" style="background: rgba(255, 255, 255, 0.01); border-bottom: 1px solid var(--border)">
         <div class="flex items-center gap-2">
-          <span style="font-size:1.15rem;">📅</span>
+          <span>${Icons?.render?.('calendar',{size:18}) || ''}</span>
           <h3 style="font-weight:700;">Coaching &amp; School Exams Calendar</h3>
         </div>
         <div class="flex items-center gap-3">
@@ -59,7 +59,7 @@ async function renderDashboard() {
         <!-- Calendar Grid -->
         <div id="calendar-grid-container">
           <div class="empty-state" style="height:250px">
-            <div class="animate-pulse" style="font-size:1.5rem">📅</div>
+            <div class="animate-pulse" style="font-size:1.5rem">${Icons?.render?.('calendar',{size:24}) || ''}</div>
             <p class="text-muted text-sm mt-2">Loading calendar...</p>
           </div>
         </div>
@@ -85,12 +85,12 @@ async function renderDashboard() {
       <!-- Upcoming Tests -->
       <div class="card">
         <div class="card-header">
-          <h3>📅 Upcoming Tests</h3>
+          <h3>${Icons?.render?.('calendar',{size:18}) || ''} Upcoming Tests</h3>
           <button class="btn btn-ghost btn-sm" onclick="Router.navigate('tests')">Manage →</button>
         </div>
         <div id="upcoming-tests-body" class="card-body" style="padding:0">
           <div class="empty-state" style="padding:var(--space-8)">
-            <div class="animate-pulse" style="font-size:1.5rem">📅</div>
+            <div class="animate-pulse" style="font-size:1.5rem">${Icons?.render?.('calendar',{size:24}) || ''}</div>
             <p class="text-muted text-sm mt-2">Loading...</p>
           </div>
         </div>
@@ -99,11 +99,11 @@ async function renderDashboard() {
       <!-- Fee Collection Summary -->
       <div class="card">
         <div class="card-header">
-          <h3>💰 Fee Collection</h3>
+          <h3>${Icons?.render?.('fees',{size:18}) || ''} Fee Collection</h3>
           <button class="btn btn-ghost btn-sm" onclick="Router.navigate('students')">View →</button>
         </div>
         <div id="fees-summary-body" class="card-body" style="padding:var(--space-5)">
-          <div class="animate-pulse" style="font-size:1.5rem;text-align:center">💰</div>
+          <div class="animate-pulse" style="font-size:1.5rem;text-align:center">${Icons?.render?.('fees',{size:24}) || ''}</div>
         </div>
       </div>
     </div>
@@ -113,12 +113,12 @@ async function renderDashboard() {
       <!-- Class Performance -->
       <div class="card">
         <div class="card-header">
-          <h3>📋 Class Performance</h3>
+          <h3>${Icons?.render?.('chart',{size:18}) || ''} Class Performance</h3>
           <button class="btn btn-ghost btn-sm" onclick="Router.navigate('results')">View Results →</button>
         </div>
         <div id="class-stats-body" class="card-body" style="padding:0">
           <div class="empty-state" style="padding:var(--space-10)">
-            <div class="animate-pulse" style="font-size:2rem">📋</div>
+            <div class="animate-pulse" style="font-size:2rem">${Icons?.render?.('chart',{size:28}) || ''}</div>
             <p class="text-muted text-sm mt-2">Loading class data...</p>
           </div>
         </div>
@@ -127,10 +127,10 @@ async function renderDashboard() {
       <!-- Recent Activity -->
       <div class="card">
         <div class="card-header">
-          <h3>🕐 Recent Activity</h3>
+          <h3>${Icons?.render?.('clock',{size:18}) || ''} Recent Activity</h3>
         </div>
         <div id="activity-log-body" class="card-body" style="padding:var(--space-4)">
-          <div class="animate-pulse" style="font-size:1.5rem;text-align:center">🕐</div>
+          <div class="animate-pulse" style="font-size:1.5rem;text-align:center">${Icons?.render?.('clock',{size:24}) || ''}</div>
         </div>
       </div>
     </div>
@@ -185,10 +185,10 @@ async function renderDashboard() {
 function renderChecklist(coaching, data) {
   const safeCoaching = coaching || {};
   const steps = [
-    { label: 'Set Up Profile', desc: 'Add address & logo', done: !!(safeCoaching.name && safeCoaching.onboarding_complete), page: 'settings', icon: '🏫' },
-    { label: 'Setup Classrooms', desc: 'Setup standards & subjects', done: data.totalStandards > 0, page: 'boards', icon: '🏛' },
-    { label: 'Enroll Students', desc: 'Add manually or import Excel', done: data.totalStudents > 0, page: 'students', icon: '👥' },
-    { label: 'Test Tracker', desc: 'Record unit exams & test scores', done: data.totalTests > 0, page: 'tests', icon: '📝' }
+    { label: 'Set Up Profile', desc: 'Add address & logo', done: !!(safeCoaching.name && safeCoaching.onboarding_complete), page: 'settings', icon: Icons?.render?.('school',{size:20}) || '' },
+    { label: 'Setup Classrooms', desc: 'Setup standards & subjects', done: data.totalStandards > 0, page: 'boards', icon: Icons?.render?.('boards',{size:20}) || '' },
+    { label: 'Enroll Students', desc: 'Add manually or import Excel', done: data.totalStudents > 0, page: 'students', icon: Icons?.render?.('students',{size:20}) || '' },
+    { label: 'Test Tracker', desc: 'Record unit exams & test scores', done: data.totalTests > 0, page: 'tests', icon: Icons?.render?.('tests',{size:20}) || '' }
   ];
 
   const doneCount = steps.filter(s => s.done).length;
@@ -207,8 +207,8 @@ function renderChecklist(coaching, data) {
     stepsContainer.innerHTML = steps.map(s => `
       <div class="stat-card flex flex-col items-start justify-between hover-lift" style="border:1px solid ${s.done ? 'var(--success)' : 'var(--border-medium)'}; background:${s.done ? 'rgba(34,197,94,0.02)' : 'var(--bg-card)'}; cursor:pointer;" onclick="Router.navigate('${s.page}')">
         <div class="flex justify-between items-center w-full mb-2">
-          <span style="font-size:1.4rem;">${s.icon}</span>
-          <span style="font-weight:700; color:${s.done ? 'var(--success)' : 'var(--text-muted)'}; font-size:1.1rem">${s.done ? '✓' : '○'}</span>
+          <span>${s.icon}</span>
+          <span style="font-weight:700; color:${s.done ? 'var(--success)' : 'var(--text-muted)'}; font-size:1.1rem">${s.done ? (Icons?.render?.('check',{size:16}) || '✓') : '○'}</span>
         </div>
         <div>
           <div style="font-weight:700; color:${s.done ? 'var(--success)' : 'var(--text-primary)'}; font-size:0.9rem">${s.label}</div>
@@ -222,15 +222,15 @@ function renderChecklist(coaching, data) {
 function renderDashboardStats(data) {
   const pendingColor = (data.pendingMarks || 0) > 0 ? 'var(--warning)' : 'var(--success)';
   const stats = [
-    { icon: '👥', label: 'Students', value: data.totalStudents || 0, iconClass: 'green', link: 'students' },
-    { icon: '📚', label: 'Classes', value: data.totalStandards || 0, iconClass: 'blue', link: 'boards' },
-    { icon: '📝', label: 'Tests Scheduled', value: data.totalTests || 0, iconClass: 'purple', link: 'tests' },
-    { icon: '⏳', label: 'Pending Marks', value: data.pendingMarks || 0, iconClass: 'gold', link: 'tests', valueColor: pendingColor },
+    { icon: Icons?.render?.('students',{size:20}) || '', label: 'Students', value: data.totalStudents || 0, iconClass: 'green', link: 'students' },
+    { icon: Icons?.render?.('boards',{size:20}) || '', label: 'Classes', value: data.totalStandards || 0, iconClass: 'blue', link: 'boards' },
+    { icon: Icons?.render?.('tests',{size:20}) || '', label: 'Tests Scheduled', value: data.totalTests || 0, iconClass: 'purple', link: 'tests' },
+    { icon: Icons?.render?.('clock',{size:20}) || '', label: 'Pending Marks', value: data.pendingMarks || 0, iconClass: 'gold', link: 'tests', valueColor: pendingColor },
   ];
   
   document.getElementById('stats-grid').innerHTML = stats.map(s => `
     <div class="stat-card stagger-item hover-lift" style="cursor:pointer" onclick="Router.navigate('${s.link}')">
-      <div class="stat-card-icon ${s.iconClass}">${s.icon}</div>
+      <div class="stat-card-icon ${s.iconClass}" style="display:flex;align-items:center;justify-content:center">${s.icon}</div>
       <div class="stat-card-value" style="${s.valueColor ? 'color:'+s.valueColor : ''}" data-target="${s.value}">${s.value}</div>
       <div class="stat-card-label">${s.label}</div>
     </div>`).join('');
@@ -242,7 +242,7 @@ function renderUpcomingTests(tests) {
   const body = document.getElementById('upcoming-tests-body');
   if (!tests || tests.length === 0) {
     body.innerHTML = `<div class="empty-state" style="padding:var(--space-8)">
-      <div class="empty-state-icon" style="font-size:1.8rem">📅</div>
+      <div class="empty-state-icon" style="font-size:1.8rem">${Icons?.render?.('calendar',{size:24}) || ''}</div>
       <p class="text-muted text-sm">No upcoming tests scheduled</p>
       <button class="btn btn-outline btn-sm mt-3" onclick="Router.navigate('tests')">Schedule Test</button>
     </div>`;
@@ -289,7 +289,7 @@ function renderUpcomingTests(tests) {
       
       urgencyClass = isToday ? 'badge-danger' : isTomorrow ? 'badge-warning' : 'badge-primary';
       dayLabel = isToday ? 'TODAY' : isTomorrow ? 'Tomorrow' : `in ${daysLeft} days`;
-      formattedDate = testDateObj.toLocaleDateString('en-IN', { weekday: 'long', day: '2-digit', month: 'short', year: 'numeric' });
+      formattedDate = testDateObj.toLocaleDateString('en-IN', { weekday: 'long' }) + ', ' + Format.date(dateStr);
     }
 
     const dayCardBorder = isMultiple
@@ -300,7 +300,7 @@ function renderUpcomingTests(tests) {
       <div class="hover-lift" style="border-radius: var(--radius); padding: var(--space-4); ${dayCardBorder}">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-3)">
           <div style="display: flex; align-items: center; gap: var(--space-2)">
-            <span style="font-size: 1.1rem">📅</span>
+            <span>${Icons?.render?.('calendar',{size:16}) || ''}</span>
             <span style="font-weight: 700; color: var(--text-primary); font-size: 0.9rem">${formattedDate}</span>
             <span class="badge ${urgencyClass}" style="font-size: 0.65rem">${dayLabel}</span>
           </div>
@@ -340,6 +340,48 @@ function renderFeesSummary(fees, data) {
   const pct = expected > 0 ? Math.round((collected / expected) * 100) : 0;
   const barColor = pct >= 80 ? 'var(--success)' : pct >= 50 ? 'var(--warning)' : 'var(--danger)';
 
+  // Build standard breakdown rows
+  const standardRows = (data.standardFees || []).map(sf => {
+    const sExpect = sf.total_expected || 0;
+    const sCollect = sf.total_collected || 0;
+    const sPending = Math.max(0, sf.total_pending || 0);
+    const sPct = sExpect > 0 ? Math.round((sCollect / sExpect) * 100) : 0;
+    const pendingStyle = sPending > 0 ? 'color: var(--danger); font-weight: 600;' : 'color: var(--text-muted);';
+    return `
+      <tr>
+        <td style="font-weight: 600; color: var(--text-primary); padding: 8px 10px;">${sf.standard_name}</td>
+        <td style="text-align: right; padding: 8px 10px;">₹${Format.number(sExpect)}</td>
+        <td style="text-align: right; color: var(--success); font-weight: 600; padding: 8px 10px;">₹${Format.number(sCollect)}</td>
+        <td style="text-align: right; padding: 8px 10px; ${pendingStyle}">₹${Format.number(sPending)}</td>
+        <td style="text-align: right; padding: 8px 10px;"><span class="badge ${sPct >= 80 ? 'badge-success' : sPct >= 50 ? 'badge-warning' : 'badge-danger'}" style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px;">${sPct}%</span></td>
+      </tr>
+    `;
+  }).join('');
+
+  const breakdownHTML = `
+    <div style="margin-top: var(--space-4); border-top: 1px solid var(--border); padding-top: var(--space-4)">
+      <h4 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: var(--space-3); display: flex; align-items: center; gap: 6px; font-weight: 700;">
+        <span>${Icons?.render?.('boards',{size:14}) || ''}</span> Class Breakdown
+      </h4>
+      <div class="table-wrap" style="max-height: 160px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius)">
+        <table class="table" style="font-size: 0.78rem; margin-bottom: 0; width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.02);">
+              <th style="text-align: left; padding: 8px 10px; color: var(--text-muted); font-weight: 700;">Class</th>
+              <th style="text-align: right; padding: 8px 10px; color: var(--text-muted); font-weight: 700;">Expected</th>
+              <th style="text-align: right; padding: 8px 10px; color: var(--text-muted); font-weight: 700;">Collected</th>
+              <th style="text-align: right; padding: 8px 10px; color: var(--text-muted); font-weight: 700;">Pending</th>
+              <th style="text-align: right; padding: 8px 10px; color: var(--text-muted); font-weight: 700;">Rate</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${standardRows || '<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding: 10px;">No class fees recorded</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
   body.innerHTML = `
     <div style="display:flex; gap: var(--space-5); align-items: center; justify-content: space-between; flex-wrap: wrap;">
       <div style="flex:1; min-width: 200px; display:flex; flex-direction:column; gap:var(--space-3)">
@@ -373,7 +415,8 @@ function renderFeesSummary(fees, data) {
       <div style="width: 110px; height: 110px; flex-shrink: 0; position: relative;">
         <canvas id="fees-doughnut-chart"></canvas>
       </div>
-    </div>`;
+    </div>
+    ${breakdownHTML}`;
 
   const ctx = document.getElementById('fees-doughnut-chart')?.getContext('2d');
   if (ctx) {
@@ -406,10 +449,10 @@ function renderClassStats(classStats) {
   const body = document.getElementById('class-stats-body');
   if (!classStats || classStats.length === 0) {
     body.innerHTML = `<div class="empty-state">
-      <div class="empty-state-icon">📋</div>
+      <div class="empty-state-icon">${Icons?.render?.('chart',{size:32}) || ''}</div>
       <h3>No Classes Yet</h3>
       <p>Add a board and standard to start tracking results.</p>
-      <button class="btn btn-primary" onclick="Router.navigate('boards')">➕ Add Board</button>
+      <button class="btn btn-primary" onclick="Router.navigate('boards')">${Icons?.render?.('add',{size:14}) || ''} Add Board</button>
     </div>`;
     return;
   }
@@ -814,13 +857,13 @@ async function renderCalendarWidget() {
             ${dayTests.map(t => `<div class="calendar-event-badge test" title="Coaching Test: ${t.name} (Class: ${t.standard_name})">📝 Prep: ${t.subject_name} (${t.standard_name})</div>`).join('')}
             ${dayExams.map(e => `<div class="calendar-event-badge school" title="School Exam: ${e.exam_name} (Class: ${e.standard_name})">🏫 School: ${e.subject_name} (${e.standard_name})</div>`).join('')}
           </div>
-
           <div class="calendar-range-bars">
             ${activeCycles.map(tc => {
               let color = '#3b82f6';
-              if (tc.standard_name.includes('10')) color = '#a855f7';
-              else if (tc.standard_name.includes('12')) color = '#14b8a6';
-              return `<div class="calendar-range-bar" style="background:${color}" title="Series: ${tc.title} (${tc.standard_name}) - Prep Active"></div>`;
+              const name = tc.standard_name || '';
+              if (name.includes('10')) color = '#a855f7';
+              else if (name.includes('12')) color = '#14b8a6';
+              return `<div class="calendar-range-bar" style="background:${color}" title="Series: ${tc.title} (${name}) - Prep Active"></div>`;
             }).join('')}
           </div>
         </div>`;
@@ -841,7 +884,7 @@ async function renderCalendarWidget() {
     container.innerHTML = gridHTML;
 
   } catch (err) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><h3>Error Loading Calendar</h3><p>${err.message}</p></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">${Icons?.render?.('warning',{size:32}) || ''}</div><h3>Error Loading Calendar</h3><p>${err.message}</p></div>`;
   }
 }
 
@@ -855,14 +898,14 @@ function openCalendarNoteModal(dateStr) {
   const noteObj = notes.find(n => n.note_date === dateStr);
   const existingNote = noteObj ? noteObj.content : '';
 
-  createModal('calendar-note-modal', `📝 Notes for ${Format.date(dateStr)}`,
+  createModal('calendar-note-modal', `${Icons?.render?.('edit',{size:16}) || ''} Notes for ${Format.date(dateStr)}`,
     `<div class="form-group mb-4">
       <label class="form-label">Custom Calendar Note / Event</label>
       <textarea class="form-control" id="calendar-note-content" rows="4" placeholder="Write reminders, custom events, alternate schedules, or notes here...">${existingNote}</textarea>
       <span class="form-hint">This note will highlight this date on the dashboard calendar. Clear the text to remove the note.</span>
     </div>`,
     `<button class="btn btn-outline" onclick="closeModal('calendar-note-modal')">Cancel</button>
-     <button class="btn btn-primary" onclick="saveCalendarNote('${dateStr}')">💾 Save Note</button>`,
+     <button class="btn btn-primary" onclick="saveCalendarNote('${dateStr}')">${Icons?.render?.('save',{size:14}) || ''} Save Note</button>`,
     'modal-md'
   );
 }

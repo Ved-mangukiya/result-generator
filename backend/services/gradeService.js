@@ -38,6 +38,32 @@ function getFinalStatus(boardId, percentage, hasAnyFail) {
 }
 
 /**
+ * Check if a student is enrolled in a given subject
+ */
+function isStudentEnrolled(student, subjectId, isSubjectCompulsory) {
+  if (!student || !student.elective_subjects) {
+    return true;
+  }
+  try {
+    const parsed = typeof student.elective_subjects === 'string'
+      ? JSON.parse(student.elective_subjects)
+      : student.elective_subjects;
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      if (Array.isArray(parsed.enrolledSubjectIds)) {
+        return parsed.enrolledSubjectIds.includes(Number(subjectId));
+      }
+    }
+    if (Array.isArray(parsed)) {
+      const electiveIds = parsed.map(el => typeof el === 'object' ? el.id : el);
+      return (isSubjectCompulsory !== 0) || electiveIds.includes(Number(subjectId));
+    }
+  } catch (e) {
+    console.error('Error parsing elective_subjects:', e);
+  }
+  return true;
+}
+
+/**
  * Calculate marks and grade for a single student
  */
 function calculateStudentResult(student, subjects, marksMap, boardId) {
@@ -48,21 +74,8 @@ function calculateStudentResult(student, subjects, marksMap, boardId) {
   let subjectResults = [];
   let marksCount = 0;
 
-  let electiveIds = [];
-  if (student.elective_subjects) {
-    try {
-      const parsed = typeof student.elective_subjects === 'string'
-        ? JSON.parse(student.elective_subjects)
-        : student.elective_subjects;
-      if (Array.isArray(parsed)) {
-        electiveIds = parsed.map(el => typeof el === 'object' ? el.id : el);
-      }
-    } catch(e) {}
-  }
-
   for (const subject of subjects) {
-    const isOptional = subject.is_compulsory === 0;
-    const isSelected = !isOptional || electiveIds.includes(subject.id);
+    const isSelected = isStudentEnrolled(student, subject.id, subject.is_compulsory);
     if (!isSelected) continue;
 
     const mark = marksMap[subject.id];
@@ -163,4 +176,88 @@ function calculateRanks(studentResults) {
   return rankMap;
 }
 
-module.exports = { getGrade, getFinalStatus, calculateStudentResult, calculateRanks, getPassMark };
+/**
+ * Recalculate overall marks for all students in a standard/class based on unit tests
+ */
+function recalculateOverallMarksForClass(standardId) {
+  const students = db.prepare('SELECT id, elective_subjects, batch_id FROM students WHERE standard_id = ?').all(standardId);
+  const subjects = db.prepare('SELECT id, max_marks, marks_type, internal_max, external_max, is_compulsory FROM subjects WHERE standard_id = ?').all(standardId);
+  const tests = db.prepare('SELECT id, subject_id, max_marks, batch_id FROM tests WHERE standard_id = ?').all(standardId);
+
+  if (students.length === 0 || subjects.length === 0) return;
+
+  const runTx = db.transaction(() => {
+    for (const student of students) {
+      for (const subject of subjects) {
+        const isSelected = isStudentEnrolled(student, subject.id, subject.is_compulsory);
+        if (!isSelected) {
+          db.prepare('DELETE FROM marks WHERE student_id = ? AND subject_id = ?').run(student.id, subject.id);
+          continue;
+        }
+
+        const subjTests = tests.filter(t => t.subject_id === subject.id && (t.batch_id === null || student.batch_id === null || t.batch_id === student.batch_id));
+        if (subjTests.length === 0) {
+          db.prepare('DELETE FROM marks WHERE student_id = ? AND subject_id = ?').run(student.id, subject.id);
+          continue;
+        }
+
+        const testIds = subjTests.map(t => t.id);
+        const studentTestMarks = db.prepare(`
+          SELECT test_id, obtained_marks, is_absent 
+          FROM test_marks 
+          WHERE student_id = ? AND test_id IN (${testIds.map(() => '?').join(',')})
+        `).all(student.id, ...testIds);
+
+        let totalObtained = 0;
+        let totalMax = 0;
+        let gradedCount = 0;
+        let absentCount = 0;
+
+        for (const t of subjTests) {
+          const tm = studentTestMarks.find(x => x.test_id === t.id);
+          if (tm) {
+            if (tm.is_absent === 1) {
+              absentCount++;
+              gradedCount++;
+              totalMax += t.max_marks;
+            } else if (tm.obtained_marks !== null && tm.obtained_marks !== undefined) {
+              totalObtained += tm.obtained_marks;
+              totalMax += t.max_marks;
+              gradedCount++;
+            }
+          }
+        }
+
+        if (gradedCount > 0) {
+          const pct = totalMax > 0 ? (totalObtained / totalMax) : 0;
+          let total_marks = null;
+          let internal_marks = null;
+          let external_marks = null;
+          let is_absent = (absentCount === gradedCount) ? 1 : 0;
+
+          if (subject.marks_type === 'split') {
+            internal_marks = Math.round(pct * (subject.internal_max || 0) * 100) / 100;
+            external_marks = Math.round(pct * (subject.external_max || 0) * 100) / 100;
+            total_marks = internal_marks + external_marks;
+          } else {
+            total_marks = Math.round(pct * subject.max_marks * 100) / 100;
+          }
+
+          db.prepare(`
+            INSERT INTO marks (student_id, subject_id, total_marks, internal_marks, external_marks, is_absent)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(student_id, subject_id) DO UPDATE SET
+              total_marks = excluded.total_marks,
+              internal_marks = excluded.internal_marks,
+              external_marks = excluded.external_marks,
+              is_absent = excluded.is_absent
+          `).run(student.id, subject.id, total_marks, internal_marks, external_marks, is_absent);
+        }
+      }
+    }
+  });
+
+  runTx();
+}
+
+module.exports = { getGrade, getFinalStatus, calculateStudentResult, calculateRanks, getPassMark, isStudentEnrolled, recalculateOverallMarksForClass };

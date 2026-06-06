@@ -6,7 +6,7 @@ const multer = require('multer');
 const XLSX = require('xlsx');
 const puppeteer = require('puppeteer');
 const { db, logActivity } = require('../db/database');
-const { getPassMark } = require('../services/gradeService');
+const { getPassMark, isStudentEnrolled, recalculateOverallMarksForClass } = require('../services/gradeService');
 
 function findMatchingCycleId(standardId, testName, explicitCycleId = null) {
   if (explicitCycleId !== undefined && explicitCycleId !== null && explicitCycleId !== '') {
@@ -44,15 +44,16 @@ router.get('/', (req, res) => {
 
   try {
     let query = `
-      SELECT t.*, s.name as subject_name,
+      SELECT t.*, s.name as subject_name, bt.name as batch_name,
              (SELECT COUNT(*) FROM test_marks tm WHERE tm.test_id = t.id) as marks_count
       FROM tests t 
       JOIN subjects s ON t.subject_id = s.id 
+      LEFT JOIN batches bt ON t.batch_id = bt.id
       WHERE t.standard_id = ? 
     `;
     const params = [standard_id];
 
-    if (batch_id) {
+    if (batch_id && batch_id !== '' && batch_id !== 'null' && batch_id !== 'undefined') {
       query += ` AND (t.batch_id = ? OR t.batch_id IS NULL) `;
       params.push(batch_id);
     }
@@ -192,6 +193,10 @@ router.put('/:id', (req, res) => {
       req.params.id
     );
 
+    if (standard_id) {
+      recalculateOverallMarksForClass(standard_id);
+    }
+
     const test = db.prepare('SELECT t.name, s.display_name FROM tests t JOIN standards s ON t.standard_id = s.id WHERE t.id = ?').get(req.params.id);
     logActivity('TEST_UPDATE', `Updated test "${test ? test.name : 'Unknown'}" for ${test ? test.display_name : 'Unknown'}`);
     res.json({ success: true });
@@ -203,10 +208,14 @@ router.put('/:id', (req, res) => {
 // DELETE /api/tests/:id — Delete a test and cascading marks
 router.delete('/:id', (req, res) => {
   try {
-    const test = db.prepare('SELECT name FROM tests WHERE id = ?').get(req.params.id);
+    const test = db.prepare('SELECT name, standard_id FROM tests WHERE id = ?').get(req.params.id);
     if (!test) return res.status(404).json({ error: 'Test not found' });
 
     db.prepare('DELETE FROM tests WHERE id = ?').run(req.params.id);
+
+    if (test.standard_id) {
+      recalculateOverallMarksForClass(test.standard_id);
+    }
 
     logActivity('TEST_DELETE', `Deleted test: ${test.name}`);
     res.json({ success: true });
@@ -276,7 +285,10 @@ router.post('/:id/marks', (req, res) => {
     });
 
     runTransaction();
-    const test = db.prepare('SELECT t.name, s.display_name FROM tests t JOIN standards s ON t.standard_id = s.id WHERE t.id = ?').get(req.params.id);
+    const test = db.prepare('SELECT t.name, t.standard_id, s.display_name FROM tests t JOIN standards s ON t.standard_id = s.id WHERE t.id = ?').get(req.params.id);
+    if (test && test.standard_id) {
+      recalculateOverallMarksForClass(test.standard_id);
+    }
     logActivity('TEST_MARKS_SAVE', `Saved marks for test "${test ? test.name : 'Unknown'}" (${test ? test.display_name : 'Unknown'})`);
     res.json({ success: true });
   } catch (err) {
@@ -288,7 +300,7 @@ router.post('/:id/marks', (req, res) => {
 router.get('/:id/export/excel', (req, res) => {
   try {
     const test = db.prepare(`
-      SELECT t.*, s.name as subject_name, std.display_name as standard_name 
+      SELECT t.*, s.is_compulsory, s.name as subject_name, std.display_name as standard_name 
       FROM tests t 
       JOIN subjects s ON t.subject_id = s.id 
       JOIN standards std ON t.standard_id = std.id
@@ -298,13 +310,15 @@ router.get('/:id/export/excel', (req, res) => {
     if (!test) return res.status(404).json({ error: 'Test not found' });
 
     const coaching = db.prepare('SELECT name FROM coaching_profile').get() || {};
-    const marks = db.prepare(`
-      SELECT s.name as student_name, s.roll_number, tm.obtained_marks, tm.is_absent, tm.remarks
+    const rawMarks = db.prepare(`
+      SELECT s.name as student_name, s.roll_number, s.elective_subjects, tm.obtained_marks, tm.is_absent, tm.remarks
       FROM students s
       LEFT JOIN test_marks tm ON s.id = tm.student_id AND tm.test_id = ?
       WHERE s.standard_id = ? AND (? IS NULL OR s.batch_id = ?)
       ORDER BY CAST(s.roll_number AS INTEGER) ASC, s.roll_number ASC
     `).all(req.params.id, test.standard_id, test.batch_id, test.batch_id);
+
+    const marks = rawMarks.filter(m => isStudentEnrolled(m, test.subject_id, test.is_compulsory));
 
     // Calculate Ranks & pass rate
     const scoredStudents = marks.map(m => {
@@ -350,13 +364,18 @@ router.get('/:id/export/excel', (req, res) => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Test Marks');
 
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = String(now.getHours()).padStart(2, '0') + '-' + String(now.getMinutes()).padStart(2, '0');
+
     const coachingClean = (coaching.name || 'Coaching').replace(/[^a-zA-Z0-9]/g, '_');
+    const stdClean = (test.standard_name || '').replace(/[^a-zA-Z0-9]/g, '_');
     const testClean = test.name.replace(/[^a-zA-Z0-9]/g, '_');
-    const filename = `${coachingClean}_${testClean}_Marks.xlsx`;
-    const outputPath = path.join(__dirname, '../../exports', filename);
+    const downloadFilename = `${coachingClean}_${stdClean}_${testClean}_TestMarks_${dateStr}_${timeStr}.xlsx`;
+    const outputPath = path.join(__dirname, '../../exports', downloadFilename);
 
     XLSX.writeFile(workbook, outputPath);
-    res.download(outputPath, filename, (err) => {
+    res.download(outputPath, downloadFilename, (err) => {
       if (err) console.error('Excel export error:', err);
       try { fs.unlinkSync(outputPath); } catch(e) {}
     });
@@ -369,7 +388,7 @@ router.get('/:id/export/excel', (req, res) => {
 router.get('/:id/export/pdf', async (req, res) => {
   try {
     const test = db.prepare(`
-      SELECT t.*, s.name as subject_name, std.display_name as standard_name, std.board_id
+      SELECT t.*, s.is_compulsory, s.name as subject_name, std.display_name as standard_name, std.board_id
       FROM tests t 
       JOIN subjects s ON t.subject_id = s.id 
       JOIN standards std ON t.standard_id = std.id
@@ -379,13 +398,15 @@ router.get('/:id/export/pdf', async (req, res) => {
     if (!test) return res.status(404).json({ error: 'Test not found' });
 
     const coaching = db.prepare('SELECT * FROM coaching_profile').get() || {};
-    const marks = db.prepare(`
-      SELECT s.name as student_name, s.roll_number, tm.obtained_marks, tm.is_absent, tm.remarks
+    const rawMarks = db.prepare(`
+      SELECT s.name as student_name, s.roll_number, s.elective_subjects, tm.obtained_marks, tm.is_absent, tm.remarks
       FROM students s
       LEFT JOIN test_marks tm ON s.id = tm.student_id AND tm.test_id = ?
       WHERE s.standard_id = ? AND (? IS NULL OR s.batch_id = ?)
       ORDER BY CAST(s.roll_number AS INTEGER) ASC, s.roll_number ASC
     `).all(req.params.id, test.standard_id, test.batch_id, test.batch_id);
+
+    const marks = rawMarks.filter(m => isStudentEnrolled(m, test.subject_id, test.is_compulsory));
 
     // Calculate Stats
     const passMarkPct = 35; // Default passing limit for small tests
@@ -577,8 +598,15 @@ router.get('/:id/export/pdf', async (req, res) => {
       args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
 
-    const filename = `${(coaching.name || 'Coaching').replace(/[^a-zA-Z0-9]/g, '_')}_${test.name.replace(/[^a-zA-Z0-9]/g, '_')}_MarksReport.pdf`;
-    const outputPath = path.join(__dirname, '../../exports', filename);
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = String(now.getHours()).padStart(2, '0') + '-' + String(now.getMinutes()).padStart(2, '0');
+
+    const coachingClean = (coaching.name || 'Coaching').replace(/[^a-zA-Z0-9]/g, '_');
+    const stdClean = (test.standard_name || '').replace(/[^a-zA-Z0-9]/g, '_');
+    const testClean = test.name.replace(/[^a-zA-Z0-9]/g, '_');
+    const downloadFilename = `${coachingClean}_${stdClean}_${testClean}_MarksReport_${dateStr}_${timeStr}.pdf`;
+    const outputPath = path.join(__dirname, '../../exports', downloadFilename);
 
     try {
       const page = await browser.newPage();
@@ -587,10 +615,10 @@ router.get('/:id/export/pdf', async (req, res) => {
         path: outputPath,
         format: 'A4',
         printBackground: true,
-        margin: { top: '10mm', bottom: '10mm', left: '10mm', right: '10mm' }
+        margin: { top: '0', right: '0', bottom: '0', left: '0' }
       });
 
-      res.download(outputPath, filename, (err) => {
+      res.download(outputPath, downloadFilename, (err) => {
         if (err) console.error('PDF export error:', err);
         try { fs.unlinkSync(outputPath); } catch(e) {}
       });
@@ -686,6 +714,7 @@ router.post('/:id/import', upload.single('file'), (req, res) => {
     });
 
     importTransaction();
+    recalculateOverallMarksForClass(test.standard_id);
 
     // Delete temp upload file
     try { fs.unlinkSync(req.file.path); } catch (e) {}

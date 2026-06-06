@@ -60,7 +60,7 @@ const Confirm = {
       }
       document.getElementById('confirm-title').textContent = title;
       document.getElementById('confirm-message').textContent = message;
-      document.getElementById('confirm-icon').textContent = icon;
+      document.getElementById('confirm-icon').innerHTML = icon;
       const okBtn = document.getElementById('confirm-ok-btn');
       okBtn.textContent = btnText;
       okBtn.className = `btn ${btnClass}`;
@@ -166,6 +166,16 @@ const Format = {
   date(str) {
     if (!str) return '—';
     try {
+      str = String(str).trim();
+      if (/^\d{5}(\.\d+)?$/.test(str)) {
+        const serial = parseFloat(str);
+        const d = new Date((serial - 25569) * 86400000);
+        if (isNaN(d)) return str;
+        const dd = String(d.getUTCDate()).padStart(2, '0');
+        const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+        const yyyy = d.getUTCFullYear();
+        return `${dd}/${mm}/${yyyy}`;
+      }
       const d = new Date(str + (str.includes('T') ? '' : 'T00:00:00'));
       if (isNaN(d)) return str;
       const dd = String(d.getDate()).padStart(2, '0');
@@ -178,13 +188,9 @@ const Format = {
   // DOB specific (same DD/MM/YYYY)
   dob(str) { return this.date(str); },
 
-  // Short date: 12 Jun 2024
+  // Short date (using DD/MM/YYYY format)
   dateShort(str) {
-    if (!str) return '—';
-    try {
-      const d = new Date(str + (str.includes('T') ? '' : 'T00:00:00'));
-      return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-    } catch { return str; }
+    return this.date(str);
   },
 
   number(val) {
@@ -220,7 +226,7 @@ const Format = {
     if (diff < 3600) return Math.floor(diff/60) + 'm ago';
     if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
     if (diff < 86400 * 7) return Math.floor(diff/86400) + 'd ago';
-    return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+    return this.date(normalized);
   },
 
   // Full datetime: DD/MM/YYYY, HH:MM AM/PM
@@ -262,17 +268,26 @@ function getVal(id) {
 
 function show(id) {
   const el = typeof id === 'string' ? document.getElementById(id) : id;
-  if (el) el.style.display = '';
+  if (el) {
+    el.style.display = '';
+    el.classList.remove('hidden');
+  }
 }
 
 function hide(id) {
   const el = typeof id === 'string' ? document.getElementById(id) : id;
-  if (el) el.style.display = 'none';
+  if (el) {
+    el.style.display = 'none';
+    el.classList.add('hidden');
+  }
 }
 
 function showFlex(id) {
   const el = typeof id === 'string' ? document.getElementById(id) : id;
-  if (el) el.style.display = 'flex';
+  if (el) {
+    el.style.display = 'flex';
+    el.classList.remove('hidden');
+  }
 }
 
 function toggleClass(el, cls, force) {
@@ -485,3 +500,34 @@ function makeImageBackgroundless(file) {
 }
 
 window.makeImageBackgroundless = makeImageBackgroundless;
+
+window.isStudentEnrolled = function(student, subjectId, isSubjectCompulsory) {
+  if (!student || !student.elective_subjects) {
+    return true;
+  }
+  try {
+    const parsed = typeof student.elective_subjects === 'string'
+      ? JSON.parse(student.elective_subjects)
+      : student.elective_subjects;
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      if (Array.isArray(parsed.enrolledSubjectIds)) {
+        return parsed.enrolledSubjectIds.includes(Number(subjectId));
+      }
+    }
+    if (Array.isArray(parsed)) {
+      const electiveIds = parsed.map(el => typeof el === 'object' ? el.id : el);
+      return (isSubjectCompulsory !== 0) || electiveIds.includes(Number(subjectId));
+    }
+  } catch (e) {
+    console.error('Error parsing elective_subjects:', e);
+  }
+  return true;
+};
+
+window.getPhotoThumbPath = function(photoPath) {
+  if (!photoPath) return '';
+  const lastDot = photoPath.lastIndexOf('.');
+  if (lastDot === -1) return photoPath;
+  return photoPath.substring(0, lastDot) + '_thumb.jpg';
+};
+

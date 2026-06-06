@@ -25,7 +25,16 @@ router.get('/results/:standardId', (req, res) => {
   if (!standard) return res.status(404).json({ error: 'Standard not found' });
 
   const subjects = db.prepare('SELECT * FROM subjects WHERE standard_id = ? ORDER BY sort_order').all(req.params.standardId);
-  const students = db.prepare('SELECT * FROM students WHERE standard_id = ? ORDER BY CAST(roll_number AS INTEGER) ASC, roll_number ASC').all(req.params.standardId);
+  
+  const { batch_id } = req.query;
+  let studentsQuery = 'SELECT * FROM students WHERE standard_id = ?';
+  const studentsParams = [req.params.standardId];
+  if (batch_id) {
+    studentsQuery += ' AND batch_id = ?';
+    studentsParams.push(batch_id);
+  }
+  studentsQuery += ' ORDER BY CAST(roll_number AS INTEGER) ASC, roll_number ASC';
+  const students = db.prepare(studentsQuery).all(...studentsParams);
 
   const studentResults = students.map(student => {
     const marksRows = db.prepare('SELECT * FROM marks WHERE student_id = ?').all(student.id);
@@ -93,9 +102,22 @@ router.get('/pdf/single/:studentId/download', async (req, res) => {
     const templatePath = path.join(__dirname, `../../templates/template${templateId}.html`);
 
     const { filename, outputPath } = await generateSinglePDF(parseInt(req.params.studentId), templatePath);
-    res.download(outputPath, filename, (err) => {
+
+    const student = db.prepare('SELECT name, standard_id FROM students WHERE id = ?').get(req.params.studentId);
+    const standard = db.prepare('SELECT display_name FROM standards WHERE id = ?').get(student.standard_id);
+    const coaching = db.prepare('SELECT name FROM coaching_profile').get() || {};
+    
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = String(now.getHours()).padStart(2, '0') + '-' + String(now.getMinutes()).padStart(2, '0');
+    
+    const coachingClean = (coaching.name || 'Coaching').replace(/[^a-zA-Z0-9]/g, '_');
+    const stdClean = (standard?.display_name || '').replace(/[^a-zA-Z0-9]/g, '_');
+    const studentClean = student.name.replace(/[^a-zA-Z0-9]/g, '_');
+    const downloadFilename = `${coachingClean}_${stdClean}_${studentClean}_ResultCard_${dateStr}_${timeStr}.pdf`;
+
+    res.download(outputPath, downloadFilename, (err) => {
       if (err) console.error('Download error:', err);
-      // Clean up after download
       try { fs.unlinkSync(outputPath); } catch(e) {}
     });
   } catch (err) {
@@ -109,9 +131,22 @@ router.get('/pdf/bulk/:standardId/download', async (req, res) => {
   try {
     const settings = db.prepare('SELECT template_id FROM result_card_settings WHERE standard_id = ?').get(req.params.standardId);
     const templateId = req.query.template_id || settings?.template_id || 1;
+    const batchId = req.query.batch_id || null;
 
-    const { filename, outputPath } = await generateBulkPDF(parseInt(req.params.standardId), parseInt(templateId));
-    res.download(outputPath, filename, (err) => {
+    const { filename, outputPath } = await generateBulkPDF(parseInt(req.params.standardId), parseInt(templateId), batchId);
+
+    const standard = db.prepare('SELECT display_name FROM standards WHERE id = ?').get(req.params.standardId);
+    const coaching = db.prepare('SELECT name FROM coaching_profile').get() || {};
+    
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = String(now.getHours()).padStart(2, '0') + '-' + String(now.getMinutes()).padStart(2, '0');
+    
+    const coachingClean = (coaching.name || 'Coaching').replace(/[^a-zA-Z0-9]/g, '_');
+    const stdClean = (standard?.display_name || '').replace(/[^a-zA-Z0-9]/g, '_');
+    const downloadFilename = `${coachingClean}_${stdClean}_Bulk_ResultCards_${dateStr}_${timeStr}.pdf`;
+
+    res.download(outputPath, downloadFilename, (err) => {
       if (err) console.error('Download error:', err);
       try { fs.unlinkSync(outputPath); } catch(e) {}
     });
@@ -128,13 +163,19 @@ router.get('/excel/:standardId/download', (req, res) => {
     if (!standard) return res.status(404).json({ error: 'Standard not found' });
 
     const coaching = db.prepare('SELECT name FROM coaching_profile').get();
-    const coachingName = (coaching?.name || 'Result').replace(/[^a-zA-Z0-9]/g, '_');
-    const stdName = standard.display_name.replace(/[^a-zA-Z0-9]/g, '_');
-    const filename = `${coachingName}_${stdName}_Results.xlsx`;
-    const outputPath = path.join(__dirname, '../../exports', filename);
+    
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = String(now.getHours()).padStart(2, '0') + '-' + String(now.getMinutes()).padStart(2, '0');
+    
+    const coachingClean = (coaching?.name || 'Coaching').replace(/[^a-zA-Z0-9]/g, '_');
+    const stdClean = standard.display_name.replace(/[^a-zA-Z0-9]/g, '_');
+    const downloadFilename = `${coachingClean}_${stdClean}_ClassResults_${dateStr}_${timeStr}.xlsx`;
+    const outputPath = path.join(__dirname, '../../exports', downloadFilename);
 
-    exportClassToExcel(parseInt(req.params.standardId), outputPath);
-    res.download(outputPath, filename, (err) => {
+    const batchId = req.query.batch_id || null;
+    exportClassToExcel(parseInt(req.params.standardId), outputPath, batchId);
+    res.download(outputPath, downloadFilename, (err) => {
       if (err) console.error('Download error:', err);
       try { fs.unlinkSync(outputPath); } catch(e) {}
     });
@@ -154,8 +195,17 @@ router.post('/reminder-pdf', async (req, res) => {
     if (req.body.test_id) {
       db.prepare('UPDATE tests SET notice_generated = 1 WHERE id = ?').run(req.body.test_id);
     }
+
+    const coaching = db.prepare('SELECT name FROM coaching_profile').get() || {};
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = String(now.getHours()).padStart(2, '0') + '-' + String(now.getMinutes()).padStart(2, '0');
     
-    res.download(outputPath, filename, (err) => {
+    const coachingClean = (coaching.name || 'Coaching').replace(/[^a-zA-Z0-9]/g, '_');
+    const typeClean = (req.body.type || 'Notice').replace(/[^a-zA-Z0-9]/g, '_');
+    const downloadFilename = `${coachingClean}_Notice_${typeClean}_${dateStr}_${timeStr}.pdf`;
+    
+    res.download(outputPath, downloadFilename, (err) => {
       if (err) console.error('Download error:', err);
       try { fs.unlinkSync(outputPath); } catch(e) {}
     });
@@ -170,7 +220,16 @@ router.post('/noticeboard-pdf', async (req, res) => {
   try {
     const { generateNoticeboardPDF } = require('../services/pdfService');
     const { filename, outputPath } = await generateNoticeboardPDF(req.body);
-    res.download(outputPath, filename, (err) => {
+
+    const coaching = db.prepare('SELECT name FROM coaching_profile').get() || {};
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = String(now.getHours()).padStart(2, '0') + '-' + String(now.getMinutes()).padStart(2, '0');
+    
+    const coachingClean = (coaching.name || 'Coaching').replace(/[^a-zA-Z0-9]/g, '_');
+    const downloadFilename = `${coachingClean}_Noticeboard_Results_${dateStr}_${timeStr}.pdf`;
+
+    res.download(outputPath, downloadFilename, (err) => {
       if (err) console.error('Noticeboard download error:', err);
       try { fs.unlinkSync(outputPath); } catch(e) {}
     });
