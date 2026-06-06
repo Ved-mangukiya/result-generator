@@ -17,8 +17,16 @@ router.post('/login', async (req, res) => {
   req.session.adminId = admin.id;
   req.session.email = admin.email;
 
-  const profile = db.prepare('SELECT * FROM coaching_profile').get();
-  res.json({ success: true, onboarding_complete: profile?.onboarding_complete === 1 });
+  // Force session save before responding
+  req.session.save((err) => {
+    if (err) {
+      console.error('Session save error:', err);
+      return res.status(500).json({ error: 'Session save failed' });
+    }
+    
+    const profile = db.prepare('SELECT * FROM coaching_profile').get();
+    res.json({ success: true, onboarding_complete: profile?.onboarding_complete === 1 });
+  });
 });
 
 // POST /api/auth/logout

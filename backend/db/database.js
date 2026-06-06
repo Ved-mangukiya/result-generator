@@ -145,9 +145,12 @@ function initializeDatabase() {
     CREATE TABLE IF NOT EXISTS students (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       standard_id INTEGER NOT NULL,
+      batch_id INTEGER DEFAULT NULL,
+      first_name TEXT NOT NULL DEFAULT '',
+      father_name TEXT DEFAULT '',
+      surname TEXT NOT NULL DEFAULT '',
       name TEXT NOT NULL,
       roll_number TEXT NOT NULL,
-      father_name TEXT DEFAULT '',
       mother_name TEXT DEFAULT '',
       dob TEXT DEFAULT '',
       photo_path TEXT DEFAULT '',
@@ -159,7 +162,8 @@ function initializeDatabase() {
       paid_fees REAL DEFAULT 0,
       elective_subjects TEXT DEFAULT '',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (standard_id) REFERENCES standards(id) ON DELETE CASCADE
+      FOREIGN KEY (standard_id) REFERENCES standards(id) ON DELETE CASCADE,
+      FOREIGN KEY (batch_id) REFERENCES batches(id) ON DELETE SET NULL
     );
 
     -- Marks
@@ -320,6 +324,28 @@ function initializeDatabase() {
   // Batch system migrations
   runMigrationSafe("ALTER TABLE students ADD COLUMN batch_id INTEGER DEFAULT NULL");
   runMigrationSafe("ALTER TABLE tests ADD COLUMN batch_id INTEGER DEFAULT NULL");
+  
+  // Name format migrations
+  runMigrationSafe("ALTER TABLE students ADD COLUMN first_name TEXT DEFAULT ''");
+  runMigrationSafe("ALTER TABLE students ADD COLUMN surname TEXT DEFAULT ''");
+  
+  // Migrate existing data to new name format
+  try {
+    const students = db.prepare('SELECT id, name, father_name FROM students WHERE (first_name IS NULL OR first_name = "") AND name != ""').all();
+    const updateStmt = db.prepare('UPDATE students SET first_name = ?, surname = ? WHERE id = ?');
+    for (const student of students) {
+      const parts = student.name.split(/\s+/);
+      if (parts.length >= 2) {
+        const firstName = parts[0];
+        const surname = parts[parts.length - 1];
+        updateStmt.run(firstName, surname, student.id);
+      } else if (parts.length === 1) {
+        updateStmt.run(parts[0], '', student.id);
+      }
+    }
+  } catch (e) {
+    // Migration already done or no data
+  }
 
   // Calendar notes table
   db.exec(`

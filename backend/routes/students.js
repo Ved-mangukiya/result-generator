@@ -91,33 +91,39 @@ router.get('/:id', (req, res) => {
 
 // POST /api/students
 router.post('/', (req, res) => {
-  let { standard_id, batch_id, name, roll_number, father_name, mother_name, dob, remarks, attendance_pct, admission_date, status, total_fees, elective_subjects } = req.body;
-  if (!standard_id || !name) return res.status(400).json({ error: 'standard_id and name required' });
+  let { standard_id, batch_id, first_name, father_name, surname, name, roll_number, mother_name, dob, remarks, attendance_pct, admission_date, status, total_fees, elective_subjects } = req.body;
+  if (!standard_id) return res.status(400).json({ error: 'standard_id is required' });
 
-  // Format student name to FirstName.FatherName.Surname
-  let firstName = '';
-  let fName = father_name ? father_name.trim() : '';
-  let lName = '';
+  // Handle new format (first_name, father_name, surname) or legacy name field
+  let firstName = (first_name || '').trim();
+  let fatherName = (father_name || '').trim();
+  let surName = (surname || '').trim();
 
-  if (name.includes('.')) {
-    const parts = name.split('.');
-    firstName = parts[0] || '';
-    if (parts[1]) fName = parts[1];
-    if (parts[2]) lName = parts[2];
-  } else {
+  // If old 'name' field is provided, parse it
+  if (name && (!firstName || !surName)) {
     const parts = name.trim().split(/\s+/);
-    firstName = parts[0] || '';
-    if (parts.length > 2) {
-      if (!fName) {
-        fName = parts.slice(1, parts.length - 1).join(' ');
-      }
-      lName = parts[parts.length - 1] || '';
+    if (parts.length >= 3) {
+      firstName = firstName || parts[0];
+      fatherName = fatherName || parts.slice(1, -1).join(' ');
+      surName = surName || parts[parts.length - 1];
     } else if (parts.length === 2) {
-      lName = parts[1] || '';
+      firstName = firstName || parts[0];
+      surName = surName || parts[1];
+    } else if (parts.length === 1) {
+      firstName = firstName || parts[0];
     }
   }
-  name = `${firstName.trim()}.${fName.trim()}.${lName.trim()}`;
-  father_name = fName.trim();
+
+  if (!firstName) return res.status(400).json({ error: 'First name is required' });
+
+  // Capitalize first letter of each name part
+  const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  firstName = capitalize(firstName);
+  if (fatherName) fatherName = fatherName.split(' ').map(capitalize).join(' ');
+  if (surName) surName = capitalize(surName);
+  
+  // Build full name in format: FirstName FatherName Surname (with spaces, not dots)
+  const fullName = [firstName, fatherName, surName].filter(Boolean).join(' ');
 
   let roll = roll_number;
   if (!roll) {
@@ -140,9 +146,9 @@ router.post('/', (req, res) => {
   const existing = db.prepare('SELECT id FROM students WHERE standard_id = ? AND roll_number = ?').get(standard_id, roll);
   if (existing) return res.status(409).json({ error: `Roll number ${roll} already exists in this class` });
 
-  const result = db.prepare(`INSERT INTO students (standard_id, batch_id, name, roll_number, father_name, mother_name, dob, remarks, attendance_pct, admission_date, status, total_fees, elective_subjects)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
-      standard_id, batch_id || null, name, roll, father_name || '', mother_name || '', dob || '', remarks || '', attendance_pct || null,
+  const result = db.prepare(`INSERT INTO students (standard_id, batch_id, first_name, father_name, surname, name, roll_number, mother_name, dob, remarks, attendance_pct, admission_date, status, total_fees, elective_subjects)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+      standard_id, batch_id || null, firstName, fatherName, surName, fullName, roll, mother_name || '', dob || '', remarks || '', attendance_pct || null,
       admission_date || '', status || 'Active', parseFloat(total_fees) || 0, JSON.stringify(elective_subjects || [])
     );
   
@@ -153,46 +159,52 @@ router.post('/', (req, res) => {
   }
   
   const std = db.prepare('SELECT display_name FROM standards WHERE id = ?').get(standard_id);
-  logActivity('STUDENT_ADD', `Enrolled student ${name} (Roll: ${roll}) in ${std ? std.display_name : 'Class'}`);
+  logActivity('STUDENT_ADD', `Enrolled student ${fullName} (Roll: ${roll}) in ${std ? std.display_name : 'Class'}`);
   res.json({ success: true, id: result.lastInsertRowid });
 });
 
 // PUT /api/students/:id
 router.put('/:id', (req, res) => {
-  let { name, roll_number, father_name, mother_name, dob, remarks, attendance_pct, standard_id, batch_id, admission_date, status, total_fees, elective_subjects } = req.body;
+  let { first_name, father_name, surname, name, roll_number, mother_name, dob, remarks, attendance_pct, standard_id, batch_id, admission_date, status, total_fees, elective_subjects } = req.body;
   
-  // Format student name to FirstName.FatherName.Surname
-  let firstName = '';
-  let fName = father_name ? father_name.trim() : '';
-  let lName = '';
+  // Handle new format (first_name, father_name, surname) or legacy name field
+  let firstName = (first_name || '').trim();
+  let fatherName = (father_name || '').trim();
+  let surName = (surname || '').trim();
 
-  if (name.includes('.')) {
-    const parts = name.split('.');
-    firstName = parts[0] || '';
-    if (parts[1]) fName = parts[1];
-    if (parts[2]) lName = parts[2];
-  } else {
+  // If old 'name' field is provided, parse it
+  if (name && (!firstName || !surName)) {
     const parts = name.trim().split(/\s+/);
-    firstName = parts[0] || '';
-    if (parts.length > 2) {
-      if (!fName) {
-        fName = parts.slice(1, parts.length - 1).join(' ');
-      }
-      lName = parts[parts.length - 1] || '';
+    if (parts.length >= 3) {
+      firstName = firstName || parts[0];
+      fatherName = fatherName || parts.slice(1, -1).join(' ');
+      surName = surName || parts[parts.length - 1];
     } else if (parts.length === 2) {
-      lName = parts[1] || '';
+      firstName = firstName || parts[0];
+      surName = surName || parts[1];
+    } else if (parts.length === 1) {
+      firstName = firstName || parts[0];
     }
   }
-  name = `${firstName.trim()}.${fName.trim()}.${lName.trim()}`;
-  father_name = fName.trim();
+
+  if (!firstName) return res.status(400).json({ error: 'First name is required' });
+
+  // Capitalize first letter of each name part
+  const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  firstName = capitalize(firstName);
+  if (fatherName) fatherName = fatherName.split(' ').map(capitalize).join(' ');
+  if (surName) surName = capitalize(surName);
+  
+  // Build full name in format: FirstName FatherName Surname (with spaces, not dots)
+  const fullName = [firstName, fatherName, surName].filter(Boolean).join(' ');
 
   // Check roll number conflict (exclude self)
   const existing = db.prepare('SELECT id FROM students WHERE standard_id = ? AND roll_number = ? AND id != ?').get(standard_id, roll_number, req.params.id);
   if (existing) return res.status(409).json({ error: `Roll number ${roll_number} already exists in this class` });
 
-  db.prepare(`UPDATE students SET name=?, roll_number=?, father_name=?, mother_name=?, dob=?, remarks=?, attendance_pct=?, standard_id=?, batch_id=?, admission_date=?, status=?, total_fees=?, elective_subjects=?
+  db.prepare(`UPDATE students SET first_name=?, father_name=?, surname=?, name=?, roll_number=?, mother_name=?, dob=?, remarks=?, attendance_pct=?, standard_id=?, batch_id=?, admission_date=?, status=?, total_fees=?, elective_subjects=?
     WHERE id=?`).run(
-      name, roll_number, father_name || '', mother_name || '', dob || '', remarks || '', attendance_pct || null, standard_id, batch_id || null,
+      firstName, fatherName, surName, fullName, roll_number, mother_name || '', dob || '', remarks || '', attendance_pct || null, standard_id, batch_id || null,
       admission_date || '', status || 'Active', parseFloat(total_fees) || 0, JSON.stringify(elective_subjects || []), req.params.id
     );
   
@@ -202,7 +214,7 @@ router.put('/:id', (req, res) => {
     console.error('Error recalculating overall marks on update:', e);
   }
   
-  logActivity('STUDENT_UPDATE', `Student updated: ${name}`);
+  logActivity('STUDENT_UPDATE', `Student updated: ${fullName}`);
   res.json({ success: true });
 });
 

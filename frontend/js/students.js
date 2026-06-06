@@ -663,8 +663,6 @@ async function saveStudent(studentId) {
     return;
   }
   
-  const name = `${firstname.trim()}.${father.trim()}.${surname.trim()}`;
-  
   // Collect enrolled subject checkboxes
   const electiveCBs = $$('.st-elective-cb');
   const enrolledSubjectIds = [];
@@ -676,9 +674,11 @@ async function saveStudent(studentId) {
   const elective_subjects = { enrolledSubjectIds };
 
   const data = {
-    name, roll_number: roll || null,
+    first_name: firstname.trim(),
     father_name: father.trim(),
+    surname: surname.trim(),
     mother_name: mother.trim(),
+    roll_number: roll || null,
     dob: getVal('st-dob'),
     remarks: getVal('st-remarks'),
     attendance_pct: null,
@@ -1696,8 +1696,47 @@ async function saveDirectGridAdmissions() {
         dobParsed = dobInput;
       }
     }
+
+    studentsToInsert.push({
+      first_name: firstname,
+      father_name: father,
+      surname: surname,
+      mother_name: mother,
+      roll_number: roll || null,
+      dob: dobParsed,
+      standard_id: parseInt(stdId),
+      batch_id: batchId ? parseInt(batchId) : null,
+      total_fees: totalFees,
+      paid_fees: paidFees,
+      status: 'Active',
+      admission_date: new Date().toISOString().split('T')[0]
+    });
+  }
+  
+  if (studentsToInsert.length === 0) {
+    Toast.error('No Data', 'Please enter at least one student.');
+    return;
+  }
+  
+  try {
+    let successCount = 0;
+    for (const stu of studentsToInsert) {
+      try {
+        await API.students.add(stu);
+        successCount++;
+      } catch (err) {
+        console.error('Failed to add student:', stu, err);
+        Toast.error('Error', `Failed to add ${stu.first_name}: ${err.message}`);
+      }
+    }
     
-    const name = `${firstname}.${father}.${surname}`;
+    Toast.success('Bulk Admission Success', `${successCount} student(s) admitted successfully.`);
+    closeModal('direct-grid-admission-modal');
+    await loadStudents();
+  } catch (err) {
+    Toast.error('Bulk Admission Failed', err.message);
+  }
+}
     
     studentsToInsert.push({
       name,

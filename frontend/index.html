@@ -1718,9 +1718,20 @@
       ['login-email','login-password'].forEach(id => {
         document.getElementById(id)?.addEventListener('input', () => {
           document.getElementById(id).classList.remove('error');
-          document.getElementById('login-error').classList.add('hidden');
+          const errEl = document.getElementById('login-error');
+          if (errEl) {
+            errEl.classList.add('hidden');
+            errEl.style.display = 'none';
+          }
         });
       });
+      
+      // CRITICAL: Ensure error is hidden on page load
+      const loginError = document.getElementById('login-error');
+      if (loginError) {
+        loginError.classList.add('hidden');
+        loginError.style.display = 'none';
+      }
     });
 
     /* Expose loader control to auth.js */

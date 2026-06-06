@@ -6,7 +6,7 @@ const API = {
   async _req(method, url, data, isFormData = false) {
     const opts = {
       method,
-      credentials: 'same-origin'
+      credentials: 'include'  // Changed from 'same-origin' to 'include' for better compatibility
     };
     if (!isFormData) {
       opts.headers = { 'Content-Type': 'application/json' };
@@ -16,8 +16,10 @@ const API = {
     const res = await fetch(url, opts);
     
     if (res.status === 401) {
-      // Session expired — redirect to login
-      window.dispatchEvent(new CustomEvent('auth:expired'));
+      // Only trigger auth:expired if user was logged in before
+      if (window._isLoggedIn) {
+        window.dispatchEvent(new CustomEvent('auth:expired'));
+      }
       throw new Error('Session expired. Please login again.');
     }
     

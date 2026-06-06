@@ -50,9 +50,11 @@ async function renderDashboard() {
           <h3 style="font-weight:700;">Coaching &amp; School Exams Calendar</h3>
         </div>
         <div class="flex items-center gap-3">
-          <button class="btn btn-outline btn-sm btn-icon" id="cal-prev-month" onclick="navigateCalendar(-1)" style="padding: 2px 8px;">&larr;</button>
-          <span style="font-weight:700; color:var(--text-primary); font-size:1rem; min-width: 145px; text-align: center; display: inline-block;" id="cal-month-year">June 2026</span>
-          <button class="btn btn-outline btn-sm btn-icon" id="cal-next-month" onclick="navigateCalendar(1)" style="padding: 2px 8px;">&rarr;</button>
+          <button class="btn btn-outline btn-sm btn-icon" onclick="navigateCalendar(-12)" style="padding: 2px 8px;" title="Previous Year">«</button>
+          <button class="btn btn-outline btn-sm btn-icon" id="cal-prev-month" onclick="navigateCalendar(-1)" style="padding: 2px 8px;" title="Previous Month">&larr;</button>
+          <span style="font-weight:700; color:var(--text-primary); font-size:1rem; min-width: 160px; text-align: center; display: inline-block; cursor: pointer;" id="cal-month-year" onclick="showCalendarYearPicker()" title="Click to jump to specific year">June 2026</span>
+          <button class="btn btn-outline btn-sm btn-icon" id="cal-next-month" onclick="navigateCalendar(1)" style="padding: 2px 8px;" title="Next Month">&rarr;</button>
+          <button class="btn btn-outline btn-sm btn-icon" onclick="navigateCalendar(12)" style="padding: 2px 8px;" title="Next Year">»</button>
         </div>
       </div>
       <div class="card-body p-4">
@@ -892,6 +894,40 @@ function navigateCalendar(direction) {
   _currentCalendarDate.setMonth(_currentCalendarDate.getMonth() + direction);
   renderCalendarWidget();
 }
+
+function showCalendarYearPicker() {
+  const currentYear = _currentCalendarDate.getFullYear();
+  const currentMonth = _currentCalendarDate.getMonth();
+  const startYear = currentYear - 15;
+  const endYear = currentYear + 15;
+  
+  const years = [];
+  for (let y = endYear; y >= startYear; y--) {
+    years.push(y);
+  }
+  
+  createModal('year-picker-modal', '📅 Jump to Year', `
+    <div style="padding:var(--space-4)">
+      <div style="max-height:400px; overflow-y:auto; display:grid; grid-template-columns:repeat(5, 1fr); gap:8px;">
+        ${years.map(y => `
+          <button class="btn ${y === currentYear ? 'btn-primary' : 'btn-outline'}" 
+            onclick="jumpToYear(${y}); closeModal('year-picker-modal')" 
+            style="font-size:14px; padding:10px">
+            ${y}
+          </button>
+        `).join('')}
+      </div>
+    </div>
+  `, `<button class="btn btn-outline" onclick="closeModal('year-picker-modal')">Cancel</button>`, 'modal-sm');
+}
+
+function jumpToYear(year) {
+  _currentCalendarDate = new Date(year, _currentCalendarDate.getMonth(), 1);
+  renderCalendarWidget();
+}
+
+window.showCalendarYearPicker = showCalendarYearPicker;
+window.jumpToYear = jumpToYear;
 
 function openCalendarNoteModal(dateStr) {
   const notes = _calendarEventsData?.notes || [];

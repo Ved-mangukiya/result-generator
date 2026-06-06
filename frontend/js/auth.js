@@ -13,28 +13,49 @@ async function initAuth() {
     window.ApexLoader.show();
   }
   
+  // Set initial state - user is NOT logged in yet
+  window._isLoggedIn = false;
+  
   try {
     const me = await API.auth.me();
     if (me && me.onboarding_complete) {
+      // User has valid session - mark as logged in
+      window._isLoggedIn = true;
       // Hide loader after 2s and show app
       setTimeout(() => {
         if (window.ApexLoader) window.ApexLoader.hide();
         showApp(me);
       }, 2200);
     } else if (me) {
+      // User logged in but onboarding not complete
+      window._isLoggedIn = true;
       if (window.ApexLoader) window.ApexLoader.hide();
       showOnboarding();
     }
-  } catch {
-    // Not logged in — hide loader, show login
+  } catch (err) {
+    // Not logged in — hide loader, show login page WITHOUT error
     if (window.ApexLoader) window.ApexLoader.hide();
     showLoginPage();
+    // Don't show any error message here - this is normal for new visitors
   }
   
-  // Handle session expiry
+  // Handle session expiry during usage (not on initial load)
   window.addEventListener('auth:expired', () => {
-    showLoginPage();
-    Toast.warning('Session Expired', 'Please sign in again.');
+    // Only show "Session Expired" if user was previously logged in
+    if (window._isLoggedIn) {
+      window._isLoggedIn = false;
+      showLoginPage();
+      // Show error message only for actual session expiry
+      setTimeout(() => {
+        const errEl = document.getElementById('login-error');
+        const errText = document.getElementById('login-error-text');
+        if (errEl && errText) {
+          errText.textContent = 'Session expired. Please login again.';
+          errEl.classList.remove('hidden');
+          errEl.style.display = 'block';
+        }
+      }, 100);
+    }
   });
 }
 
@@ -49,8 +70,13 @@ function showLoginPage() {
   // Reset form
   const form = document.getElementById('login-form');
   if (form) form.reset();
+  
+  // IMPORTANT: Hide error message on page load
   const errEl = document.getElementById('login-error');
-  if (errEl) errEl.classList.add('hidden');
+  if (errEl) {
+    errEl.classList.add('hidden');
+    errEl.style.display = 'none';
+  }
 
   // Reset login button and spinner state
   const btn = document.getElementById('login-btn');
@@ -61,11 +87,20 @@ function showLoginPage() {
   if (btnText) btnText.textContent = 'Sign In to Dashboard';
   if (spinner) spinner.classList.add('hidden');
   if (arrow) arrow.style.display = '';
+  
+  // Clear error classes from inputs
+  const emailInput = document.getElementById('login-email');
+  const passwordInput = document.getElementById('login-password');
+  if (emailInput) emailInput.classList.remove('error');
+  if (passwordInput) passwordInput.classList.remove('error');
 }
 
 function showApp(me) {
   hide('login-page');
   hide('onboarding-overlay');
+  
+  // Mark user as logged in
+  window._isLoggedIn = true;
   
   // Update UI
   const email = me?.email || 'admin';
@@ -356,6 +391,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Logout button
   document.getElementById('logout-btn')?.addEventListener('click', async () => {
     await API.auth.logout();
+    window._isLoggedIn = false;
     showLoginPage();
     Toast.info('Signed Out', 'You have been logged out successfully.');
   });
