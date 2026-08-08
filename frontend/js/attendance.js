@@ -16,7 +16,7 @@ let attendanceState = {
 async function renderAttendancePage(container) {
   // Fetch coaching profile to get attendance mode
   try {
-    const profileRes = await API.getCoachingProfile();
+    const profileRes = await API.coaching.get();
     if (profileRes && profileRes.profile && profileRes.profile.attendance_mode) {
       attendanceState.attendanceMode = profileRes.profile.attendance_mode;
     }
@@ -186,7 +186,7 @@ async function loadBatchesAndSubjects() {
 
   // Load batches
   try {
-    const res = await API.getBatches(stdId);
+    const res = await API.batches.list(stdId);
     const batchSelect = document.getElementById('att-batch-select');
     if (batchSelect) {
       batchSelect.innerHTML = '<option value="">All Batches</option>' + 
@@ -200,7 +200,7 @@ async function loadBatchesAndSubjects() {
   const subjectSelect = document.getElementById('att-subject-select');
   if (subjectSelect) {
     try {
-      const res = await API.getSubjects(stdId);
+      const res = await API.subjects.list(stdId);
       subjectSelect.innerHTML = '<option value="">Select Subject...</option>' +
         (res.subjects || []).map(s => `<option value="${s.id}">${s.name}</option>`).join('');
     } catch (e) {
@@ -222,7 +222,7 @@ async function loadAttendanceData() {
 
   try {
     // 1. Fetch students for standard & batch
-    const stRes = await API.getStudents(stdId, attendanceState.selectedBatchId);
+    const stRes = await API.students.list(stdId, attendanceState.selectedBatchId);
     attendanceState.students = stRes.students || [];
 
     // 2. Fetch existing attendance records for date

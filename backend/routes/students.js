@@ -188,10 +188,13 @@ router.post('/', (req, res) => {
   const existing = db.prepare('SELECT id FROM students WHERE standard_id = ? AND roll_number = ?').get(standard_id, roll);
   if (existing) return res.status(409).json({ error: `Roll number ${roll} already exists in this class` });
 
-  const result = db.prepare(`INSERT INTO students (standard_id, batch_id, first_name, father_name, surname, name, roll_number, mother_name, dob, remarks, attendance_pct, admission_date, status, total_fees, elective_subjects)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
-      standard_id, batch_id || null, firstName, fatherName, surName, fullName, roll, mother_name || '', dob || '', remarks || '', attendance_pct || null,
-      admission_date || '', status || 'Active', parseFloat(total_fees) || 0, JSON.stringify(elective_subjects || [])
+  const bcrypt = require('bcryptjs');
+  const parentHash = bcrypt.hashSync('parent123', 10);
+
+  const result = db.prepare(`INSERT INTO students (standard_id, batch_id, first_name, father_name, surname, name, roll_number, mother_name, dob, remarks, attendance_pct, admission_date, status, total_fees, elective_subjects, parent_username, parent_password_hash)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+      standard_id, batch_id || null, firstName, fatherName, surName, fullName, roll, mother_name || '', dob || '', remarks || '', attendance_pct || 100,
+      admission_date || '', status || 'Active', parseFloat(total_fees) || 0, JSON.stringify(elective_subjects || []), roll, parentHash
     );
   
   try {
@@ -202,7 +205,11 @@ router.post('/', (req, res) => {
   
   const std = db.prepare('SELECT display_name FROM standards WHERE id = ?').get(standard_id);
   logActivity('STUDENT_ADD', `Enrolled student ${fullName} (Roll: ${roll}) in ${std ? std.display_name : 'Class'}`);
-  res.json({ success: true, id: result.lastInsertRowid });
+  res.json({ 
+    success: true, 
+    id: result.lastInsertRowid, 
+    credentials: { username: roll, password: 'parent123' } 
+  });
 });
 
 // PUT /api/students/:id

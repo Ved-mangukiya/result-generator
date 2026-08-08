@@ -26,6 +26,8 @@ const batchesRoutes = require('./routes/batches');
 const tokenService = require('./services/tokenService');
 const calendarNotesRoutes = require('./routes/calendarNotes');
 const attendanceRoutes = require('./routes/attendance');
+const teachersRoutes = require('./routes/teachers');
+const timetableRoutes = require('./routes/timetable');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -117,6 +119,8 @@ app.use('/api/promotions', requireAuth, promotionsRoutes);
 app.use('/api/batches', requireAuth, batchesRoutes);
 app.use('/api/calendar-notes', requireAuth, calendarNotesRoutes);
 app.use('/api/attendance', requireAuth, attendanceRoutes);
+app.use('/api/teachers', requireAuth, teachersRoutes);
+app.use('/api/timetable', requireAuth, timetableRoutes);
 
 // Dashboard stats
 app.get('/api/dashboard', requireAuth, (req, res) => {

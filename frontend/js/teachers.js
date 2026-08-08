@@ -28,7 +28,10 @@ async function renderTeachersPage(container) {
         <p>Faculty workspace for fast class attendance taking, test grading &amp; student monitoring.</p>
       </div>
       <div class="page-header-actions">
-        <span class="badge badge-info" style="padding:6px 14px;">👩‍🏫 Faculty Role Active</span>
+        <button class="btn btn-primary btn-sm" id="add-faculty-btn" onclick="showAddFacultyModal()">
+          <span>➕ Add New Faculty</span>
+        </button>
+        <span class="badge badge-info" style="padding:6px 14px;">👩‍🏫 Faculty Portal</span>
       </div>
     </div>
 
@@ -36,7 +39,62 @@ async function renderTeachersPage(container) {
     <div class="tabs mb-6" id="teacher-tabs">
       <button class="tab-btn active" data-tab="quick-attendance">📋 Roll Call Attendance Desk</button>
       <button class="tab-btn" data-tab="test-grading">✏️ Test Marks Grading Desk</button>
+      <button class="tab-btn" data-tab="faculty-timetable">🗓️ Faculty Lecture Timetable</button>
       <button class="tab-btn" data-tab="class-overview">📊 Class Performance Overview</button>
+      <button class="tab-btn" data-tab="faculty-list">👩‍🏫 Faculty Directory &amp; Logins</button>
+    </div>
+
+    <!-- Tab: Faculty Timetable -->
+    <div id="teacher-tab-faculty-timetable" class="teacher-tab-content" style="display:none;">
+      <div class="card">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:var(--space-5);">
+          <h3>🗓️ Weekly Faculty Teaching Schedule</h3>
+          <span class="badge badge-info">Monday — Saturday</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Day</th>
+                <th>Time Slot</th>
+                <th>Subject</th>
+                <th>Assigned Class</th>
+                <th>Room No</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge badge-primary">Monday</span></td>
+                <td class="font-mono font-bold">08:30 AM - 09:30 AM</td>
+                <td class="td-primary">Mathematics</td>
+                <td>Class 10 (GSEB)</td>
+                <td>Lecture Hall 101</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-primary">Monday</span></td>
+                <td class="font-mono font-bold">09:30 AM - 10:30 AM</td>
+                <td class="td-primary">Science &amp; Physics</td>
+                <td>Class 10 (GSEB)</td>
+                <td>Lecture Hall 101</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-secondary">Tuesday</span></td>
+                <td class="font-mono font-bold">08:30 AM - 09:30 AM</td>
+                <td class="td-primary">Mathematics</td>
+                <td>Class 12 Science</td>
+                <td>Lab 202</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-secondary">Wednesday</span></td>
+                <td class="font-mono font-bold">10:45 AM - 11:45 AM</td>
+                <td class="td-primary">English Literature</td>
+                <td>Class 10 (GSEB)</td>
+                <td>Lecture Hall 101</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <!-- Tab 1: Quick Attendance -->
@@ -280,6 +338,76 @@ async function submitTeacherTestMarks(testId) {
     if (saveBtn) saveBtn.classList.remove('btn-loading');
   }
 }
+
+async function showAddFacultyModal() {
+  const modalHtml = `
+    <div id="add-faculty-modal-overlay" class="modal-overlay">
+      <div class="modal modal-md">
+        <div class="modal-header">
+          <h3>➕ Add New Faculty Member</h3>
+          <button class="modal-close" onclick="document.getElementById('add-faculty-modal-overlay').remove()">✕</button>
+        </div>
+        <div class="modal-body">
+          <form id="add-faculty-form">
+            <div class="form-group mb-4">
+              <label class="form-label">Full Name <span class="required">*</span></label>
+              <input type="text" id="fac-name" class="form-control" placeholder="e.g. Prof. Ramesh Verma" required>
+            </div>
+            <div class="form-group mb-4">
+              <label class="form-label">Email / Login ID (Optional - Auto generated if blank)</label>
+              <input type="email" id="fac-email" class="form-control" placeholder="e.g. ramesh@apex.local">
+            </div>
+            <div class="form-group mb-4">
+              <label class="form-label">Phone Number</label>
+              <input type="tel" id="fac-phone" class="form-control" placeholder="+91 9876543210">
+            </div>
+            <div class="form-group mb-4">
+              <label class="form-label">Assigned Classes / Standards</label>
+              <input type="text" id="fac-standards" class="form-control" placeholder="e.g. Class 10, Class 12 Science" value="Class 10, Class 12">
+            </div>
+            <div class="form-group mb-4">
+              <label class="form-label">Subjects Taught</label>
+              <input type="text" id="fac-subjects" class="form-control" placeholder="e.g. Mathematics, Physics" value="Mathematics">
+            </div>
+            <div class="form-group mb-4">
+              <label class="form-label">Password (Default: teacher123)</label>
+              <input type="text" id="fac-password" class="form-control" value="teacher123">
+            </div>
+            <div class="modal-footer" style="padding-right:0; padding-left:0;">
+              <button type="button" class="btn btn-outline" onclick="document.getElementById('add-faculty-modal-overlay').remove()">Cancel</button>
+              <button type="submit" class="btn btn-primary">Create Faculty Account</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+  document.getElementById('add-faculty-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      const name = document.getElementById('fac-name').value;
+      const email = document.getElementById('fac-email').value;
+      const phone = document.getElementById('fac-phone').value;
+      const assigned_standards = document.getElementById('fac-standards').value;
+      const subjects_taught = document.getElementById('fac-subjects').value;
+      const password = document.getElementById('fac-password').value;
+
+      const res = await API.request('/teachers', 'POST', {
+        name, email, phone, assigned_standards, subjects_taught, password
+      });
+
+      document.getElementById('add-faculty-modal-overlay').remove();
+      Utils.showToast('✅ Faculty Account Created!', `Login: ${res.credentials.username} | Password: ${res.credentials.password}`);
+    } catch (err) {
+      Utils.showToast('❌ Failed to add faculty: ' + err.message, 'danger');
+    }
+  });
+}
+
+window.showAddFacultyModal = showAddFacultyModal;
 
 window.TeachersModule = {
   renderTeachersPage

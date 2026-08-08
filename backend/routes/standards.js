@@ -16,6 +16,27 @@ const STREAMS = [
   'Custom'
 ];
 
+// GET /api/standards — list all standards across all boards
+router.get('/', (req, res) => {
+  const { board_id } = req.query;
+  let query = `
+    SELECT s.*, b.name as board_name, b.short_name as board_short
+    FROM standards s
+    JOIN boards b ON s.board_id = b.id
+  `;
+  const params = [];
+
+  if (board_id) {
+    query += ` WHERE s.board_id = ?`;
+    params.push(board_id);
+  }
+
+  query += ` ORDER BY b.name ASC, s.standard_number ASC, s.stream ASC`;
+
+  const standards = db.prepare(query).all(...params);
+  res.json({ standards });
+});
+
 // GET /api/standards/streams
 router.get('/streams', (req, res) => {
   res.json(STREAMS);

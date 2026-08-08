@@ -29,6 +29,7 @@ async function renderStudents(params = {}) {
         <p>Manage student profiles, enrollment statuses, and tuition fee ledgers.</p>
       </div>
       <div class="page-header-actions">
+        <button class="btn btn-outline btn-sm" onclick="showCredentialExportModal()">📇 Credential Slips</button>
         <button class="btn btn-outline btn-sm" onclick="resequenceRollNumbers()">${Icons?.render?.('refresh',{size:14}) || ''} Resequence Rolls</button>
         <button class="btn btn-outline btn-sm" onclick="Router.navigate('import')">${Icons?.render?.('import',{size:14}) || ''} Import Excel</button>
         <button class="btn btn-outline btn-sm" onclick="showDirectGridAdmissionModal()">${Icons?.render?.('chart',{size:14}) || ''} Direct Grid Entry</button>
@@ -847,6 +848,7 @@ async function saveStudent(studentId) {
     let id = studentId;
     if (studentId) {
       await API.students.update(studentId, data);
+      Toast.success('Student Saved', 'Student details updated successfully.');
     } else {
       const res = await API.students.add(data);
       id = res.id;
@@ -854,6 +856,11 @@ async function saveStudent(studentId) {
       // Resequence if requested
       if (rollMode === 'resequence') {
         await API.students.resequence(parseInt(standardId));
+      }
+
+      if (res.credentials) {
+        Toast.success('Student Enrolled & Parent Login Created!', 
+          `Parent Credentials -> Roll No / Login: ${res.credentials.username} | Password: ${res.credentials.password}`);
       }
     }
     
@@ -1878,4 +1885,251 @@ function filterFeesTable(val) {
   });
 }
 window.filterFeesTable = filterFeesTable;
+
+async function showCredentialExportModal() {
+  let standards = [];
+  try {
+    const res = await API.getStandards();
+    standards = res.standards || [];
+  } catch (e) {}
+
+  const modalHtml = `
+    <div id="cred-export-modal-overlay" class="modal-overlay">
+      <div class="modal modal-md">
+        <div class="modal-header">
+          <h3>📇 Export Student &amp; Parent Login Credentials</h3>
+          <button class="modal-close" onclick="document.getElementById('cred-export-modal-overlay').remove()">✕</button>
+        </div>
+        <div class="modal-body">
+          <p class="text-sm text-muted mb-4">Choose how you want to export login credentials for students and parents to distribute before classes start.</p>
+          
+          <div class="form-group mb-4">
+            <label class="form-label">Select Class / Standard <span class="required">*</span></label>
+            <select id="cred-export-standard-id" class="form-control">
+              <option value="all">All Standards (All Students)</option>
+              ${standards.map(s => `<option value="${s.id}">${s.display_name}</option>`).join('')}
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="card p-4 text-center cursor-pointer hover:border-primary" onclick="generateCredentialsPDF('tabular')" style="border:2px solid var(--border); transition:all 0.2s ease;">
+              <div style="font-size:2rem;" class="mb-2">📊</div>
+              <h4 class="font-bold mb-1">Option 1: Bulk Credential Ledger PDF</h4>
+              <p class="text-xs text-muted">A clean tabular A4 sheet listing Roll No, Name, Username, Default Password, and Login URL.</p>
+            </div>
+
+            <div class="card p-4 text-center cursor-pointer hover:border-primary" onclick="generateCredentialsPDF('slips')" style="border:2px solid var(--border); transition:all 0.2s ease;">
+              <div style="font-size:2rem;" class="mb-2">📜</div>
+              <h4 class="font-bold mb-1">Option 2: Individual Welcome Cards PDF</h4>
+              <p class="text-xs text-muted">Official 1-page printable Welcome Slips for each student with logo, credentials &amp; login instructions.</p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="document.getElementById('cred-export-modal-overlay').remove()">Close</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+async function generateCredentialsPDF(mode) {
+  const stdId = document.getElementById('cred-export-standard-id')?.value || 'all';
+  document.getElementById('cred-export-modal-overlay')?.remove();
+
+  try {
+    let url = `/api/students`;
+    if (stdId !== 'all') {
+      url += `?standard_id=${stdId}`;
+    }
+    const res = await API.request(url);
+    const students = res.students || [];
+
+    if (students.length === 0) {
+      Toast.warning('No Students Found', 'Please add students first before exporting credentials.');
+      return;
+    }
+
+    const coachingRes = await API.coaching.get().catch(() => ({}));
+    const coachingName = coachingRes.name || 'Apex Executive Coaching Institute';
+    const coachingAddress = coachingRes.address || 'Surat, Gujarat';
+    const coachingPhone = coachingRes.phone || '+91 98250 12345';
+
+    const printWin = window.open('', '_blank');
+    if (!printWin) {
+      Toast.error('Popup Blocked', 'Please allow popups to view credential PDF.');
+      return;
+    }
+
+    if (mode === 'tabular') {
+      printWin.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>${coachingName} — Student Credentials Roster</title>
+          <style>
+            body { font-family: 'DM Sans', Arial, sans-serif; padding: 30px; color: #1B2A4A; }
+            .header { text-align: center; margin-bottom: 25px; border-bottom: 2px solid #1B2A4A; padding-bottom: 15px; }
+            h2 { margin: 0 0 5px 0; color: #1B2A4A; font-family: serif; }
+            p { margin: 0; font-size: 13px; color: #64748B; }
+            table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+            th, td { border: 1px solid #CBD5E1; padding: 10px 12px; text-align: left; }
+            th { background: #1B2A4A; color: white; }
+            tr:nth-child(even) { background: #F8FAFC; }
+            .code { font-family: monospace; font-weight: bold; background: #E2E8F0; padding: 2px 6px; border-radius: 4px; }
+            .footer { margin-top: 30px; font-size: 11px; text-align: center; color: #94A3B8; }
+            @media print { .no-print { display: none; } }
+          </style>
+        </head>
+        <body>
+          <div class="no-print" style="margin-bottom:20px; text-align:right;">
+            <button onclick="window.print()" style="padding:10px 20px; background:#1B2A4A; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">🖨️ Print / Download PDF</button>
+          </div>
+          <div class="header">
+            <h2>${coachingName}</h2>
+            <p>${coachingAddress} | Phone: ${coachingPhone}</p>
+            <h3 style="margin-top:10px; color:#C9A96E;">📇 STUDENT &amp; PARENT PORTAL LOGIN ROSTER</h3>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Roll No</th>
+                <th>Student Full Name</th>
+                <th>Father's Name</th>
+                <th>Login Username</th>
+                <th>Default Password</th>
+                <th>Portal Web Address</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${students.map(st => `
+                <tr>
+                  <td><span class="code">${st.roll_number || 'TEMP'}</span></td>
+                  <td><strong>${st.name}</strong></td>
+                  <td>${st.father_name || '-'}</td>
+                  <td><span class="code">${st.parent_username || st.roll_number}</span></td>
+                  <td><span class="code">parent123</span></td>
+                  <td>http://localhost:3000</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          <div class="footer">
+            Generated on ${new Date().toLocaleDateString()} • Confidential Official Institute Document
+          </div>
+        </body>
+        </html>
+      `);
+    } else {
+      // Individual Welcome Cards (1 page per student)
+      printWin.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>${coachingName} — Student Welcome Cards</title>
+          <style>
+            body { font-family: 'DM Sans', Arial, sans-serif; margin: 0; padding: 0; background: #F1F5F9; color: #1B2A4A; }
+            .card-page { page-break-after: always; width: 210mm; min-height: 297mm; margin: 0 auto; background: white; padding: 40px; box-sizing: border-box; position: relative; }
+            .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px double #1B2A4A; padding-bottom: 20px; margin-bottom: 30px; }
+            .coaching-title { font-family: serif; font-size: 24px; font-weight: bold; color: #1B2A4A; margin: 0 0 4px 0; }
+            .coaching-sub { font-size: 12px; color: #64748B; margin: 0; }
+            .badge { background: #1B2A4A; color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+            .stu-box { background: #F8FAFC; border: 1.5px solid #CBD5E1; border-radius: 12px; padding: 20px; margin-bottom: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+            .stu-box div { font-size: 14px; }
+            .label { font-size: 11px; font-weight: bold; text-transform: uppercase; color: #64748B; display: block; margin-bottom: 2px; }
+            .cred-card { background: linear-gradient(135deg, #1B2A4A, #243357); color: white; border-radius: 16px; padding: 25px; margin-bottom: 30px; box-shadow: 0 10px 25px rgba(27,42,74,0.2); }
+            .cred-title { font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: #C9A96E; font-weight: bold; margin-bottom: 15px; }
+            .cred-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+            .val-box { background: rgba(255,255,255,0.12); padding: 12px 16px; border-radius: 10px; font-family: monospace; font-size: 16px; font-weight: bold; border: 1px solid rgba(255,255,255,0.2); }
+            .steps-list { line-height: 1.8; font-size: 13.5px; color: #334155; margin-bottom: 30px; }
+            .steps-list li { margin-bottom: 8px; }
+            .use-cases { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
+            .uc-card { background: #F1F5F9; padding: 14px; border-radius: 10px; font-size: 12px; }
+            .uc-card strong { color: #1B2A4A; display: block; margin-bottom: 4px; font-size: 13px; }
+            .footer { position: absolute; bottom: 40px; left: 40px; right: 40px; border-top: 1px solid #E2E8F0; padding-top: 15px; display: flex; justify-content: space-between; font-size: 11px; color: #94A3B8; }
+            @media print { body { background: none; } .no-print { display: none; } }
+          </style>
+        </head>
+        <body>
+          <div class="no-print" style="padding:20px; text-align:center; background:#1B2A4A;">
+            <button onclick="window.print()" style="padding:12px 30px; background:#C9A96E; color:#1B2A4A; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size:16px;">🖨️ Print All Welcome Cards (${students.length} Pages)</button>
+          </div>
+          ${students.map(st => `
+            <div class="card-page">
+              <div class="header">
+                <div>
+                  <h1 class="coaching-title">${coachingName}</h1>
+                  <p class="coaching-sub">${coachingAddress} | Tel: ${coachingPhone}</p>
+                </div>
+                <span class="badge">OFFICIAL PARENT &amp; STUDENT WELCOME SLIP</span>
+              </div>
+
+              <div class="stu-box">
+                <div><span class="label">Student Full Name</span><strong>${st.name}</strong></div>
+                <div><span class="label">Roll Number</span><strong>${st.roll_number || 'TEMP'}</strong></div>
+                <div><span class="label">Father's Name</span>${st.father_name || '-'}</div>
+                <div><span class="label">Enrolled Status</span><span style="color:#2EB8A0;font-weight:bold;">Active Student</span></div>
+              </div>
+
+              <div class="cred-card">
+                <div class="cred-title">🔐 YOUR OFFICIAL APP LOGIN CREDENTIALS</div>
+                <div class="cred-grid">
+                  <div>
+                    <span class="label" style="color:rgba(255,255,255,0.7)">Username / Login ID</span>
+                    <div class="val-box">${st.parent_username || st.roll_number}</div>
+                  </div>
+                  <div>
+                    <span class="label" style="color:rgba(255,255,255,0.7)">Default Password</span>
+                    <div class="val-box">parent123</div>
+                  </div>
+                </div>
+              </div>
+
+              <h3 style="margin-bottom:10px; color:#1B2A4A;">🚀 How to Access Your Student/Parent Portal:</h3>
+              <ol class="steps-list">
+                <li>Open web browser on your smartphone or computer and go to: <strong>http://localhost:3000</strong></li>
+                <li>On the login card, select the <strong>👨‍👩‍👧 Parent / Student</strong> role pill.</li>
+                <li>Enter your assigned <strong>Username</strong> and <strong>Password</strong> shown above.</li>
+                <li>Press <strong>Sign In to Dashboard</strong> to immediately view your personal portal.</li>
+              </ol>
+
+              <h3 style="margin-bottom:12px; color:#1B2A4A;">💡 What You Can Track Live on the Portal:</h3>
+              <div class="use-cases">
+                <div class="uc-card">
+                  <strong>✅ Daily Attendance Tracker</strong>
+                  View live daily roll call status (Present, Absent, Late) logged by faculty.
+                </div>
+                <div class="uc-card">
+                  <strong>🗓️ Lecture Timetable</strong>
+                  Check weekly subject schedules, faculty names, and lecture room numbers.
+                </div>
+                <div class="uc-card">
+                  <strong>📊 Exam Marks &amp; Bar Graphs</strong>
+                  Track midterm and unit test scores, subject percentages, and distinction ranks.
+                </div>
+                <div class="uc-card">
+                  <strong>📄 Printable Report Cards</strong>
+                  Download official A4 performance report cards with 1-click PDF export.
+                </div>
+              </div>
+
+              <div class="footer">
+                <span>Direct Support: contact@apexcoaching.edu.in</span>
+                <span>${coachingName} © 2026</span>
+              </div>
+            </div>
+          `).join('')}
+        </body>
+        </html>
+      `);
+    }
+    printWin.document.close();
+  } catch (err) {
+    Toast.error('Export Error', err.message);
+  }
+}
+
+window.showCredentialExportModal = showCredentialExportModal;
+window.generateCredentialsPDF = generateCredentialsPDF;
 

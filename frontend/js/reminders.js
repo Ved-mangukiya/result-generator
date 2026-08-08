@@ -2,12 +2,14 @@
    REMINDERS.JS — Timetable & Reminders Notice Exporter
    ═══════════════════════════════════════════════ */
 
-let _currentReminderTab = 'vacation';
+let _currentReminderTab = 'timetable_builder';
 
 function renderReminders(params = {}) {
   setPageTitle('Timetables & Reminders', 'Timetables & Reminders');
 
-  if (params && params.testId) {
+  if (params && params.tab) {
+    _currentReminderTab = params.tab;
+  } else if (params && params.testId) {
     _currentReminderTab = 'exam_schedule';
   }
 
@@ -21,6 +23,7 @@ function renderReminders(params = {}) {
 
     <!-- Reminder Type Tabs -->
     <div class="tabs mb-6">
+      <button class="btn ${_currentReminderTab === 'timetable_builder' ? 'btn-primary' : 'btn-outline'} btn-sm" id="btn-rem-timetable" onclick="switchReminderTab('timetable_builder')">🗓️ Timetable Builder</button>
       <button class="btn ${_currentReminderTab === 'vacation' ? 'btn-primary' : 'btn-outline'} btn-sm" id="btn-rem-vacation" onclick="switchReminderTab('vacation')">🌴 Vacation Notice</button>
       <button class="btn ${_currentReminderTab === 'exam_schedule' ? 'btn-primary' : 'btn-outline'} btn-sm" id="btn-rem-exam" onclick="switchReminderTab('exam_schedule')">📅 Exam Timetable</button>
       <button class="btn ${_currentReminderTab === 'starting_date' ? 'btn-primary' : 'btn-outline'} btn-sm" id="btn-rem-start" onclick="switchReminderTab('starting_date')">🚀 Batch Start Date</button>
@@ -58,11 +61,13 @@ function renderReminders(params = {}) {
 function switchReminderTab(tab, params = {}) {
   _currentReminderTab = tab;
 
+  const btnTT = document.getElementById('btn-rem-timetable');
   const btnVac = document.getElementById('btn-rem-vacation');
   const btnExm = document.getElementById('btn-rem-exam');
   const btnStr = document.getElementById('btn-rem-start');
   const btnGen = document.getElementById('btn-rem-general');
 
+  if (btnTT) btnTT.className = `btn ${tab === 'timetable_builder' ? 'btn-primary' : 'btn-outline'} btn-sm`;
   if (btnVac) btnVac.className = `btn ${tab === 'vacation' ? 'btn-primary' : 'btn-outline'} btn-sm`;
   if (btnExm) btnExm.className = `btn ${tab === 'exam_schedule' ? 'btn-primary' : 'btn-outline'} btn-sm`;
   if (btnStr) btnStr.className = `btn ${tab === 'starting_date' ? 'btn-primary' : 'btn-outline'} btn-sm`;
@@ -71,6 +76,12 @@ function switchReminderTab(tab, params = {}) {
   const formTitle = document.getElementById('reminder-form-title');
   const formBody = document.getElementById('reminder-form-body');
   if (!formBody) return;
+
+  if (tab === 'timetable_builder') {
+    formTitle.textContent = '🗓️ Manage Class Timetable Slots';
+    renderTimetableBuilderForm(formBody);
+    return;
+  }
 
   if (tab === 'vacation') {
     formTitle.textContent = '🌴 Compose Vacation Notice';
@@ -441,6 +452,168 @@ async function onReminderCycleChange(cycleId) {
     Toast.error('Load Failed', 'Failed to load cycle details: ' + err.message);
   }
 }
+
+async function renderTimetableBuilderForm(container) {
+  let boards = [];
+  try {
+    boards = await API.boards.list();
+  } catch (e) {}
+
+  let allStandards = [];
+  try {
+    const res = await API.getStandards();
+    allStandards = res.standards || [];
+  } catch (e) {}
+
+  let slots = [];
+  try {
+    const ttRes = await API.request('/timetable');
+    slots = ttRes.slots || [];
+  } catch (e) {}
+
+  container.innerHTML = `
+    <form id="admin-tt-slot-form" class="mb-6">
+      <div class="form-grid mb-4">
+        <div class="form-group">
+          <label class="form-label">1. Select Educational Board <span class="required">*</span></label>
+          <select id="tt-board-id" class="form-control" required>
+            <option value="all">-- All Boards --</option>
+            ${boards.map(b => `<option value="${b.id}">${b.name} (${b.short_name})</option>`).join('')}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">2. Select Class / Standard <span class="required">*</span></label>
+          <select id="tt-standard-id" class="form-control" required>
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+      </div>
+
+      <div class="form-grid mb-4">
+        <div class="form-group">
+          <label class="form-label">Day of Week <span class="required">*</span></label>
+          <select id="tt-day-of-week" class="form-control">
+            <option value="Monday">Monday</option>
+            <option value="Tuesday">Tuesday</option>
+            <option value="Wednesday">Wednesday</option>
+            <option value="Thursday">Thursday</option>
+            <option value="Friday">Friday</option>
+            <option value="Saturday">Saturday</option>
+          </select>
+        </div>
+
+      <div class="form-grid mb-4">
+        <div class="form-group">
+          <label class="form-label">Time Slot <span class="required">*</span></label>
+          <input type="text" id="tt-time-slot" class="form-control" placeholder="e.g. 08:30 AM - 09:30 AM" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Subject Name <span class="required">*</span></label>
+          <input type="text" id="tt-subject-name" class="form-control" placeholder="e.g. Mathematics" required>
+        </div>
+      </div>
+
+      <div class="form-grid mb-6">
+        <div class="form-group">
+          <label class="form-label">Assigned Faculty Member</label>
+          <input type="text" id="tt-teacher-name" class="form-control" placeholder="e.g. Prof. Rajesh Sharma">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Room Number / Lab</label>
+          <input type="text" id="tt-room-no" class="form-control" placeholder="e.g. Lecture Hall 101" value="Lecture Hall 101">
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-3">
+        <button type="submit" class="btn btn-primary">➕ Save Timetable Slot</button>
+      </div>
+    </form>
+
+    <h4 class="font-bold mb-3">📋 Current Scheduled Lecture Slots (${slots.length})</h4>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Day</th>
+            <th>Time Slot</th>
+            <th>Subject</th>
+            <th>Faculty</th>
+            <th>Room</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${slots.length > 0 ? slots.map(s => `
+            <tr>
+              <td><span class="badge badge-primary">${s.day_of_week}</span></td>
+              <td class="font-mono font-bold">${s.time_slot}</td>
+              <td class="td-primary">${s.subject_name}</td>
+              <td>${s.teacher_name || '-'}</td>
+              <td>${s.room_no || 'Room 101'}</td>
+              <td>
+                <button type="button" class="btn btn-ghost btn-icon-sm text-danger" onclick="deleteTimetableSlot(${s.id})">🗑️</button>
+              </td>
+            </tr>
+          `).join('') : `<tr><td colspan="6" class="text-center text-muted" style="padding:var(--space-6)">No timetable slots created yet.</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  const boardSelect = document.getElementById('tt-board-id');
+  const stdSelect = document.getElementById('tt-standard-id');
+
+  const populateStandards = () => {
+    const selectedBoardId = boardSelect ? boardSelect.value : 'all';
+    let filtered = allStandards;
+    if (selectedBoardId !== 'all') {
+      filtered = allStandards.filter(s => String(s.board_id) === String(selectedBoardId));
+    }
+
+    if (filtered.length === 0) {
+      stdSelect.innerHTML = `<option value="">No classes found for this board</option>`;
+      return;
+    }
+
+    stdSelect.innerHTML = filtered.map(s => `
+      <option value="${s.id}">[${s.board_short || 'Board'}] ${s.display_name}</option>
+    `).join('');
+  };
+
+  populateStandards();
+  boardSelect?.addEventListener('change', populateStandards);
+
+  document.getElementById('admin-tt-slot-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      const standard_id = document.getElementById('tt-standard-id').value;
+      const day_of_week = document.getElementById('tt-day-of-week').value;
+      const time_slot = document.getElementById('tt-time-slot').value;
+      const subject_name = document.getElementById('tt-subject-name').value;
+      const teacher_name = document.getElementById('tt-teacher-name').value;
+      const room_no = document.getElementById('tt-room-no').value;
+
+      await API.request('/timetable', 'POST', { standard_id, day_of_week, time_slot, subject_name, teacher_name, room_no });
+      Toast.success('Slot Created', 'Timetable lecture slot saved successfully.');
+      switchReminderTab('timetable_builder');
+    } catch (err) {
+      Toast.error('Save Failed', err.message);
+    }
+  });
+}
+
+async function deleteTimetableSlot(id) {
+  try {
+    await API.request(`/timetable/${id}`, 'DELETE');
+    Toast.success('Slot Deleted', 'Timetable slot removed.');
+    switchReminderTab('timetable_builder');
+  } catch (err) {
+    Toast.error('Delete Failed', err.message);
+  }
+}
+
+window.deleteTimetableSlot = deleteTimetableSlot;
 
 // Expose globals
 window.renderReminders = renderReminders;

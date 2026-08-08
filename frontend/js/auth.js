@@ -142,17 +142,54 @@ function showLoginPage() {
 function showApp(me) {
   hide('login-page');
   hide('onboarding-overlay');
-  
-  // Mark user as logged in
+
   window._isLoggedIn = true;
-  
-  // Update UI
-  const email = me?.email || 'admin';
-  document.getElementById('topbar-admin-email').textContent = email.split('@')[0];
-  document.getElementById('admin-avatar-initials').textContent = email[0].toUpperCase();
-  
+  const role = me?.role || 'admin';
+  window._currentUserRole = role;
+
+  const adminChipEmail = document.getElementById('topbar-admin-email');
+  const avatarInitials = document.getElementById('admin-avatar-initials');
+
+  if (role === 'teacher') {
+    if (adminChipEmail) adminChipEmail.textContent = me?.name || 'Faculty';
+    if (avatarInitials) avatarInitials.textContent = 'F';
+    // Faculty can see: their portal desk, attendance, timetable view
+    $$('#sidebar .nav-item[data-page]').forEach(item => {
+      const page = item.dataset.page;
+      if (['teachers', 'attendance', 'tests'].includes(page)) {
+        item.style.display = 'flex';
+      } else {
+        item.style.display = 'none';
+      }
+    });
+  } else if (role === 'parent') {
+    if (adminChipEmail) adminChipEmail.textContent = me?.name || 'Parent';
+    if (avatarInitials) avatarInitials.textContent = 'P';
+    // Parent/Student can see: their portal
+    $$('#sidebar .nav-item[data-page]').forEach(item => {
+      const page = item.dataset.page;
+      if (['parents'].includes(page)) {
+        item.style.display = 'flex';
+      } else {
+        item.style.display = 'none';
+      }
+    });
+  } else {
+    // Admin role — show all except teacher/parent portals
+    if (adminChipEmail) adminChipEmail.textContent = (me?.email || 'admin').split('@')[0];
+    if (avatarInitials) avatarInitials.textContent = 'A';
+    $$('#sidebar .nav-item[data-page]').forEach(item => {
+      const page = item.dataset.page;
+      if (['teachers', 'parents'].includes(page)) {
+        item.style.display = 'none';
+      } else {
+        item.style.display = 'flex';
+      }
+    });
+  }
+
   showFlex('app');
-  
+
   // Load coaching profile for sidebar
   API.coaching.get().then(profile => {
     if (profile?.name) {
@@ -163,8 +200,23 @@ function showApp(me) {
       thumb.innerHTML = `<img src="/${profile.logo_path}" alt="Logo" style="width:100%;height:100%;object-fit:contain;border-radius:4px">`;
     }
   }).catch(() => {});
-  
-  // Navigation is handled uniquely by app.js showApp override
+
+  // Route dynamically by role
+  if (role === 'teacher') {
+    Router.navigate('teachers');
+  } else if (role === 'parent') {
+    Router.navigate('parents');
+    if (me?.student_id && window.ParentsModule) {
+      setTimeout(() => {
+        const studentSelect = document.getElementById('parent-student-select');
+        if (studentSelect) studentSelect.value = me.student_id;
+        window.ParentsModule.loadParentDashboardData(me.student_id);
+      }, 200);
+    }
+  } else {
+    const targetPage = window._initialPage || 'dashboard';
+    Router.navigate(targetPage);
+  }
 }
 
 function showOnboarding() {
@@ -377,18 +429,28 @@ document.addEventListener('DOMContentLoaded', () => {
     if (errEl) errEl.classList.add('hidden');
   });
 
-  document.getElementById('login-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
+  async function handleLoginSubmit(e) {
+    if (e) e.preventDefault();
     
     const btn = document.getElementById('login-btn');
     const btnText = document.getElementById('login-btn-text');
     const spinner = document.getElementById('login-spinner');
     const arrow = document.getElementById('login-arrow');
     const errorEl = document.getElementById('login-error');
+    const errText = document.getElementById('login-error-text');
+
+    const emailVal = document.getElementById('login-email')?.value?.trim();
+    const passwordVal = document.getElementById('login-password')?.value;
+
+    if (!emailVal || !passwordVal) {
+      if (errText) errText.textContent = 'Please enter both Username/Roll No and Password';
+      if (errorEl) { errorEl.classList.remove('hidden'); errorEl.style.display = 'block'; }
+      return;
+    }
     
     btn.disabled = true;
     const isLogin = window._authMode === 'login';
-    btnText.textContent = isLogin ? 'Signing In…' : 'Creating Account…';
+    if (btnText) btnText.textContent = isLogin ? 'Signing In…' : 'Creating Account…';
     if (spinner) spinner.classList.remove('hidden');
     if (arrow) arrow.style.display = 'none';
     if (errorEl) errorEl.classList.add('hidden');
@@ -400,47 +462,43 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       let result;
       if (isLogin) {
-        result = await API.auth.login(
-          document.getElementById('login-email').value,
-          document.getElementById('login-password').value
-        );
+        result = await API.auth.login(emailVal, passwordVal);
       } else {
-        result = await API.auth.register(
-          document.getElementById('login-email').value,
-          document.getElementById('login-password').value
-        );
+        result = await API.auth.register(emailVal, passwordVal);
       }
       
-      // Show loader before transitioning
-      hide('login-page');
-      if (window.ApexLoader) window.ApexLoader.show();
-      
-      // Small delay to let loader animate, then load app
-      setTimeout(async () => {
-        try {
-          if (result.onboarding_complete) {
-            const me = await API.auth.me();
-            showApp(me);
-          } else {
-            if (window.ApexLoader) window.ApexLoader.hide();
-            showOnboarding();
-          }
-        } catch(err2) {
-          if (window.ApexLoader) window.ApexLoader.hide();
-          showLoginPage();
+      if (result && result.success) {
+        window._isLoggedIn = true;
+        hide('login-page');
+        
+        if (result.onboarding_complete) {
+          showApp(result);
+        } else {
+          showOnboarding();
         }
-      }, 1800);
-      
+        Toast.success('Login Successful', 'Welcome to Apex Tuition ERP!');
+      } else {
+        throw new Error(result?.error || 'Login failed');
+      }
     } catch (err) {
-      const errText = document.getElementById('login-error-text');
+      console.error('Login error:', err);
       if (errText) errText.textContent = err.message || (isLogin ? 'Invalid credentials' : 'Registration failed');
-      if (errorEl) errorEl.classList.remove('hidden');
+      if (errorEl) { errorEl.classList.remove('hidden'); errorEl.style.display = 'block'; }
       document.getElementById('login-email')?.classList.add('error');
       document.getElementById('login-password')?.classList.add('error');
+      Toast.error('Login Failed', err.message || 'Invalid credentials');
+    } finally {
       btn.disabled = false;
-      btnText.textContent = isLogin ? 'Sign In to Dashboard' : 'Create Admin Account';
+      if (btnText) btnText.textContent = isLogin ? 'Sign In to Dashboard' : 'Create Admin Account';
       if (spinner) spinner.classList.add('hidden');
       if (arrow) arrow.style.display = '';
+    }
+  }
+
+  document.getElementById('login-form')?.addEventListener('submit', handleLoginSubmit);
+  document.getElementById('login-btn')?.addEventListener('click', (e) => {
+    if (document.getElementById('login-form')) {
+      handleLoginSubmit(e);
     }
   });
   
@@ -453,6 +511,62 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
   
+  // 3-Way Role Pill switcher
+  document.querySelectorAll('.role-pill-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.querySelectorAll('.role-pill-btn').forEach(b => {
+        b.style.background = 'transparent';
+        b.style.color = 'var(--text-muted)';
+        b.classList.remove('active');
+      });
+
+      btn.style.background = 'var(--navy)';
+      btn.style.color = 'white';
+      btn.classList.add('active');
+
+      const role = btn.dataset.role;
+
+      const emailInput = document.getElementById('login-email');
+      const passInput = document.getElementById('login-password');
+      const userLabel = document.getElementById('login-user-label');
+      const tagline = document.getElementById('login-tagline');
+
+      if (emailInput) emailInput.value = '';
+      if (passInput) passInput.value = '';
+
+      if (tagline) {
+        if (role === 'admin') {
+          tagline.textContent = 'Sign in to Admin ERP Control Panel';
+          if (userLabel) userLabel.textContent = 'Admin Email / Username';
+        } else if (role === 'teacher') {
+          tagline.textContent = 'Sign in to Faculty Teaching Desk';
+          if (userLabel) userLabel.textContent = 'Faculty Login ID / Email';
+        } else if (role === 'parent') {
+          tagline.textContent = 'Sign in to Student & Parent Portal';
+          if (userLabel) userLabel.textContent = 'Student Roll Number / Username';
+        }
+      }
+    });
+  });
+
+  // Demo login helper chips
+  document.querySelectorAll('.demo-login-chip').forEach(chip => {
+    chip.addEventListener('click', (e) => {
+      e.preventDefault();
+      const user = chip.dataset.user;
+      const pass = chip.dataset.pass;
+
+      const emailInput = document.getElementById('login-email');
+      const passInput = document.getElementById('login-password');
+      if (emailInput) emailInput.value = user;
+      if (passInput) passInput.value = pass;
+
+      // Trigger submit
+      document.getElementById('login-form')?.requestSubmit();
+    });
+  });
+
   // Logout button
   document.getElementById('logout-btn')?.addEventListener('click', async () => {
     await API.auth.logout();

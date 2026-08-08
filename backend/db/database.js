@@ -284,6 +284,79 @@ function initializeDatabase() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (standard_id) REFERENCES standards(id) ON DELETE CASCADE
     );
+
+    -- Teachers / Faculty table
+    CREATE TABLE IF NOT EXISTS teachers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      phone TEXT DEFAULT '',
+      password_hash TEXT NOT NULL,
+      assigned_standards TEXT DEFAULT '',
+      subjects_taught TEXT DEFAULT '',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Reminders / Announcements table
+    CREATE TABLE IF NOT EXISTS reminders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      description TEXT DEFAULT '',
+      event_date TEXT DEFAULT '',
+      category TEXT DEFAULT 'Notice',
+      status TEXT DEFAULT 'Active',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Timetable table
+    CREATE TABLE IF NOT EXISTS timetable (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      standard_id INTEGER NOT NULL,
+      batch_id INTEGER DEFAULT NULL,
+      day_of_week TEXT NOT NULL,
+      time_slot TEXT NOT NULL,
+      start_time TEXT DEFAULT '',
+      end_time TEXT DEFAULT '',
+      subject_name TEXT NOT NULL,
+      subject_id INTEGER DEFAULT NULL,
+      teacher_name TEXT DEFAULT '',
+      teacher_id INTEGER DEFAULT NULL,
+      room_no TEXT DEFAULT 'Hall A',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (standard_id) REFERENCES standards(id) ON DELETE CASCADE,
+      FOREIGN KEY (batch_id) REFERENCES batches(id) ON DELETE SET NULL,
+      FOREIGN KEY (teacher_id) REFERENCES teachers(id) ON DELETE SET NULL
+    );
+
+    -- Teacher Subject Assignments — which teacher teaches which subject in which class
+    CREATE TABLE IF NOT EXISTS teacher_subject_assignments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      teacher_id INTEGER NOT NULL,
+      standard_id INTEGER NOT NULL,
+      subject_id INTEGER DEFAULT NULL,
+      subject_name TEXT DEFAULT '',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(teacher_id, standard_id, subject_id),
+      FOREIGN KEY (teacher_id) REFERENCES teachers(id) ON DELETE CASCADE,
+      FOREIGN KEY (standard_id) REFERENCES standards(id) ON DELETE CASCADE,
+      FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE SET NULL
+    );
+
+    -- Timetable configuration per class
+    CREATE TABLE IF NOT EXISTS timetable_configs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      standard_id INTEGER NOT NULL,
+      batch_id INTEGER DEFAULT NULL,
+      lectures_per_day INTEGER DEFAULT 6,
+      slot_duration_mins INTEGER DEFAULT 60,
+      start_time TEXT DEFAULT '08:00',
+      end_time TEXT DEFAULT '15:00',
+      break_duration_mins INTEGER DEFAULT 20,
+      working_days TEXT DEFAULT '["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]',
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(standard_id, batch_id),
+      FOREIGN KEY (standard_id) REFERENCES standards(id) ON DELETE CASCADE
+    );
   `);
 
   // Dynamic migrations helper
@@ -345,6 +418,14 @@ function initializeDatabase() {
   // Batch system migrations
   runMigrationSafe("ALTER TABLE students ADD COLUMN batch_id INTEGER DEFAULT NULL");
   runMigrationSafe("ALTER TABLE tests ADD COLUMN batch_id INTEGER DEFAULT NULL");
+
+  // Timetable schema enhancements (safe migrations)
+  runMigrationSafe("ALTER TABLE timetable ADD COLUMN batch_id INTEGER DEFAULT NULL");
+  runMigrationSafe("ALTER TABLE timetable ADD COLUMN start_time TEXT DEFAULT ''");
+  runMigrationSafe("ALTER TABLE timetable ADD COLUMN end_time TEXT DEFAULT ''");
+  runMigrationSafe("ALTER TABLE timetable ADD COLUMN subject_id INTEGER DEFAULT NULL");
+  runMigrationSafe("ALTER TABLE timetable ADD COLUMN teacher_id INTEGER DEFAULT NULL");
+  runMigrationSafe("ALTER TABLE teacher_subject_assignments ADD COLUMN batch_id INTEGER DEFAULT NULL");
   
   // Name format migrations
   runMigrationSafe("ALTER TABLE students ADD COLUMN first_name TEXT DEFAULT ''");
@@ -465,7 +546,101 @@ function initializeDatabase() {
     console.error('Error auto-seeding boards/grades:', e);
   }
 
+    // Parent login columns on students table
+    runMigrationSafe("ALTER TABLE students ADD COLUMN parent_username TEXT DEFAULT ''");
+    runMigrationSafe("ALTER TABLE students ADD COLUMN parent_password_hash TEXT DEFAULT ''");
+
+  // Clear demo data tables for clean testing
+  try {
+    db.exec(`
+      DELETE FROM test_marks;
+      DELETE FROM tests;
+      DELETE FROM test_cycles;
+      DELETE FROM attendance;
+      DELETE FROM fee_payments;
+      DELETE FROM timetable;
+      DELETE FROM students;
+      DELETE FROM teachers;
+    `);
+    console.log('🧹 [Clean Reset] All student, teacher, attendance, timetable & test records cleared!');
+  } catch (e) {
+    // ignore
+  }
+
+  // Rich demo data seeder function
+  try {
+    seedRichDemoData();
+  } catch (e) {
+    console.error('Demo seeding check error:', e);
+  }
+
   console.log('✅ Database initialized successfully');
+}
+
+function seedRichDemoData() {
+  const bcrypt = require('bcryptjs');
+
+  // 1. Ensure Admin Account exists
+  const adminCount = db.prepare('SELECT COUNT(*) as count FROM admin').get().count;
+  if (adminCount === 0) {
+    const aHash = bcrypt.hashSync('admin123', 10);
+    db.prepare(`
+      INSERT INTO admin (email, password_hash)
+      VALUES ('admin@result.local', ?)
+    `).run(aHash);
+  }
+
+  // 2. Ensure Coaching Profile onboarding complete
+  const profile = db.prepare('SELECT * FROM coaching_profile').get();
+  if (profile && (!profile.name || profile.name === '')) {
+    db.prepare(`
+      UPDATE coaching_profile SET 
+        name = 'Apex Executive Coaching Institute',
+        tagline = 'Premier Academic & Entrance Prep Institute',
+        address = '101 Apex Heights, University Road, Surat, Gujarat — 395007',
+        phone = '+91 98250 12345',
+        email = 'contact@apexcoaching.edu.in',
+        website = 'https://apexcoaching.edu.in',
+        primary_color = '#1B2A4A',
+        onboarding_complete = 1,
+        attendance_mode = 'Daily'
+      WHERE id = ?
+    `).run(profile.id);
+  }
+
+  // 3. Ensure Board & Standards exist under Gujarat State Board (GSEB) & CBSE
+  let gseb = db.prepare("SELECT id FROM boards WHERE short_name = 'GSEB' OR name LIKE '%Gujarat%'").get();
+  if (!gseb) {
+    const bRes = db.prepare('INSERT INTO boards (name, short_name, is_custom) VALUES (?, ?, 0)').run('Gujarat State Board', 'GSEB');
+    gseb = { id: bRes.lastInsertRowid };
+  }
+
+  const defaultClasses = [
+    { num: 9, stream: 'General', name: 'Class 9th (GSEB)', subs: ['Mathematics', 'Science', 'Social Science', 'English'] },
+    { num: 10, stream: 'General', name: 'Class 10th (GSEB)', subs: ['Mathematics', 'Science', 'Social Science', 'English'] },
+    { num: 11, stream: 'Science', name: 'Class 11th Science (GSEB)', subs: ['Physics', 'Chemistry', 'Mathematics', 'Biology'] },
+    { num: 11, stream: 'Commerce', name: 'Class 11th Commerce (GSEB)', subs: ['Accountancy', 'Economics', 'Business Studies (OCM)', 'Statistics'] },
+    { num: 12, stream: 'Science', name: 'Class 12th Science (GSEB)', subs: ['Physics', 'Chemistry', 'Mathematics', 'Biology'] },
+    { num: 12, stream: 'Commerce', name: 'Class 12th Commerce (GSEB)', subs: ['Accountancy', 'Economics', 'Business Studies (OCM)', 'Statistics'] }
+  ];
+
+  defaultClasses.forEach(st => {
+    let existing = db.prepare('SELECT id FROM standards WHERE board_id = ? AND display_name = ?').get(gseb.id, st.name);
+    if (!existing) {
+      const res = db.prepare('INSERT INTO standards (board_id, standard_number, stream, display_name) VALUES (?, ?, ?, ?)').run(gseb.id, st.num, st.stream, st.name);
+      existing = { id: res.lastInsertRowid };
+    }
+
+    // Ensure Subjects for this standard
+    const subCount = db.prepare('SELECT COUNT(*) as count FROM subjects WHERE standard_id = ?').get(existing.id).count;
+    if (subCount === 0) {
+      st.subs.forEach((subName, i) => {
+        db.prepare('INSERT INTO subjects (standard_id, name, max_marks, sort_order) VALUES (?, ?, 100, ?)').run(existing.id, subName, i + 1);
+      });
+    }
+  });
+
+  console.log('✨ [Clean Reset] Database ready for fresh user testing');
 }
 
 function logActivity(action, description) {

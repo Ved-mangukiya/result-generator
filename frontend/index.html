@@ -4,9 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Apex Tuition ERP — Indian Coaching Class Management System</title>
+  <title>EduTrack ERP — Educational Institution Management System</title>
   <meta name="description"
-    content="Premium tuition management ERP for Indian coaching classes. Manage admissions, track fees, schedule tests, and generate reminder notices or print-ready result cards.">
+    content="Comprehensive ERP for all educational institutions: coaching classes, tutors, schools, colleges and universities. Manage admissions, timetables, attendance, fees, tests, and generate results.">
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1033,6 +1033,7 @@
       </div>
 
       <div class="login-card-new" id="login-card-actual">
+        <form id="login-form">
         <!-- Logo -->
         <div class="lc-logo">
           <div class="lc-logo-mark">
@@ -1051,17 +1052,28 @@
           <span id="login-error-text">Invalid credentials</span>
         </div>
 
-        <!-- Form -->
-        <form id="login-form">
-          <!-- Email -->
+          <!-- 3-Way Role Switcher Pills -->
+          <div style="display:flex; background:rgba(27,42,74,0.06); padding:4px; border-radius:12px; margin-bottom:20px; border:1px solid rgba(201,169,110,0.2);">
+            <button type="button" class="role-pill-btn active" data-role="admin" style="flex:1; padding:8px 6px; border:none; background:var(--navy); color:white; font-size:0.75rem; font-weight:700; border-radius:8px; cursor:pointer; transition:all 0.2s ease;">
+              👑 Admin
+            </button>
+            <button type="button" class="role-pill-btn" data-role="teacher" style="flex:1; padding:8px 6px; border:none; background:transparent; color:var(--text-muted); font-size:0.75rem; font-weight:700; border-radius:8px; cursor:pointer; transition:all 0.2s ease;">
+              👩‍🏫 Teacher
+            </button>
+            <button type="button" class="role-pill-btn" data-role="parent" style="flex:1; padding:8px 6px; border:none; background:transparent; color:var(--text-muted); font-size:0.75rem; font-weight:700; border-radius:8px; cursor:pointer; transition:all 0.2s ease;">
+              👨‍👩‍👧 Parent / Student
+            </button>
+          </div>
+
+          <!-- Email / Roll No -->
           <div class="fl-group">
-            <input type="email" id="login-email" class="fl-input" placeholder=" " required autocomplete="email">
-            <label class="fl-label" for="login-email">Email Address</label>
+            <input type="text" id="login-email" class="fl-input" placeholder=" " required value="">
+            <label class="fl-label" id="login-user-label" for="login-email">Username / Email / Roll Number</label>
           </div>
 
           <!-- Password -->
           <div class="fl-group" style="position:relative;">
-            <input type="password" id="login-password" class="fl-input" placeholder=" " required autocomplete="current-password">
+            <input type="password" id="login-password" class="fl-input" placeholder=" " required autocomplete="current-password" value="">
             <label class="fl-label" for="login-password">Password</label>
             <button type="button" id="toggle-password" class="pw-toggle-btn" title="Show/hide password">
               <svg id="pw-eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -1074,7 +1086,7 @@
             <span id="login-spinner" class="lc-spinner hidden"></span>
             <svg id="login-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
           </button>
-          <!-- No sign up toggle (manual credential assignment) -->
+        </form>
         </form>
       </div>
     </div>
@@ -1359,8 +1371,8 @@
           </svg>
         </div>
         <div>
-          <div class="sidebar-brand-name">Apex Tuition ERP</div>
-          <div class="sidebar-brand-sub">Admin Panel</div>
+          <div class="sidebar-brand-name">EduTrack ERP</div>
+          <div class="sidebar-brand-sub">Institutional Management</div>
         </div>
       </div>
 
@@ -1410,6 +1422,11 @@
           <span>Parent Portal</span>
         </a>
 
+        <a class="nav-item" href="#" data-page="faculty" id="nav-faculty" role="menuitem">
+          <span class="nav-icon" id="ico-faculty">👩‍🏫</span>
+          <span>Faculty Management</span>
+        </a>
+
         <a class="nav-item" href="#" data-page="tests" id="nav-tests" role="menuitem">
           <span class="nav-icon" id="ico-tests"></span>
           <span>Test Scheduler</span>
@@ -1422,9 +1439,15 @@
 
         <span class="nav-section-label" style="margin-top:var(--space-2)">Utilities</span>
 
+        <a class="nav-item" href="#" data-page="timetable" id="nav-timetable" role="menuitem">
+          <span class="nav-icon" id="ico-timetable">🗓️</span>
+          <span>Timetable Builder</span>
+          <span style="font-size:0.6rem;font-weight:800;letter-spacing:0.06em;background:linear-gradient(90deg,#2eb8a0,#1bd9bc);color:#0a1a2e;padding:1px 5px;border-radius:9999px;margin-left:4px">NEW</span>
+        </a>
+
         <a class="nav-item" href="#" data-page="reminders" id="nav-reminders" role="menuitem">
           <span class="nav-icon" id="ico-reminders"></span>
-          <span>Timetable &amp; Reminders</span>
+          <span>Notices &amp; Reminders</span>
         </a>
 
         <a class="nav-item" href="#" data-page="promotions" id="nav-promotions" role="menuitem">
@@ -1558,6 +1581,8 @@
   <script src="/js/attendance.js"></script>
   <script src="/js/teachers.js"></script>
   <script src="/js/parents.js"></script>
+  <script src="/js/faculty.js"></script>
+  <script src="/js/timetable_builder.js"></script>
   <script src="/js/app.js"></script>
 
   <!-- Loader JS + Sign-in transitions -->

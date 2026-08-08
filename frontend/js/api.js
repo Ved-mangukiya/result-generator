@@ -43,6 +43,12 @@ const API = {
   delete: (url)        => API._req('DELETE', url),
   uploadFile: (url, form)  => API._req('POST', url, form, true),
 
+  // Convenience wrapper: API.request('/teachers', 'GET') → GET /api/teachers
+  request: (path, method = 'GET', data = null) => {
+    const url = path.startsWith('/api/') ? path : `/api${path}`;
+    return API._req(method.toUpperCase(), url, data || undefined);
+  },
+
   // ─── Auth ──────────────────────────────────────
   auth: {
     login:    (email, password) => API.post('/api/auth/login', { email, password }),
@@ -72,7 +78,15 @@ const API = {
     delete:         (id)        => API.delete(`/api/boards/${id}`),
     getGrades:      (id)        => API.get(`/api/boards/${id}/grades`),
     updateGrades:   (id, grades) => API.put(`/api/boards/${id}/grades`, { grades }),
-    getStandards:   (id)        => API.get(`/api/boards/${id}/standards`),
+    getStandards: (id) => API.get(`/api/boards/${id}/standards`),
+  },
+
+  getStandards: async (boardId) => {
+    if (boardId) {
+      const arr = await API.get(`/api/boards/${boardId}/standards`);
+      return { standards: arr };
+    }
+    return API.get('/api/standards');
   },
 
   // ─── Standards ─────────────────────────────────
