@@ -15,7 +15,8 @@ router.put('/', (req, res) => {
     established_year, registration_no, registration_authority,
     primary_color, onboarding_complete, weekly_tests_count, has_midsem, has_final, 
     signatory_name, signatory_title,
-    exam_mode_default, passing_percentage, grading_format, eval_style, notice_lead_days
+    exam_mode_default, passing_percentage, grading_format, eval_style, notice_lead_days,
+    attendance_mode, academic_year
   } = req.body;
   
   const existing = db.prepare('SELECT id FROM coaching_profile').get();
@@ -34,6 +35,7 @@ router.put('/', (req, res) => {
       onboarding_complete = ?, weekly_tests_count = ?, has_midsem = ?, has_final = ?,
       signatory_name = ?, signatory_title = ?, 
       exam_mode_default = ?, passing_percentage = ?, grading_format = ?, eval_style = ?, notice_lead_days = ?,
+      attendance_mode = ?, academic_year = ?,
       updated_at = CURRENT_TIMESTAMP
       WHERE id = ?`).run(
         name || '', tagline || '', address || '', phone || '', alternate_phone || '', email || '', website || '',
@@ -41,6 +43,7 @@ router.put('/', (req, res) => {
         onboarding_complete ? 1 : 0, w_count, midsem, final,
         signatory_name || '', signatory_title || 'Director',
         exam_mode_default || 'Offline', pass_pct, grading_format || 'State Scale', eval_style || 'Manual', lead_days,
+        attendance_mode || 'Daily', academic_year || '2026-2027',
         existing.id
       );
   } else {
@@ -48,12 +51,14 @@ router.put('/', (req, res) => {
       name, tagline, address, phone, alternate_phone, email, website, established_year, 
       registration_no, registration_authority, primary_color, onboarding_complete, 
       weekly_tests_count, has_midsem, has_final, signatory_name, signatory_title,
-      exam_mode_default, passing_percentage, grading_format, eval_style, notice_lead_days
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+      exam_mode_default, passing_percentage, grading_format, eval_style, notice_lead_days,
+      academic_year
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
         name || '', tagline || '', address || '', phone || '', alternate_phone || '', email || '', website || '',
         est_year, registration_no || '', registration_authority || '', primary_color || '#7a6130', 
         onboarding_complete ? 1 : 0, w_count, midsem, final, signatory_name || '', signatory_title || 'Director',
-        exam_mode_default || 'Offline', pass_pct, grading_format || 'State Scale', eval_style || 'Manual', lead_days
+        exam_mode_default || 'Offline', pass_pct, grading_format || 'State Scale', eval_style || 'Manual', lead_days,
+        academic_year || '2026-2027'
       );
   }
   logActivity('PROFILE_UPDATE', `Coaching profile updated: ${name}`);

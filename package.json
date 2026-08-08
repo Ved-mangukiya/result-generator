@@ -1,16 +1,16 @@
 {
-  "name": "result-generator",
+  "name": "apex-tuition-erp",
   "version": "1.0.0",
-  "description": "Premium Result Card Generator for Indian Coaching Classes",
+  "description": "Apex Tuition ERP — Enterprise Grade Management & Academic System for Coaching Institutes",
   "main": "backend/server.js",
   "scripts": {
     "start": "node backend/server.js",
     "dev": "nodemon backend/server.js",
     "seed": "node backend/db/seed.js"
   },
-  "keywords": ["result", "coaching", "india", "education", "pdf"],
-  "author": "",
-  "license": "ISC",
+  "keywords": ["coaching", "erp", "india", "education", "pdf", "fees", "ledger"],
+  "author": "Apex Softwares",
+  "license": "Proprietary",
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",

@@ -2,10 +2,26 @@
    AUTH.JS — Login, Onboarding, Session
    ═══════════════════════════════════════════════ */
 
+window._authMode = 'login';
+
 let _selectedLogoFile = null;
 let _selectedSigFile = null;
 let _obCurrentStep = 0;
 const OB_TOTAL_STEPS = 6;
+
+function showLoginPageWithSkeleton() {
+  hide('app');
+  hide('onboarding-overlay');
+  hide('spinner-overlay');
+  show('login-page');
+  show('login-card-skeleton');
+  hide('login-card-actual');
+}
+
+function showLoginPageWithActualForm() {
+  hide('login-card-skeleton');
+  show('login-card-actual');
+}
 
 async function initAuth() {
   // Show loader briefly on initial page load for returning sessions
@@ -15,6 +31,9 @@ async function initAuth() {
   
   // Set initial state - user is NOT logged in yet
   window._isLoggedIn = false;
+  
+  // Show skeleton card initially
+  showLoginPageWithSkeleton();
   
   try {
     const me = await API.auth.me();
@@ -35,7 +54,7 @@ async function initAuth() {
   } catch (err) {
     // Not logged in — hide loader, show login page WITHOUT error
     if (window.ApexLoader) window.ApexLoader.hide();
-    showLoginPage();
+    showLoginPageWithActualForm();
     // Don't show any error message here - this is normal for new visitors
   }
   
@@ -59,6 +78,25 @@ async function initAuth() {
   });
 }
 
+function updateAuthModeUI() {
+  const isLogin = window._authMode === 'login';
+  const tagline = document.getElementById('login-tagline');
+  const btnText = document.getElementById('login-btn-text');
+  const toggleLink = document.getElementById('toggle-auth-mode');
+  const defaultHint = document.getElementById('login-default-hint');
+  
+  if (tagline) tagline.textContent = isLogin ? 'Sign in to your admin dashboard' : 'Sign up to create your admin account';
+  if (btnText) btnText.textContent = isLogin ? 'Sign In to Dashboard' : 'Create Admin Account';
+  if (toggleLink) toggleLink.textContent = isLogin ? "Don't have an account? Sign Up" : "Already have an account? Sign In";
+  if (defaultHint) {
+    if (isLogin) {
+      defaultHint.style.display = '';
+    } else {
+      defaultHint.style.display = 'none';
+    }
+  }
+}
+
 function showLoginPage() {
   hide('app');
   hide('onboarding-overlay');
@@ -67,9 +105,15 @@ function showLoginPage() {
   const loader = document.getElementById('apex-loader');
   if (loader) loader.style.display = 'none';
   show('login-page');
+  showLoginPageWithActualForm();
+  
   // Reset form
   const form = document.getElementById('login-form');
   if (form) form.reset();
+  
+  // Reset auth mode to login
+  window._authMode = 'login';
+  updateAuthModeUI();
   
   // IMPORTANT: Hide error message on page load
   const errEl = document.getElementById('login-error');
@@ -321,6 +365,18 @@ async function finishOnboarding() {
 
 // ─── Login Form ───────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('toggle-auth-mode')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    window._authMode = window._authMode === 'login' ? 'register' : 'login';
+    updateAuthModeUI();
+    
+    // Clear errors when toggling
+    document.getElementById('login-email')?.classList.remove('error');
+    document.getElementById('login-password')?.classList.remove('error');
+    const errEl = document.getElementById('login-error');
+    if (errEl) errEl.classList.add('hidden');
+  });
+
   document.getElementById('login-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -331,7 +387,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const errorEl = document.getElementById('login-error');
     
     btn.disabled = true;
-    btnText.textContent = 'Signing In…';
+    const isLogin = window._authMode === 'login';
+    btnText.textContent = isLogin ? 'Signing In…' : 'Creating Account…';
     if (spinner) spinner.classList.remove('hidden');
     if (arrow) arrow.style.display = 'none';
     if (errorEl) errorEl.classList.add('hidden');
@@ -341,10 +398,18 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('login-password')?.classList.remove('error');
     
     try {
-      const result = await API.auth.login(
-        document.getElementById('login-email').value,
-        document.getElementById('login-password').value
-      );
+      let result;
+      if (isLogin) {
+        result = await API.auth.login(
+          document.getElementById('login-email').value,
+          document.getElementById('login-password').value
+        );
+      } else {
+        result = await API.auth.register(
+          document.getElementById('login-email').value,
+          document.getElementById('login-password').value
+        );
+      }
       
       // Show loader before transitioning
       hide('login-page');
@@ -368,12 +433,12 @@ document.addEventListener('DOMContentLoaded', () => {
       
     } catch (err) {
       const errText = document.getElementById('login-error-text');
-      if (errText) errText.textContent = err.message || 'Invalid credentials';
+      if (errText) errText.textContent = err.message || (isLogin ? 'Invalid credentials' : 'Registration failed');
       if (errorEl) errorEl.classList.remove('hidden');
       document.getElementById('login-email')?.classList.add('error');
       document.getElementById('login-password')?.classList.add('error');
       btn.disabled = false;
-      btnText.textContent = 'Sign In to Dashboard';
+      btnText.textContent = isLogin ? 'Sign In to Dashboard' : 'Create Admin Account';
       if (spinner) spinner.classList.add('hidden');
       if (arrow) arrow.style.display = '';
     }

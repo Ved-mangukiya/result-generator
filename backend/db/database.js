@@ -299,6 +299,7 @@ function initializeDatabase() {
   runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN has_midsem INTEGER DEFAULT 1");
   runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN has_final INTEGER DEFAULT 1");
   runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN signature_path TEXT DEFAULT ''");
+  runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN academic_year TEXT DEFAULT '2026-2027'");
   runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN signatory_name TEXT DEFAULT ''");
   runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN signatory_title TEXT DEFAULT 'Director'");
   runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN alternate_phone TEXT DEFAULT ''");
@@ -318,8 +319,28 @@ function initializeDatabase() {
   runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN exam_mode_default TEXT DEFAULT 'Offline'");
   runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN passing_percentage INTEGER DEFAULT 33");
   runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN grading_format TEXT DEFAULT 'State Scale'");
-  runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN eval_style TEXT DEFAULT 'Manual'");
   runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN notice_lead_days INTEGER DEFAULT 3");
+  runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN attendance_mode TEXT DEFAULT 'Daily'");
+
+  // Attendance table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS attendance (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      student_id INTEGER NOT NULL,
+      standard_id INTEGER NOT NULL,
+      batch_id INTEGER DEFAULT NULL,
+      subject_id INTEGER DEFAULT NULL,
+      attendance_date TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'Present',
+      remarks TEXT DEFAULT '',
+      marked_by TEXT DEFAULT 'Admin',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+      FOREIGN KEY (standard_id) REFERENCES standards(id) ON DELETE CASCADE,
+      FOREIGN KEY (batch_id) REFERENCES batches(id) ON DELETE SET NULL,
+      FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE SET NULL
+    );
+  `);
   
   // Batch system migrations
   runMigrationSafe("ALTER TABLE students ADD COLUMN batch_id INTEGER DEFAULT NULL");
@@ -380,6 +401,68 @@ function initializeDatabase() {
     db.exec("DELETE FROM activity_log WHERE description LIKE '%undefined%' OR description LIKE '%null%' OR description LIKE '%test ID%'");
   } catch (e) {
     // ignore
+  }
+
+  // Auto-seed default admin if table is empty
+  try {
+    const adminCount = db.prepare('SELECT COUNT(*) as count FROM admin').get().count;
+    if (adminCount === 0) {
+      const bcrypt = require('bcryptjs');
+      const hash = bcrypt.hashSync('admin123', 10);
+      db.prepare('INSERT INTO admin (email, password_hash) VALUES (?, ?)').run('admin@result.local', hash);
+      console.log('🌱 [Auto-Seed] Created default admin account: admin@result.local / admin123');
+    }
+  } catch (e) {
+    console.error('Error auto-seeding default admin:', e);
+  }
+
+  // Auto-seed coaching profile placeholder if table is empty
+  try {
+    const existingProfile = db.prepare('SELECT id FROM coaching_profile').get();
+    if (!existingProfile) {
+      db.prepare(`INSERT INTO coaching_profile (name, tagline, address, phone, website, primary_color, onboarding_complete)
+                  VALUES (?, ?, ?, ?, ?, ?, 0)`).run('', '', '', '', '', '#7a6130');
+      console.log('🌱 [Auto-Seed] Coaching profile placeholder created');
+    }
+  } catch (e) {
+    console.error('Error auto-seeding coaching profile:', e);
+  }
+
+  // Auto-seed boards & grade scales if boards is empty
+  try {
+    const existingBoards = db.prepare('SELECT COUNT(*) as count FROM boards').get();
+    if (existingBoards.count === 0) {
+      const boardsData = require('../data/boards.json');
+      const gradesData = require('../data/grades.json');
+
+      const insertBoard = db.prepare('INSERT INTO boards (id, name, short_name, is_custom) VALUES (?, ?, ?, ?)');
+      const insertMany = db.transaction((boards) => {
+        for (const board of boards) {
+          insertBoard.run(board.id, board.name, board.short_name, board.is_custom ? 1 : 0);
+        }
+      });
+      insertMany(boardsData.boards);
+      console.log(`🌱 [Auto-Seed] ${boardsData.boards.length} boards seeded`);
+
+      // Seed grade scales for each board
+      const insertGrade = db.prepare(`
+        INSERT INTO grade_scales (board_id, label, min_pct, max_pct, color, result_status, sort_order)
+        VALUES (?, ?, ?, ?, ?, ?, ?)`);
+
+      const seedGrades = db.transaction(() => {
+        for (const board of boardsData.boards) {
+          const scaleKey = gradesData.boardGradeMap[board.short_name] || 'STATE';
+          const scale = gradesData.grades[scaleKey];
+          scale.forEach((grade, i) => {
+            insertGrade.run(board.id, grade.label, grade.min_pct, grade.max_pct, grade.color, grade.result_status, i);
+          });
+        }
+      });
+      seedGrades();
+      console.log('🌱 [Auto-Seed] Grade scales seeded for all boards');
+    }
+  } catch (e) {
+    console.error('Error auto-seeding boards/grades:', e);
   }
 
   console.log('✅ Database initialized successfully');

@@ -425,7 +425,7 @@ async function showCreateTestModal() {
 }
 
 // ─── Create Series Wizard (2-Step) ───────────────────────
-async function showCreateSeriesModal() {
+async function showCreateSeriesModal(prefillTitle = '', prefillMaxMarks = 25) {
   if (!_testsStandardId) return;
   const subjects = await API.subjects.list(_testsStandardId);
   if (subjects.length === 0) {
@@ -434,9 +434,9 @@ async function showCreateSeriesModal() {
   }
 
   // State
-  let step = 1;
-  let seriesTitle = '';
-  let maxMarks = 25;
+  let step = prefillTitle ? 2 : 1;
+  let seriesTitle = prefillTitle || '';
+  let maxMarks = prefillMaxMarks || 25;
   let examMode = 'Offline';
 
   function buildStep1() {
@@ -505,15 +505,47 @@ async function showCreateSeriesModal() {
   }
 
   const overlay = createModal('create-series-modal', `${Icons?.render?.('tests',{size:18}) || ''} Create Test Series`,
-    `<div id="series-wizard-body">${buildStep1()}</div>`,
-    `<button class="btn btn-outline" style="display:none" id="series-back-btn" onclick="seriesWizardBack()">← Back</button>
+    `<div id="series-wizard-body">${prefillTitle ? buildStep2() : buildStep1()}</div>`,
+    `<button class="btn btn-outline" style="${prefillTitle ? 'display:inline-flex' : 'display:none'}" id="series-back-btn" onclick="seriesWizardBack()">← Back</button>
      <button class="btn btn-outline" onclick="closeModal('create-series-modal')">Cancel</button>
-     <button class="btn btn-primary" id="series-next-btn" onclick="seriesWizardNext()">Next →</button>`,
+     <button class="btn btn-primary" id="series-next-btn" onclick="seriesWizardNext()">${prefillTitle ? Icons?.render?.('save',{size:15}) || '' + ' Create Series' : 'Next →'}</button>`,
     'modal-md'
   );
 
-  window._seriesWizardStep = 1;
+  window._seriesWizardStep = prefillTitle ? 2 : 1;
   window._seriesWizardSubjects = subjects;
+  window._seriesTitle = seriesTitle;
+  window._seriesMaxMarks = maxMarks;
+  window._seriesExamMode = examMode;
+  window._seriesBatchId = '';
+
+  if (prefillTitle) {
+    (async () => {
+      const { holidays } = await API.calendarNotes.get().catch(() => ({ holidays: {} }));
+      subjects.forEach(s => {
+        const input = document.getElementById(`sub-date-${s.id}`);
+        if (input) {
+          const warn = document.createElement('div');
+          warn.className = 'text-xs text-warning mt-1';
+          warn.style.fontWeight = '600';
+          warn.style.display = 'none';
+          input.parentNode.appendChild(warn);
+          
+          const check = () => {
+            const val = input.value;
+            if (val && holidays[val]) {
+              warn.innerHTML = `⚠️ Holiday: ${holidays[val]}`;
+              warn.style.display = 'block';
+            } else {
+              warn.style.display = 'none';
+            }
+          };
+          input.addEventListener('change', check);
+          check();
+        }
+      });
+    })();
+  }
   window.seriesWizardNext = async function() {
     if (window._seriesWizardStep === 1) {
       seriesTitle = (document.getElementById('series-title')?.value || '').trim();
@@ -575,9 +607,10 @@ async function showCreateSeriesModal() {
           const created = await API.testCycles.create({
             standard_id: _testsStandardId,
             title: window._seriesTitle,
+            max_marks: window._seriesMaxMarks || 100,
             description: `Auto-created series: ${window._seriesTitle}`
           });
-          cycleId = created.id;
+          cycleId = created.id || created.cycleId;
         }
       } catch (e) {
         console.warn('Could not create cycle:', e.message);
@@ -600,7 +633,7 @@ async function showCreateSeriesModal() {
         await API.tests.bulkCreate(tests);
         closeModal('create-series-modal');
         Toast.success('Series Created!', `${window._seriesTitle} created with ${tests.length} tests.`);
-        await loadTestsForClass(_testsStandardId);
+        await switchTestsTab(_currentTestsTab);
       } catch (err) {
         btn.disabled = false; btn.innerHTML = `${Icons?.render?.('save',{size:15}) || ''} Create Series`;
         Toast.error('Creation Failed', err.message);
@@ -626,6 +659,8 @@ async function showCreateSeriesModal() {
     if (row) row.style.opacity = chk?.checked ? '1' : '0.4';
     if (dateInput) dateInput.disabled = !chk?.checked;
   };
+  window.showCreateSeriesModal = showCreateSeriesModal;
+  window.showCreateSeriesForCycle = showCreateSeriesModal;
 } // end showCreateSeriesModal
 
 async function showEditTestModal(testId) {
@@ -816,6 +851,7 @@ async function showTestMarksEntry(testId) {
           <input type="number" 
                  class="form-control test-marks-input" 
                  data-idx="${idx}" 
+                 data-row="${idx}" data-col="0"
                  id="tm-input-${m.student_id}" 
                  value="${val}" 
                  min="0" 
@@ -828,7 +864,7 @@ async function showTestMarksEntry(testId) {
         inputHTML = `
           <div style="display:flex; align-items:center; gap:8px">
             <span class="badge badge-gray" style="font-size:0.7rem; text-transform:none">Not Chosen</span>
-            <input type="number" class="form-control test-marks-input" style="display:none" data-idx="${idx}" id="tm-input-${m.student_id}" disabled value="">
+            <input type="number" class="form-control test-marks-input" style="display:none" data-idx="${idx}" data-row="${idx}" data-col="0" id="tm-input-${m.student_id}" disabled value="">
           </div>`;
       }
 
@@ -846,7 +882,7 @@ async function showTestMarksEntry(testId) {
             </label>
           </td>
           <td style="padding:var(--space-2) var(--space-4);">
-            <input type="text" class="form-control test-remarks-input" id="tm-remarks-${m.student_id}" value="${m.remarks || ''}" placeholder="${isElected ? 'Remarks (optional)' : 'Not enrolled'}" ${!isElected ? 'disabled' : ''}>
+            <input type="text" class="form-control test-remarks-input" data-row="${idx}" data-col="1" id="tm-remarks-${m.student_id}" value="${m.remarks || ''}" placeholder="${isElected ? 'Remarks (optional)' : 'Not enrolled'}" ${!isElected ? 'disabled' : ''}>
           </td>
         </tr>`;
     }).join('');
@@ -857,7 +893,13 @@ async function showTestMarksEntry(testId) {
           <span class="badge badge-primary">${test.subject_name}</span>
           <span class="badge badge-gold">Max Marks: ${test.max_marks}</span>
         </div>
-        <p class="text-xs text-muted">💡 Use <kbd>Enter</kbd> or <kbd>↓</kbd> / <kbd>↑</kbd> arrow keys to navigate rows quickly like a spreadsheet.</p>
+        <div class="flex items-center gap-2">
+          <label class="form-label mb-0" style="font-weight:600; font-size:0.85rem">Enter Key Action:</label>
+          <select class="form-control form-control-sm" id="grid-enter-action" style="width:160px; padding:2px 8px; height:auto;">
+            <option value="right">➡️ Right Then Next Row</option>
+            <option value="down" selected>⬇️ Down Then Next Col</option>
+          </select>
+        </div>
       </div>
       <div style="max-height:550px; overflow-y:auto; border: 1px solid var(--border); border-radius: var(--radius)">
         <table class="marks-table" style="width:100%; border-collapse:collapse;">
@@ -880,11 +922,30 @@ async function showTestMarksEntry(testId) {
       'modal-xl'
     );
 
-    // Setup spreadsheet navigation keyboard listeners
-    setupGridKeyboardNavigation();
+    // Setup spreadsheet navigation keyboard & paste listeners
+    const tbody = document.querySelector('#test-marks-grid-modal tbody');
+    setupGridExcelCopyPaste(tbody);
+    setupSpreadsheetKeyboardNavigation(tbody);
+
+    // Global Ctrl + S listener inside the modal
+    if (!window._marksSaveShortcutBound) {
+      window._marksSaveShortcutBound = true;
+      window.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.key === 's') {
+          const modal = document.getElementById('test-marks-grid-modal');
+          if (modal && modal.style.display !== 'none') {
+            e.preventDefault();
+            const saveBtn = modal.querySelector('button[onclick^="saveGridMarks"]');
+            if (saveBtn) {
+              saveBtn.click();
+            }
+          }
+        }
+      });
+    }
   } catch (err) {
     Spinner.hide();
-    Toast.error('Load Failed', err.message);
+    Toast.error('Failed to load marks grid', err.message);
   }
 }
 
@@ -907,94 +968,6 @@ function toggleGridAbsent(studentId) {
   if (input) {
     input.disabled = absent;
     if (absent) input.value = '';
-  }
-}
-
-function setupGridKeyboardNavigation() {
-  const tbody = document.querySelector('#test-marks-grid-modal tbody');
-  if (!tbody) return;
-  const rows = Array.from(tbody.querySelectorAll('tr'));
-  
-  const focusInput = (rowIndex, type, direction = 1) => {
-    if (rowIndex < 0 || rowIndex >= rows.length) return;
-    const row = rows[rowIndex];
-    const isElected = row.dataset.isElected === 'true';
-    const studentId = row.dataset.studentId;
-    const input = type === 'marks' 
-      ? document.getElementById(`tm-input-${studentId}`)
-      : document.getElementById(`tm-remarks-${studentId}`);
-      
-    if (isElected && input && !input.disabled) {
-      input.focus();
-      input.select();
-    } else {
-      focusInput(rowIndex + direction, type, direction);
-    }
-  };
-
-  rows.forEach((row, rowIndex) => {
-    const studentId = row.dataset.studentId;
-    const marksInput = document.getElementById(`tm-input-${studentId}`);
-    const remarksInput = document.getElementById(`tm-remarks-${studentId}`);
-
-    if (marksInput) {
-      marksInput.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowDown' || e.key === 'Enter') {
-          e.preventDefault();
-          focusInput(rowIndex + 1, 'marks', 1);
-        } else if (e.key === 'ArrowUp') {
-          e.preventDefault();
-          focusInput(rowIndex - 1, 'marks', -1);
-        } else if (e.key === 'Tab') {
-          e.preventDefault();
-          if (e.shiftKey) {
-            focusInput(rowIndex - 1, 'marks', -1);
-          } else {
-            focusInput(rowIndex + 1, 'marks', 1);
-          }
-        } else if (e.key === 'ArrowRight') {
-          focusInput(rowIndex, 'remarks', 1);
-        }
-      });
-    }
-
-    if (remarksInput) {
-      remarksInput.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowDown' || e.key === 'Enter') {
-          e.preventDefault();
-          focusInput(rowIndex + 1, 'remarks', 1);
-        } else if (e.key === 'ArrowUp') {
-          e.preventDefault();
-          focusInput(rowIndex - 1, 'remarks', -1);
-        } else if (e.key === 'Tab') {
-          e.preventDefault();
-          if (e.shiftKey) {
-            focusInput(rowIndex, 'marks', -1);
-          } else {
-            focusInput(rowIndex + 1, 'marks', 1);
-          }
-        } else if (e.key === 'ArrowLeft') {
-          focusInput(rowIndex, 'marks', -1);
-        }
-      });
-    }
-  });
-
-  // Global Ctrl + S listener inside the modal
-  if (!window._marksSaveShortcutBound) {
-    window._marksSaveShortcutBound = true;
-    window.addEventListener('keydown', (e) => {
-      if (e.ctrlKey && e.key === 's') {
-        const modal = document.getElementById('test-marks-grid-modal');
-        if (modal && modal.style.display !== 'none') {
-          e.preventDefault();
-          const saveBtn = modal.querySelector('button[onclick^="saveGridMarks"]');
-          if (saveBtn) {
-            saveBtn.click();
-          }
-        }
-      }
-    });
   }
 }
 
@@ -1429,40 +1402,58 @@ async function viewTestCycleDetails(cycleId) {
     const { cycle, tests } = await API.testCycles.get(cycleId);
     Spinner.hide();
     
-    const rows = tests.map(t => `
-      <tr>
-        <td style="padding:8px 12px;font-weight:600;text-align:left">${t.subject_name}</td>
-        <td style="padding:8px 12px">${Format.date(t.test_date)}</td>
-        <td style="padding:8px 12px"><span class="badge ${t.marks_count > 0 ? 'badge-success' : 'badge-gold'}">${t.marks_count > 0 ? 'Graded (' + t.marks_count + ')' : 'Pending'}</span></td>
-        <td style="padding:8px 12px">
-          <div class="td-actions" style="justify-content:center">
-            <button class="btn btn-outline btn-sm" onclick="closeModal('cycle-details-modal'); showTestMarksEntry(${t.id})">📝 Enter Marks</button>
-            <button class="btn btn-ghost btn-icon-sm" onclick="closeModal('cycle-details-modal'); showTestWhatsAppModal(${t.id})" title="Share to WhatsApp">💬</button>
-          </div>
-        </td>
-      </tr>
-    `).join('');
+    let contentHTML = '';
+    if (tests.length === 0) {
+      contentHTML = `
+        <div class="empty-state" style="padding:var(--space-8) var(--space-4); text-align:center;">
+          <div class="animate-pulse" style="font-size:2.5rem; margin-bottom:12px;">📝</div>
+          <h4 style="font-weight:700; font-size:1.05rem; color:var(--text-primary); margin-bottom:6px;">No Subjects Scheduled Yet</h4>
+          <p class="text-xs text-muted mb-4" style="max-width:360px; margin-inline:auto; line-height:1.5;">This exam cycle is currently empty. You can schedule tests for this cycle using the Test Series Wizard, which will automatically link your tests to this cycle.</p>
+          <button class="btn btn-primary btn-sm" onclick="closeModal('cycle-details-modal'); showCreateSeriesForCycle('${cycle.title.replace(/'/g, "\\'")}', ${cycle.max_marks})">
+            ${Icons?.render?.('add',{size:14}) || ''} Schedule Tests Now
+          </button>
+        </div>
+      `;
+    } else {
+      const rows = tests.map(t => `
+        <tr>
+          <td style="padding:8px 12px;font-weight:600;text-align:left">${t.subject_name}</td>
+          <td style="padding:8px 12px">${Format.date(t.test_date)}</td>
+          <td style="padding:8px 12px"><span class="badge ${t.marks_count > 0 ? 'badge-success' : 'badge-gold'}">${t.marks_count > 0 ? 'Graded (' + t.marks_count + ')' : 'Pending'}</span></td>
+          <td style="padding:8px 12px">
+            <div class="td-actions" style="justify-content:center">
+              <button class="btn btn-outline btn-sm" onclick="closeModal('cycle-details-modal'); showTestMarksEntry(${t.id})">📝 Enter Marks</button>
+              <button class="btn btn-ghost btn-icon-sm" onclick="closeModal('cycle-details-modal'); showTestWhatsAppModal(${t.id})" title="Share to WhatsApp">💬</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+
+      contentHTML = `
+        <div class="table-wrap">
+          <table style="width:100%;border-collapse:collapse">
+            <thead>
+              <tr>
+                <th style="text-align:left;padding:8px 12px">Subject</th>
+                <th style="padding:8px 12px">Exam Date</th>
+                <th style="padding:8px 12px">Status</th>
+                <th style="padding:8px 12px">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
     
     createModal('cycle-details-modal', `🗓 Exam Cycle Details — ${cycle.title}`,
       `<div class="bg-surface p-4 rounded mb-4" style="border:1px solid var(--border)">
         <h4 style="font-weight:700;font-size:1.1rem" class="mb-1">${cycle.title} Timetable Schedule</h4>
         <p class="text-xs text-muted">Groups related subject tests under a single exam cycle. Evaluating student performance collectively.</p>
       </div>
-      <div class="table-wrap">
-        <table style="width:100%;border-collapse:collapse">
-          <thead>
-            <tr>
-              <th style="text-align:left;padding:8px 12px">Subject</th>
-              <th style="padding:8px 12px">Exam Date</th>
-              <th style="padding:8px 12px">Status</th>
-              <th style="padding:8px 12px">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows}
-          </tbody>
-        </table>
-      </div>`,
+      ${contentHTML}`,
       `<button class="btn btn-primary" onclick="closeModal('cycle-details-modal')">Close</button>`,
       'modal-lg'
     );
@@ -1518,29 +1509,31 @@ async function loadSchoolExamsForClass(standardId) {
 
     container.innerHTML = `
       <div class="card animate-fade-in">
-        <div class="table-wrap">
-          <table style="width:100%; border-collapse:collapse">
-            <thead>
-              <tr>
-                <th style="text-align:left; padding:12px">Exam/Test Name</th>
-                <th style="text-align:left; padding:12px">Subject</th>
-                <th style="padding:12px">School Exam Date</th>
-                <th style="padding:12px">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${exams.map(e => `
-                <tr class="stagger-item">
-                  <td style="padding:12px; font-weight:600; text-align:left">${e.exam_name}</td>
-                  <td style="padding:12px; text-align:left"><span class="badge badge-primary">${e.subject_name}</span></td>
-                  <td style="padding:12px">${Format.date(e.exam_date)}</td>
-                  <td style="padding:12px">
-                    <button class="btn btn-ghost btn-icon-sm" onclick="confirmDeleteSchoolExam(${e.id}, '${e.exam_name.replace(/'/g, "\\'")}')" title="Delete School Exam">${Icons?.render?.('delete',{size:14}) || ''}</button>
-                  </td>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table style="width:100%; border-collapse:collapse">
+              <thead>
+                <tr>
+                  <th style="text-align:left; padding:12px">Exam/Test Name</th>
+                  <th style="text-align:left; padding:12px">Subject</th>
+                  <th style="padding:12px">School Exam Date</th>
+                  <th style="padding:12px">Actions</th>
                 </tr>
-              `).join('')}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                ${exams.map(e => `
+                  <tr class="stagger-item">
+                    <td style="padding:12px; font-weight:600; text-align:left">${e.exam_name}</td>
+                    <td style="padding:12px; text-align:left"><span class="badge badge-primary">${e.subject_name}</span></td>
+                    <td style="padding:12px">${Format.date(e.exam_date)}</td>
+                    <td style="padding:12px">
+                      <button class="btn btn-ghost btn-icon-sm" onclick="confirmDeleteSchoolExam(${e.id}, '${e.exam_name.replace(/'/g, "\\'")}')" title="Delete School Exam">${Icons?.render?.('delete',{size:14}) || ''}</button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>`;
     

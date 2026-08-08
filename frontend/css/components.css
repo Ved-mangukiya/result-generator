@@ -1723,3 +1723,50 @@ td.td-primary {
   .rsc-stats { width: 100%; justify-content: space-between; border-top: 1px solid rgba(201,169,110,0.18); padding-top: var(--space-3); flex-wrap: wrap; gap: 8px 12px !important; }
   .rsc-avatar { display: none !important; }
 }
+
+/* Attendance Status Buttons */
+.att-btn {
+  padding: 4px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.att-btn:hover {
+  background: rgba(27,42,74,0.06);
+  color: var(--navy);
+}
+
+.att-btn.att-present.active {
+  background: rgba(22, 163, 74, 0.15);
+  color: #15803d;
+  border-color: rgba(22, 163, 74, 0.35);
+  font-weight: 700;
+}
+
+.att-btn.att-absent.active {
+  background: rgba(220, 38, 38, 0.15);
+  color: #b91c1c;
+  border-color: rgba(220, 38, 38, 0.35);
+  font-weight: 700;
+}
+
+.att-btn.att-late.active {
+  background: rgba(217, 119, 6, 0.15);
+  color: #b45309;
+  border-color: rgba(217, 119, 6, 0.35);
+  font-weight: 700;
+}
+
+.att-btn.att-excused.active {
+  background: rgba(37, 99, 235, 0.15);
+  color: #1d4ed8;
+  border-color: rgba(37, 99, 235, 0.35);
+  font-weight: 700;
+}
+

@@ -25,6 +25,7 @@ const promotionsRoutes = require('./routes/promotions');
 const batchesRoutes = require('./routes/batches');
 const tokenService = require('./services/tokenService');
 const calendarNotesRoutes = require('./routes/calendarNotes');
+const attendanceRoutes = require('./routes/attendance');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -115,6 +116,7 @@ app.use('/api/sync', requireAuth, syncRoutes);
 app.use('/api/promotions', requireAuth, promotionsRoutes);
 app.use('/api/batches', requireAuth, batchesRoutes);
 app.use('/api/calendar-notes', requireAuth, calendarNotesRoutes);
+app.use('/api/attendance', requireAuth, attendanceRoutes);
 
 // Dashboard stats
 app.get('/api/dashboard', requireAuth, (req, res) => {
@@ -122,7 +124,7 @@ app.get('/api/dashboard', requireAuth, (req, res) => {
   const { calculateStudentResult, calculateRanks } = require('./services/gradeService');
 
   const totalBoards = db.prepare('SELECT COUNT(*) as count FROM boards').get().count;
-  const totalStudents = db.prepare('SELECT COUNT(*) as count FROM students').get().count;
+  const totalStudents = db.prepare("SELECT COUNT(*) as count FROM students WHERE status = 'Active'").get().count;
   const totalStandards = db.prepare('SELECT COUNT(*) as count FROM standards').get().count;
   const totalTests = db.prepare('SELECT COUNT(*) as count FROM tests').get().count;
   const totalCycles = db.prepare('SELECT COUNT(*) as count FROM test_cycles').get().count;
@@ -152,8 +154,9 @@ app.get('/api/dashboard', requireAuth, (req, res) => {
   const feesSummary = db.prepare(`
     SELECT 
       COALESCE(SUM(s.total_fees), 0) as total_expected,
-      COALESCE((SELECT SUM(amount) FROM fee_payments), 0) as total_collected
+      COALESCE((SELECT SUM(fp.amount) FROM fee_payments fp JOIN students st ON fp.student_id = st.id WHERE st.status = 'Active'), 0) as total_collected
     FROM students s
+    WHERE s.status = 'Active'
   `).get() || { total_expected: 0, total_collected: 0 };
 
   // Standard-wise Fee collection summary
@@ -161,11 +164,11 @@ app.get('/api/dashboard', requireAuth, (req, res) => {
     SELECT 
       std.id as standard_id,
       std.display_name as standard_name,
-      COALESCE(SUM(s.total_fees), 0) as total_expected,
-      COALESCE(SUM(s.paid_fees), 0) as total_collected,
-      (COALESCE(SUM(s.total_fees), 0) - COALESCE(SUM(s.paid_fees), 0)) as total_pending
+      COALESCE(SUM(CASE WHEN s.status = 'Active' THEN s.total_fees ELSE 0 END), 0) as total_expected,
+      COALESCE(SUM(CASE WHEN s.status = 'Active' THEN s.paid_fees ELSE 0 END), 0) as total_collected,
+      (COALESCE(SUM(CASE WHEN s.status = 'Active' THEN s.total_fees ELSE 0 END), 0) - COALESCE(SUM(CASE WHEN s.status = 'Active' THEN s.paid_fees ELSE 0 END), 0)) as total_pending
     FROM standards std
-    LEFT JOIN students s ON std.id = s.standard_id
+    LEFT JOIN students s ON std.id = s.standard_id AND s.status = 'Active'
     GROUP BY std.id, std.display_name
   `).all();
 
@@ -174,7 +177,7 @@ app.get('/api/dashboard', requireAuth, (req, res) => {
   const classStats = [];
 
   for (const std of standards) {
-    const students = db.prepare('SELECT * FROM students WHERE standard_id = ?').all(std.id);
+    const students = db.prepare("SELECT * FROM students WHERE standard_id = ? AND status = 'Active'").all(std.id);
     const subjects = db.prepare('SELECT * FROM subjects WHERE standard_id = ? ORDER BY sort_order').all(std.id);
     if (students.length === 0) {
       classStats.push({ standard_id: std.id, standard_name: std.display_name, total: 0, pass: 0, fail: 0, distinction: 0 });

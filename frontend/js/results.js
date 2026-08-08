@@ -1298,7 +1298,8 @@ async function downloadBulkPDF() {
   try {
     const tokenRes = await API.export.downloadToken();
     const token = tokenRes.token;
-    const baseUrl = API.export.pdfBulk(_resultsStandardId, null, _resultsBatchId);
+    const activeCycleId = (_activeBoxType === 'cycle') ? _activeBoxId : null;
+    const baseUrl = API.export.pdfBulk(_resultsStandardId, null, _resultsBatchId, activeCycleId);
     const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `token=${token}`;
     const a = document.createElement('a');
     a.href = url; a.download = ''; a.click();

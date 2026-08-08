@@ -47,8 +47,9 @@ router.post('/', (req, res) => {
 
   if (!standard_id) return res.status(400).json({ error: 'standard_id is required' });
   if (!title) return res.status(400).json({ error: 'Title is required' });
-  if (!max_marks || isNaN(max_marks)) return res.status(400).json({ error: 'Valid max_marks is required' });
-  if (!Array.isArray(tests) || tests.length === 0) return res.status(400).json({ error: 'tests must be a non-empty array' });
+
+  const parsedMaxMarks = (max_marks !== undefined && max_marks !== null && !isNaN(max_marks)) ? parseFloat(max_marks) : 100;
+  const testsArray = Array.isArray(tests) ? tests : [];
 
   const std = db.prepare('SELECT display_name FROM standards WHERE id = ?').get(standard_id);
   if (!std) return res.status(404).json({ error: 'Standard not found' });
@@ -65,15 +66,15 @@ router.post('/', (req, res) => {
   let cycleId = null;
 
   const createTransaction = db.transaction(() => {
-    const cycleRes = insertCycle.run(standard_id, title, parseFloat(max_marks));
+    const cycleRes = insertCycle.run(standard_id, title, parsedMaxMarks);
     cycleId = cycleRes.lastInsertRowid;
 
-    for (const test of tests) {
+    for (const test of testsArray) {
       insertTest.run(
         standard_id, 
         test.subject_id, 
         `${title} - ${test.subject_name || 'Test'}`, 
-        parseFloat(max_marks), 
+        parsedMaxMarks, 
         test.test_date || '', 
         cycleId
       );
@@ -83,7 +84,7 @@ router.post('/', (req, res) => {
   try {
     createTransaction();
     logActivity('TEST_CYCLE_CREATE', `Scheduled test cycle: ${title} for class ${std.display_name}`);
-    res.json({ success: true, cycleId });
+    res.json({ success: true, cycleId, id: cycleId });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

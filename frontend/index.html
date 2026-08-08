@@ -318,6 +318,38 @@
        LOGIN PAGE — PREMIUM REDESIGN
        ═══════════════════════════════════════════════ */
 
+    /* Shimmer Skeleton Loader */
+    .skeleton-card {
+      width: 100%; max-width: 420px;
+      background: rgba(255,255,255,0.75);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(201,169,110,0.30);
+      border-radius: 28px;
+      padding: 44px 40px;
+      box-shadow: 0 24px 72px rgba(27,42,74,0.12);
+      position: relative;
+    }
+    .shimmer-anim {
+      background: linear-gradient(90deg, rgba(27,42,74,0.05) 25%, rgba(27,42,74,0.12) 37%, rgba(27,42,74,0.05) 63%);
+      background-size: 400px 100%;
+      animation: shimmerEffect 1.4s ease infinite;
+    }
+    @keyframes shimmerEffect {
+      0% { background-position: -200px 0; }
+      100% { background-position: 200px 0; }
+    }
+    .skeleton-line {
+      height: 14px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+    .skeleton-circle {
+      width: 56px; height: 56px;
+      border-radius: 16px;
+      margin: 0 auto 14px;
+    }
+
     #login-page {
       position: fixed; inset: 0;
       display: flex; z-index: 100;
@@ -983,7 +1015,24 @@
 
     <!-- Right Panel — Login Form -->
     <div class="login-right">
-      <div class="login-card-new">
+      <!-- Card Skeleton (Visible during initial session check or login action) -->
+      <div id="login-card-skeleton" class="skeleton-card" style="display:none; width: 100%;">
+        <div class="skeleton-circle shimmer-anim"></div>
+        <div class="skeleton-line shimmer-anim" style="width: 60%; margin: 0 auto 28px; height: 18px;"></div>
+        <div class="skeleton-line shimmer-anim" style="width: 40%; margin: 0 auto 28px; height: 12px;"></div>
+        
+        <div class="fl-group" style="height: 56px; margin-bottom: 18px; border-radius: 14px; overflow: hidden; position: relative;">
+          <div class="shimmer-anim" style="width: 100%; height: 100%; position: absolute; inset: 0;"></div>
+        </div>
+        <div class="fl-group" style="height: 56px; margin-bottom: 18px; border-radius: 14px; overflow: hidden; position: relative;">
+          <div class="shimmer-anim" style="width: 100%; height: 100%; position: absolute; inset: 0;"></div>
+        </div>
+        <div class="fl-group" style="height: 50px; margin-bottom: 18px; border-radius: 14px; overflow: hidden; position: relative;">
+          <div class="shimmer-anim" style="width: 100%; height: 100%; position: absolute; inset: 0;"></div>
+        </div>
+      </div>
+
+      <div class="login-card-new" id="login-card-actual">
         <!-- Logo -->
         <div class="lc-logo">
           <div class="lc-logo-mark">
@@ -993,7 +1042,7 @@
             </svg>
           </div>
           <div class="lc-brand-name">Apex Tuition ERP</div>
-          <div class="lc-tagline">Sign in to your admin dashboard</div>
+          <div class="lc-tagline" id="login-tagline">Sign in to your admin dashboard</div>
         </div>
 
         <!-- Error -->
@@ -1025,8 +1074,7 @@
             <span id="login-spinner" class="lc-spinner hidden"></span>
             <svg id="login-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
           </button>
-
-          <p class="lc-default-hint">Default: admin@result.local / admin123</p>
+          <!-- No sign up toggle (manual credential assignment) -->
         </form>
       </div>
     </div>
@@ -1346,6 +1394,22 @@
           <span>Admissions &amp; Fees</span>
         </a>
 
+        <a class="nav-item" href="#" data-page="attendance" id="nav-attendance" role="menuitem">
+          <span class="nav-icon" id="ico-attendance"></span>
+          <span>Attendance Tracker</span>
+          <span style="font-size:0.6rem;font-weight:800;letter-spacing:0.06em;background:rgba(46,184,160,0.20);color:#1BD9BC;padding:1px 5px;border-radius:9999px;margin-left:4px">LIVE</span>
+        </a>
+
+        <a class="nav-item" href="#" data-page="teachers" id="nav-teachers" role="menuitem">
+          <span class="nav-icon" id="ico-teachers"></span>
+          <span>Teachers Portal</span>
+        </a>
+
+        <a class="nav-item" href="#" data-page="parents" id="nav-parents" role="menuitem">
+          <span class="nav-icon" id="ico-parents"></span>
+          <span>Parent Portal</span>
+        </a>
+
         <a class="nav-item" href="#" data-page="tests" id="nav-tests" role="menuitem">
           <span class="nav-icon" id="ico-tests"></span>
           <span>Test Scheduler</span>
@@ -1491,6 +1555,9 @@
   <script src="/js/settings.js"></script>
   <script src="/js/reminders.js"></script>
   <script src="/js/promotions.js"></script>
+  <script src="/js/attendance.js"></script>
+  <script src="/js/teachers.js"></script>
+  <script src="/js/parents.js"></script>
   <script src="/js/app.js"></script>
 
   <!-- Loader JS + Sign-in transitions -->

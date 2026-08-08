@@ -38,7 +38,20 @@ async function renderDashboard() {
         <span class="badge badge-gold" id="checklist-progress-badge">0/4 Complete</span>
       </div>
       <div class="card-body p-4">
-        <div class="grid grid-4 gap-4" id="checklist-steps"><!-- loaded --></div>
+        <div class="grid grid-4 gap-4" id="checklist-steps">
+          ${[1,2,3,4].map(() => `
+            <div class="stat-card flex flex-col items-start justify-between" style="border: 1px solid var(--border); background: var(--bg-card);">
+              <div class="flex justify-between items-center w-full mb-2">
+                <div class="skeleton" style="width:28px; height:28px; border-radius:var(--radius-sm)"></div>
+                <div class="skeleton" style="width:16px; height:16px; border-radius:50%"></div>
+              </div>
+              <div class="w-full">
+                <div class="skeleton skeleton-title" style="width:60%"></div>
+                <div class="skeleton skeleton-text" style="width:80%; height:10px"></div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
       </div>
     </div>
 
@@ -60,9 +73,8 @@ async function renderDashboard() {
       <div class="card-body p-4">
         <!-- Calendar Grid -->
         <div id="calendar-grid-container">
-          <div class="empty-state" style="height:250px">
-            <div class="animate-pulse" style="font-size:1.5rem">${Icons?.render?.('calendar',{size:24}) || ''}</div>
-            <p class="text-muted text-sm mt-2">Loading calendar...</p>
+          <div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:8px; margin-top:10px">
+            ${Array.from({length:35}).map(() => `<div class="skeleton" style="height:105px; border-radius:var(--radius)"></div>`).join('')}
           </div>
         </div>
         
@@ -90,10 +102,23 @@ async function renderDashboard() {
           <h3>${Icons?.render?.('calendar',{size:18}) || ''} Upcoming Tests</h3>
           <button class="btn btn-ghost btn-sm" onclick="Router.navigate('tests')">Manage →</button>
         </div>
-        <div id="upcoming-tests-body" class="card-body" style="padding:0">
-          <div class="empty-state" style="padding:var(--space-8)">
-            <div class="animate-pulse" style="font-size:1.5rem">${Icons?.render?.('calendar',{size:24}) || ''}</div>
-            <p class="text-muted text-sm mt-2">Loading...</p>
+        <div id="upcoming-tests-body" class="card-body" style="padding:var(--space-4)">
+          <div style="display:flex; flex-direction:column; gap:12px">
+            ${[1,2].map(() => `
+              <div style="border: 1px solid var(--border); background: var(--bg-card); border-radius: var(--radius); padding: var(--space-4)">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+                  <div class="skeleton" style="width:140px; height:16px"></div>
+                  <div class="skeleton" style="width:60px; height:16px; border-radius:9999px"></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center">
+                  <div style="flex:1">
+                    <div class="skeleton skeleton-title" style="width:50%; height:14px"></div>
+                    <div class="skeleton skeleton-text" style="width:75%; height:10px; margin-top:6px"></div>
+                  </div>
+                  <div class="skeleton" style="width:50px; height:16px; border-radius:9999px"></div>
+                </div>
+              </div>
+            `).join('')}
           </div>
         </div>
       </div>
@@ -105,7 +130,26 @@ async function renderDashboard() {
           <button class="btn btn-ghost btn-sm" onclick="Router.navigate('students')">View →</button>
         </div>
         <div id="fees-summary-body" class="card-body" style="padding:var(--space-5)">
-          <div class="animate-pulse" style="font-size:1.5rem;text-align:center">${Icons?.render?.('fees',{size:24}) || ''}</div>
+          <div style="display:flex; gap:20px; align-items:center; justify-content:space-between; flex-wrap:wrap">
+            <div style="flex:1; min-width:200px; display:flex; flex-direction:column; gap:12px">
+              <div style="display:flex; justify-content:space-between; align-items:flex-end">
+                <div>
+                  <div class="skeleton" style="width:80px; height:12px; margin-bottom:6px"></div>
+                  <div class="skeleton" style="width:120px; height:24px"></div>
+                </div>
+                <div style="text-align:right; display:flex; flex-direction:column; align-items:flex-end">
+                  <div class="skeleton" style="width:80px; height:12px; margin-bottom:6px"></div>
+                  <div class="skeleton" style="width:60px; height:20px"></div>
+                </div>
+              </div>
+              <div class="skeleton" style="width:100%; height:8px; border-radius:100px"></div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px">
+                <div class="skeleton" style="height:44px; border-radius:var(--radius)"></div>
+                <div class="skeleton" style="height:44px; border-radius:var(--radius)"></div>
+              </div>
+            </div>
+            <div class="skeleton" style="width:110px; height:110px; border-radius:50%; flex-shrink:0"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -118,11 +162,9 @@ async function renderDashboard() {
           <h3>${Icons?.render?.('chart',{size:18}) || ''} Class Performance</h3>
           <button class="btn btn-ghost btn-sm" onclick="Router.navigate('results')">View Results →</button>
         </div>
-        <div id="class-stats-body" class="card-body" style="padding:0">
-          <div class="empty-state" style="padding:var(--space-10)">
-            <div class="animate-pulse" style="font-size:2rem">${Icons?.render?.('chart',{size:28}) || ''}</div>
-            <p class="text-muted text-sm mt-2">Loading class data...</p>
-          </div>
+        <div id="class-stats-body" class="card-body" style="padding:var(--space-4)">
+          <div class="skeleton" style="width:100%; height:180px; border-radius:var(--radius); margin-bottom:16px"></div>
+          <div class="skeleton" style="width:100%; height:120px; border-radius:var(--radius)"></div>
         </div>
       </div>
 
@@ -131,8 +173,17 @@ async function renderDashboard() {
         <div class="card-header">
           <h3>${Icons?.render?.('clock',{size:18}) || ''} Recent Activity</h3>
         </div>
-        <div id="activity-log-body" class="card-body" style="padding:var(--space-4)">
-          <div class="animate-pulse" style="font-size:1.5rem;text-align:center">${Icons?.render?.('clock',{size:24}) || ''}</div>
+        <div id="activity-log-body" class="card-body" style="padding:var(--space-4); display:flex; flex-direction:column; gap:12px">
+          ${[1,2,3,4,5].map(() => `
+            <div style="display:flex; gap:10px; align-items:flex-start">
+              <div class="skeleton" style="width:8px; height:8px; border-radius:50%; margin-top:6px; flex-shrink:0"></div>
+              <div style="flex:1">
+                <div class="skeleton" style="width:80px; height:10px; margin-bottom:4px"></div>
+                <div class="skeleton" style="width:85%; height:12px; margin-bottom:4px"></div>
+                <div class="skeleton" style="width:50px; height:8px"></div>
+              </div>
+            </div>
+          `).join('')}
         </div>
       </div>
     </div>
@@ -761,19 +812,19 @@ async function renderCalendarWidget() {
           font-weight: 600;
         }
         .calendar-event-badge.holiday {
-          background: rgba(239, 68, 68, 0.12);
-          color: #f87171;
-          border: 1px solid rgba(239, 68, 68, 0.2);
+          background: rgba(239, 68, 68, 0.08);
+          color: #c53030;
+          border: 1px solid rgba(239, 68, 68, 0.18);
         }
         .calendar-event-badge.test {
-          background: rgba(59, 130, 246, 0.12);
-          color: #60a5fa;
-          border: 1px solid rgba(59, 130, 246, 0.2);
+          background: rgba(59, 130, 246, 0.08);
+          color: #2b6cb0;
+          border: 1px solid rgba(59, 130, 246, 0.18);
         }
         .calendar-event-badge.school {
-          background: rgba(234, 179, 8, 0.12);
-          color: #facc15;
-          border: 1px solid rgba(234, 179, 8, 0.2);
+          background: rgba(234, 179, 8, 0.08);
+          color: #b7791f;
+          border: 1px solid rgba(234, 179, 8, 0.18);
         }
         .calendar-note-indicator {
           position: absolute;

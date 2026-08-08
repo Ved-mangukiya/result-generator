@@ -3,35 +3,77 @@ const router = express.Router();
 const { db, logActivity } = require('../db/database');
 const { recalculateOverallMarksForClass } = require('../services/gradeService');
 
-// GET /api/students?standard_id=X&batch_id=Y&search=Z
+// GET /api/students?standard_id=X&batch_id=Y&search=Z&status=W
 router.get('/', (req, res) => {
-  const { standard_id, batch_id, search } = req.query;
+  const { standard_id, batch_id, search, status } = req.query;
   let query = `SELECT s.*, st.display_name as standard_name, b.short_name as board_short, bt.name as batch_name
     FROM students s 
     JOIN standards st ON s.standard_id = st.id
     JOIN boards b ON st.board_id = b.id
     LEFT JOIN batches bt ON s.batch_id = bt.id`;
   const params = [];
+  const clauses = [];
 
   if (standard_id) {
-    query += ' WHERE s.standard_id = ?';
+    clauses.push('s.standard_id = ?');
     params.push(standard_id);
     if (batch_id && batch_id !== '' && batch_id !== 'null' && batch_id !== 'undefined') {
-      query += ' AND s.batch_id = ?';
+      clauses.push('s.batch_id = ?');
       params.push(batch_id);
     }
-    if (search) {
-      query += ' AND (s.name LIKE ? OR s.roll_number LIKE ?)';
-      params.push(`%${search}%`, `%${search}%`);
-    }
-  } else if (search) {
-    query += ' WHERE (s.name LIKE ? OR s.roll_number LIKE ?)';
+  }
+  if (search) {
+    clauses.push('(s.name LIKE ? OR s.roll_number LIKE ?)');
     params.push(`%${search}%`, `%${search}%`);
+  }
+
+  // Filter by status (default to Active if not specified)
+  if (status) {
+    if (status !== 'all') {
+      clauses.push('s.status = ?');
+      params.push(status);
+    }
+  } else {
+    clauses.push('s.status = ?');
+    params.push('Active');
+  }
+
+  if (clauses.length > 0) {
+    query += ' WHERE ' + clauses.join(' AND ');
   }
 
   query += ' ORDER BY CAST(s.roll_number AS INTEGER) ASC, s.roll_number ASC';
   const students = db.prepare(query).all(...params);
   res.json(students);
+});
+
+// POST /api/students/graduate-bulk
+router.post('/graduate-bulk', (req, res) => {
+  const { standard_id } = req.body;
+  if (!standard_id) return res.status(400).json({ error: 'standard_id is required' });
+
+  try {
+    let query = `UPDATE students SET status = 'Completed' WHERE status = 'Active'`;
+    const params = [];
+    if (standard_id !== 'all') {
+      query += ` AND standard_id = ?`;
+      params.push(standard_id);
+    }
+
+    const stmt = db.prepare(query);
+    const result = stmt.run(...params);
+
+    let logMsg = `Graduated ${result.changes} students in bulk`;
+    if (standard_id !== 'all') {
+      const std = db.prepare('SELECT display_name FROM standards WHERE id = ?').get(standard_id);
+      logMsg += ` for class ${std ? std.display_name : standard_id}`;
+    }
+    logActivity('STUDENTS_GRADUATE', logMsg);
+
+    res.json({ success: true, count: result.changes });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // GET /api/students/next-roll?standard_id=X
@@ -167,6 +209,34 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   let { first_name, father_name, surname, name, roll_number, mother_name, dob, remarks, attendance_pct, standard_id, batch_id, admission_date, status, total_fees, elective_subjects } = req.body;
   
+  const existingStudent = db.prepare('SELECT * FROM students WHERE id = ?').get(req.params.id);
+  if (!existingStudent) return res.status(404).json({ error: 'Student not found' });
+
+  // Handle fallback for partial updates
+  if (first_name === undefined) first_name = existingStudent.first_name;
+  if (father_name === undefined) father_name = existingStudent.father_name;
+  if (surname === undefined) surname = existingStudent.surname;
+  if (name === undefined) name = existingStudent.name;
+  if (roll_number === undefined) roll_number = existingStudent.roll_number;
+  if (mother_name === undefined) mother_name = existingStudent.mother_name;
+  if (dob === undefined) dob = existingStudent.dob;
+  if (remarks === undefined) remarks = existingStudent.remarks;
+  if (attendance_pct === undefined) attendance_pct = existingStudent.attendance_pct;
+  if (standard_id === undefined) standard_id = existingStudent.standard_id;
+  if (batch_id === undefined) batch_id = existingStudent.batch_id;
+  if (admission_date === undefined) admission_date = existingStudent.admission_date;
+  if (status === undefined) status = existingStudent.status;
+  if (total_fees === undefined) total_fees = existingStudent.total_fees;
+  if (elective_subjects === undefined) {
+    try {
+      elective_subjects = typeof existingStudent.elective_subjects === 'string'
+        ? JSON.parse(existingStudent.elective_subjects)
+        : (existingStudent.elective_subjects || []);
+    } catch (e) {
+      elective_subjects = [];
+    }
+  }
+
   // Handle new format (first_name, father_name, surname) or legacy name field
   let firstName = (first_name || '').trim();
   let fatherName = (father_name || '').trim();

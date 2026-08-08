@@ -46,6 +46,7 @@ const API = {
   // ─── Auth ──────────────────────────────────────
   auth: {
     login:    (email, password) => API.post('/api/auth/login', { email, password }),
+    register: (email, password) => API.post('/api/auth/register', { email, password }),
     logout:   ()                => API.post('/api/auth/logout'),
     me:       ()                => API.get('/api/auth/me'),
     changePassword: (current_password, new_password) => API.put('/api/auth/change-password', { current_password, new_password }),
@@ -106,12 +107,13 @@ const API = {
 
   // ─── Students ──────────────────────────────────
   students: {
-    list:       (standardId, batchId, search) => {
+    list:       (standardId, batchId, search, status) => {
       let url = '/api/students';
       const params = [];
       if (standardId) params.push(`standard_id=${standardId}`);
       if (batchId) params.push(`batch_id=${batchId}`);
       if (search) params.push(`search=${encodeURIComponent(search)}`);
+      if (status) params.push(`status=${status}`);
       if (params.length) url += '?' + params.join('&');
       return API.get(url);
     },
@@ -124,6 +126,7 @@ const API = {
     getResult:  (id)            => API.get(`/api/students/${id}/result`),
     getNextRoll:(standardId)    => API.get(`/api/students/next-roll?standard_id=${standardId}`),
     resequence: (standardId)    => API.post('/api/students/resequence', { standard_id: standardId }),
+    graduateBulk:(standardId)   => API.post('/api/students/graduate-bulk', { standard_id: standardId }),
   },
 
   // ─── Tests ─────────────────────────────────────
@@ -135,6 +138,7 @@ const API = {
     },
     add:         (data)         => API.post('/api/tests', data),
     bulkAdd:     (tests)        => API.post('/api/tests/bulk', { tests }),
+    bulkCreate:  (tests)        => API.post('/api/tests/bulk', { tests }),
     update:      (id, data)     => API.put(`/api/tests/${id}`, data),
     delete:      (id)           => API.delete(`/api/tests/${id}`),
     getMarks:    (id)           => API.get(`/api/tests/${id}/marks`),
@@ -208,7 +212,7 @@ const API = {
       return fetch(url, { credentials: 'same-origin' }).then(r => r.text());
     },
     pdfSingle:      (studentId, templateId)   => `/api/export/pdf/single/${studentId}/download${templateId ? `?template_id=${templateId}` : ''}`,
-    pdfBulk:        (standardId, templateId, batchId)  => `/api/export/pdf/bulk/${standardId}/download?template_id=${templateId || ''}${batchId ? `&batch_id=${batchId}` : ''}`,
+    pdfBulk:        (standardId, templateId, batchId, cycleId)  => `/api/export/pdf/bulk/${standardId}/download?template_id=${templateId || ''}${batchId ? `&batch_id=${batchId}` : ''}${cycleId ? `&cycle_id=${cycleId}` : ''}`,
     excel:          (standardId, batchId)              => `/api/export/excel/${standardId}/download${batchId ? `?batch_id=${batchId}` : ''}`,
     reminderPDF:    (data)                    => API.post('/api/export/reminder-pdf', data),
     noticeboardPDF: (data)                    => API.post('/api/export/noticeboard-pdf', data),

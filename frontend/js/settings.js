@@ -49,6 +49,16 @@ async function renderSettings() {
             <label class="form-label">Coaching Name <span class="required">*</span></label>
             <input type="text" class="form-control" id="s-name" value="${profile.name || ''}" placeholder="e.g. Sharma Classes">
           </div>
+          <div class="form-group mb-4" id="setting-academic-year-group">
+            <label class="form-label">Academic Year <span class="required">*</span></label>
+            <select class="form-control" id="s-academic-year">
+              <option value="2025-2026" ${profile.academic_year === '2025-2026' ? 'selected' : ''}>2025-2026</option>
+              <option value="2026-2027" ${(!profile.academic_year || profile.academic_year === '2026-2027') ? 'selected' : ''}>2026-2027</option>
+              <option value="2027-2028" ${profile.academic_year === '2027-2028' ? 'selected' : ''}>2027-2028</option>
+              <option value="2028-2029" ${profile.academic_year === '2028-2029' ? 'selected' : ''}>2028-2029</option>
+              <option value="2029-2030" ${profile.academic_year === '2029-2030' ? 'selected' : ''}>2029-2030</option>
+            </select>
+          </div>
           <div class="form-group mb-4">
             <label class="form-label">Tagline</label>
             <input type="text" class="form-control" id="s-tagline" value="${profile.tagline || ''}" placeholder="e.g. Excellence in Education">
@@ -128,6 +138,15 @@ async function renderSettings() {
               </select>
             </div>
           </div>
+          <div class="form-group mb-4">
+            <label class="form-label font-bold">Attendance Tracking Mode</label>
+            <select id="s-attendance-mode" class="form-control">
+              <option value="Daily" ${(profile.attendance_mode || 'Daily') === 'Daily' ? 'selected' : ''}>🌅 Daily (Taken once at start of day)</option>
+              <option value="Lecture" ${profile.attendance_mode === 'Lecture' ? 'selected' : ''}>📚 Lecture-wise (Taken per subject/lecture)</option>
+            </select>
+            <span class="form-hint">Choose how faculty will mark student attendance.</span>
+          </div>
+
           <div class="form-group mb-6">
             <label class="form-label">Notice Schedule Lead Time (Days in Advance)</label>
             <input type="number" id="s-notice-lead-days" class="form-control" value="${profile.notice_lead_days ?? 3}" min="1" max="30">
@@ -214,6 +233,27 @@ async function renderSettings() {
           </div>
         </div>
 
+        <div class="card mb-4" id="graduation-center-card">
+          <div class="card-header">
+            <h3>🎓 Class Graduation Center</h3>
+            <p class="text-xs text-muted">Graduate students in bulk at the end of the academic year</p>
+          </div>
+          <div class="card-body">
+            <p class="text-xs text-muted mb-4">
+              When the academic year ends, you can graduate all active students of a specific class (standard) or all classes at once. This updates their status to 'Completed', excluding them from active lists and dashboard statistics, while preserving historical marks and fee records.
+            </p>
+            <div class="form-group mb-4">
+              <label class="form-label" style="font-weight:600">Select Class to Graduate</label>
+              <select class="form-control" id="grad-bulk-std-select">
+                <option value="all">🎓 All Classes / Standards</option>
+              </select>
+            </div>
+            <button class="btn btn-primary w-full flex items-center justify-center gap-2" onclick="performBulkGraduation()">
+              🎓 Graduate Selected Class Students
+            </button>
+          </div>
+        </div>
+
         <div class="card mb-4">
           <div class="card-header"><h3>${Icons?.render?.('info',{size:18}) || ''} System Info</h3></div>
           <div class="card-body">
@@ -269,6 +309,8 @@ async function renderSettings() {
         </div>
       </div>
     </div>`;
+
+  loadGraduationStandardsDropdown().catch(() => {});
 }
 
 function setProfileColor(color) {
@@ -322,6 +364,8 @@ async function saveCoachingProfile() {
       grading_format: document.getElementById('s-grading-format').value,
       eval_style: document.getElementById('s-eval-style').value,
       notice_lead_days: parseInt(getVal('s-notice-lead-days')) || 3,
+      attendance_mode: document.getElementById('s-attendance-mode').value,
+      academic_year: document.getElementById('s-academic-year').value,
       onboarding_complete: true
     });
     
@@ -531,144 +575,191 @@ window.executeMasterReset = executeMasterReset;
 window.performCloudSyncExport = performCloudSyncExport;
 window.performCloudSyncImport = performCloudSyncImport;
 
+// ─── Bulk Graduation Helpers ──────────────────────
+async function loadGraduationStandardsDropdown() {
+  try {
+    const boards = await API.boards.list();
+    const sel = document.getElementById('grad-bulk-std-select');
+    if (!sel) return;
+    sel.innerHTML = '<option value="all">🎓 All Classes / Standards</option>';
+    for (const board of boards) {
+      const standards = await API.boards.getStandards(board.id);
+      if (standards.length > 0) {
+        const grp = document.createElement('optgroup');
+        grp.label = board.short_name;
+        standards.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s.id;
+          opt.textContent = s.display_name;
+          grp.appendChild(opt);
+        });
+        sel.appendChild(grp);
+      }
+    }
+  } catch {}
+}
+
+async function performBulkGraduation() {
+  const stdSelect = document.getElementById('grad-bulk-std-select');
+  if (!stdSelect) return;
+  const stdId = stdSelect.value;
+  const stdText = stdSelect.options[stdSelect.selectedIndex].textContent;
+
+  const confirmMsg = stdId === 'all'
+    ? 'Are you sure you want to graduate ALL active students across all classes? This is typically done at the end of an academic year.'
+    : `Are you sure you want to graduate all active students in ${stdText}?`;
+
+  const ok = await Confirm.show('Confirm Bulk Graduation?', confirmMsg, 'Graduate Students', 'btn-primary', Icons?.render?.('school',{size:28}) || '');
+  if (!ok) return;
+
+  Spinner.show('Graduating students...');
+  try {
+    const res = await API.students.graduateBulk(stdId);
+    Spinner.hide();
+    Toast.success('Graduation Completed', `Successfully graduated ${res.count} student(s).`);
+  } catch (err) {
+    Spinner.hide();
+    Toast.error('Graduation Failed', err.message);
+  }
+}
+
+window.loadGraduationStandardsDropdown = loadGraduationStandardsDropdown;
+window.performBulkGraduation = performBulkGraduation;
+
 // ─── Guided Walkthrough Tour ──────────────────────
-let _currentTourStep = 0;
-const settingsTourSteps = [
+let _currentGlobalTourStep = 0;
+const globalTourSteps = [
   {
+    page: 'dashboard',
     element: '.page-header',
-    title: '⚙️ Settings Page Overview',
-    content: 'Welcome to the Settings page! This is your control center where you can fully customize your coaching brand, upload signatures, configure academic test schedules, and perform database resets.'
+    title: '📊 Welcome to Apex Tuition ERP!',
+    content: 'This is your main dashboard. Here you can view active enrollment numbers, fee collection statistics, and upcoming test schedules at a single glance.'
   },
   {
-    element: '#logo-preview-wrap',
-    title: '🖼 Institute Logo Upload',
-    content: 'Upload your academy logo here. The logo will automatically be placed at the top header of all generated result sheets, timetable sheets, and notice documents.'
+    page: 'boards',
+    element: '.page-header',
+    title: '📋 Class & Board Management',
+    content: 'Manage school boards (GSEB, CBSE) and standards/classes. Configure streams, subjects, and grade scales here.'
   },
   {
-    element: '#s-name',
-    title: '🏫 Coaching Name & Brand',
-    content: 'Input your official academy name. This name automatically propagates across the sidebar branding chip, headers, and reports.'
+    page: 'students',
+    element: '#btn-tab-directory',
+    title: '👥 Admissions & Student Profiles',
+    content: 'Manage active student records, view detailed profiles, or perform Direct Excel-like Grid admissions. Graduated students are kept safe in historical records.'
   },
   {
-    element: '#s-weekly-tests',
-    title: '🗓 Academic Test Cycles',
-    content: 'Configure how many tests are scheduled across standards in a year. You can also turn Midterm/Semester 1 and Final/Semester 2 exams on or off depending on your school curriculum.'
+    page: 'tests',
+    element: '#tests-tabs',
+    title: '📝 Test Scheduler & Marks Entry',
+    content: 'Schedule weekly unit tests or grouped cycle exams. Teachers can enter student marks in a rapid Excel-like spreadsheet editor.'
   },
   {
-    element: '#s-signatory-name',
-    title: '✍️ Signature & Signatory Title',
-    content: 'Provide the signatory name and designation (e.g. Director, Principal). You can upload a transparent digital signature image here, which appears automatically on every generated result card.'
+    page: 'results',
+    element: '.page-header',
+    title: '🏆 Report Cards & Results',
+    content: 'Generate individual and bulk A4-formatted progress report cards. Customize templates with school colors, rankings, and digital signatures.'
   },
   {
-    element: '#s-curr-pass',
-    title: '🔐 Administrative Security',
-    content: 'Change your administrative password at any time. Secure your database logs, fees accounts, and student data profiles.'
-  },
-  {
-    element: '#reset-test-marks',
-    title: '⚡ Selective Database Reset',
-    content: 'Erase specific categories of data selectively (like only deleting small test scores, or erasing students) without resetting the entire system database.'
-  },
-  {
-    element: 'button.btn-danger[onclick*="MasterReset"]',
-    title: '🚨 Master Factory Reset',
-    content: 'Wipes the entire database clean back to fresh state. This requires passing a strict 10-second safety warning countdown to prevent accidental clicks.'
+    page: 'settings',
+    element: '.page-header',
+    title: '⚙️ Settings Control Center',
+    content: 'Configure academic years, logo, and digital signatures. You can also export/import backups and trigger bulk student graduation.'
   }
 ];
 
-function startSettingsTour() {
-  _currentTourStep = 0;
-  showTourStep(0);
+async function startGlobalTour() {
+  _currentGlobalTourStep = 0;
+  await showGlobalTourStep(0);
 }
 
-function showTourStep(stepIdx) {
-  // Remove existing tour overlay and popover card
+async function showGlobalTourStep(stepIdx) {
   const existingOverlay = document.getElementById('tour-overlay');
   const existingPopover = document.getElementById('tour-popover');
   if (existingOverlay) existingOverlay.remove();
   if (existingPopover) existingPopover.remove();
   
-  // Remove highlighted class from any previous target elements
   document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight'));
   
-  if (stepIdx < 0 || stepIdx >= settingsTourSteps.length) {
-    Toast.success('Tour Completed', 'You now know all settings options!');
+  if (stepIdx < 0 || stepIdx >= globalTourSteps.length) {
+    Toast.success('Tour Completed', 'You have successfully explored all key modules of Apex Tuition ERP! 🎓');
+    Router.navigate('settings');
     return;
   }
   
-  _currentTourStep = stepIdx;
-  const step = settingsTourSteps[stepIdx];
-  const targetEl = document.querySelector(step.element);
+  _currentGlobalTourStep = stepIdx;
+  const step = globalTourSteps[stepIdx];
+  
+  if (Router.current !== step.page) {
+    Router.navigate(step.page);
+  }
+  
+  let targetEl = null;
+  for (let attempt = 0; attempt < 15; attempt++) {
+    targetEl = document.querySelector(step.element);
+    if (targetEl && targetEl.offsetHeight > 0) break;
+    await new Promise(r => setTimeout(r, 100));
+  }
   
   if (!targetEl) {
-    // If element is not found on current page, skip to next
-    showTourStep(stepIdx + 1);
-    return;
+    targetEl = document.querySelector('.page-header') || document.body;
   }
   
-  // Add highlight class
   targetEl.classList.add('tour-highlight');
   
-  // Create background overlay to prevent interactions elsewhere
   const overlay = document.createElement('div');
   overlay.id = 'tour-overlay';
   overlay.style.cssText = `
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.45);
+    background: rgba(0, 0, 0, 0.4);
     z-index: 9999998;
     pointer-events: all;
   `;
-  overlay.onclick = endSettingsTour;
+  overlay.onclick = endGlobalTour;
   document.body.appendChild(overlay);
   
-  // Get positions
   const rect = targetEl.getBoundingClientRect();
   
-  // Create popover card
   const popover = document.createElement('div');
   popover.id = 'tour-popover';
-  popover.className = 'card stagger-item';
+  popover.className = 'card';
   popover.style.cssText = `
     position: fixed;
     z-index: 9999999;
-    width: 320px;
+    width: 330px;
     background: var(--bg-elevated);
     border: 2px solid var(--accent);
-    box-shadow: var(--shadow-xl), 0 0 25px rgba(212, 175, 55, 0.2);
+    box-shadow: var(--shadow-xl), 0 0 25px rgba(212, 175, 55, 0.25);
     padding: var(--space-4);
     border-radius: var(--radius-lg);
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
   `;
   
   popover.innerHTML = `
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--space-2)">
-      <strong style="color:var(--accent); font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em">Step ${stepIdx + 1} of ${settingsTourSteps.length}</strong>
-      <button onclick="endSettingsTour()" class="btn-ghost btn-icon-sm" style="border:none; cursor:pointer" title="Skip tour">✕</button>
+      <strong style="color:var(--accent); font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em">Module ${stepIdx + 1} of ${globalTourSteps.length}</strong>
+      <button onclick="endGlobalTour()" class="btn-ghost btn-icon-sm" style="border:none; cursor:pointer" title="Skip tour">✕</button>
     </div>
     <h4 style="font-weight:700; margin-bottom:var(--space-2); color:var(--text-primary); font-size:0.95rem">${step.title}</h4>
-    <p style="font-size:0.8125rem; color:var(--text-secondary); line-height:1.5; margin-bottom:var(--space-4)">${step.content}</p>
+    <p style="font-size:0.8125rem; color:var(--text-secondary); line-height:1.55; margin-bottom:var(--space-4)">${step.content}</p>
     <div style="display:flex; justify-content:space-between; align-items:center">
-      <button onclick="endSettingsTour()" class="btn btn-ghost btn-sm" style="padding:var(--space-1) var(--space-2); font-size:0.75rem">Skip Tour</button>
+      <button onclick="endGlobalTour()" class="btn btn-ghost btn-sm" style="padding:var(--space-1) var(--space-2); font-size:0.75rem">Skip Tour</button>
       <div class="flex gap-2">
-        ${stepIdx > 0 ? `<button onclick="showTourStep(${stepIdx - 1})" class="btn btn-outline btn-sm">← Back</button>` : ''}
-        <button onclick="showTourStep(${stepIdx + 1})" class="btn btn-primary btn-sm">${stepIdx === settingsTourSteps.length - 1 ? '🏁 Finish' : 'Next →'}</button>
+        ${stepIdx > 0 ? `<button onclick="showGlobalTourStep(${stepIdx - 1})" class="btn btn-outline btn-sm">← Back</button>` : ''}
+        <button onclick="showGlobalTourStep(${stepIdx + 1})" class="btn btn-primary btn-sm">${stepIdx === globalTourSteps.length - 1 ? '🏁 Finish' : 'Next →'}</button>
       </div>
     </div>
   `;
   
   document.body.appendChild(popover);
   
-  // Position tooltip popover carefully
   const popoverHeight = popover.offsetHeight || 180;
-  const popoverWidth = 320;
+  const popoverWidth = 330;
   
   let top = rect.bottom + 12;
   let left = rect.left + (rect.width / 2) - (popoverWidth / 2);
   
-  // Boundary safety check
   if (top + popoverHeight > window.innerHeight) {
-    // position above
     top = rect.top - popoverHeight - 12;
   }
   if (top < 0) top = 20;
@@ -681,19 +772,20 @@ function showTourStep(stepIdx) {
   popover.style.top = top + 'px';
   popover.style.left = left + 'px';
   
-  // Smooth scroll target element into viewport center
   targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-function endSettingsTour() {
+function endGlobalTour() {
   const existingOverlay = document.getElementById('tour-overlay');
   const existingPopover = document.getElementById('tour-popover');
   if (existingOverlay) existingOverlay.remove();
   if (existingPopover) existingPopover.remove();
   document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight'));
-  Toast.info('Tour Closed', 'You can restart it anytime using the guided tour button.');
 }
 
-window.startSettingsTour = startSettingsTour;
-window.showTourStep = showTourStep;
-window.endSettingsTour = endSettingsTour;
+window.startGlobalTour = startGlobalTour;
+window.startSettingsTour = startGlobalTour;
+window.showGlobalTourStep = showGlobalTourStep;
+window.showTourStep = showGlobalTourStep;
+window.endGlobalTour = endGlobalTour;
+window.endSettingsTour = endGlobalTour;

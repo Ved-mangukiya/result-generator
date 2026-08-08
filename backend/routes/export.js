@@ -59,7 +59,8 @@ router.get('/preview/:studentId', async (req, res) => {
       WHERE st.id = ?`).get(req.params.studentId);
     const templateId = settings?.template_id || 1;
     const templatePath = path.join(__dirname, `../../templates/template${templateId}.html`);
-    const html = await buildResultCardHTML(req.params.studentId, templatePath);
+    const cycleId = req.query.cycle_id ? parseInt(req.query.cycle_id) : null;
+    const html = await buildResultCardHTML(req.params.studentId, templatePath, cycleId);
     res.send(html);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -71,7 +72,8 @@ router.get('/preview/:studentId/template/:templateId', async (req, res) => {
   try {
     const templatePath = path.join(__dirname, `../../templates/template${req.params.templateId}.html`);
     if (!fs.existsSync(templatePath)) return res.status(404).json({ error: 'Template not found' });
-    const html = await buildResultCardHTML(req.params.studentId, templatePath);
+    const cycleId = req.query.cycle_id ? parseInt(req.query.cycle_id) : null;
+    const html = await buildResultCardHTML(req.params.studentId, templatePath, cycleId);
     res.send(html);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -100,8 +102,9 @@ router.get('/pdf/single/:studentId/download', async (req, res) => {
       JOIN students st ON st.standard_id = rcs.standard_id WHERE st.id = ?`).get(req.params.studentId);
     const templateId = req.query.template_id || settings?.template_id || 1;
     const templatePath = path.join(__dirname, `../../templates/template${templateId}.html`);
+    const cycleId = req.query.cycle_id ? parseInt(req.query.cycle_id) : null;
 
-    const { filename, outputPath } = await generateSinglePDF(parseInt(req.params.studentId), templatePath);
+    const { filename, outputPath } = await generateSinglePDF(parseInt(req.params.studentId), templatePath, cycleId);
 
     const student = db.prepare('SELECT name, standard_id FROM students WHERE id = ?').get(req.params.studentId);
     const standard = db.prepare('SELECT display_name FROM standards WHERE id = ?').get(student.standard_id);
@@ -132,8 +135,9 @@ router.get('/pdf/bulk/:standardId/download', async (req, res) => {
     const settings = db.prepare('SELECT template_id FROM result_card_settings WHERE standard_id = ?').get(req.params.standardId);
     const templateId = req.query.template_id || settings?.template_id || 1;
     const batchId = req.query.batch_id || null;
+    const cycleId = req.query.cycle_id ? parseInt(req.query.cycle_id) : null;
 
-    const { filename, outputPath } = await generateBulkPDF(parseInt(req.params.standardId), parseInt(templateId), batchId);
+    const { filename, outputPath } = await generateBulkPDF(parseInt(req.params.standardId), parseInt(templateId), batchId, cycleId);
 
     const standard = db.prepare('SELECT display_name FROM standards WHERE id = ?').get(req.params.standardId);
     const coaching = db.prepare('SELECT name FROM coaching_profile').get() || {};

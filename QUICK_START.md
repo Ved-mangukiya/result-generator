@@ -1,255 +1,89 @@
-# 🚀 Apex Tuition ERP - Quick Start Guide
+# 🚀 Apex Tuition ERP — Getting Started Guide
 
-## ✅ Server is Running!
-
-**Access the application:**
-- 🌐 URL: http://localhost:3000
-- 📧 Email: admin@result.local
-- 🔑 Password: admin123
+Welcome to **Apex Tuition ERP**, the premier administration and academic management platform. Follow this guide to set up, launch, and operate the platform for your coaching institute.
 
 ---
 
-## 🎉 ALL BUGS FIXED!
+## 🔑 Default Connection Details
 
-### ✅ What's Been Fixed:
+Once the server is running, the platform can be accessed locally:
+- 🌐 **Access URL**: `http://localhost:3000`
+- 📧 **Admin Username**: `admin@result.local`
+- 🔑 **Admin Password**: `admin123`
 
-1. **Name Format** - Forms now ask for First Name, Father's Name, Surname separately (Indian format)
-2. **Name Display** - Shows as "Rahul Kumar Sharma" with spaces, not dots
-3. **Grid Entry** - Direct bulk student admission works perfectly
-4. **Search** - Search by name or roll number works in all panels
-5. **Batch System** - Create, assign, and filter by batches working
-6. **Add Students** - Single form and bulk entry both work
-7. **Add Tests** - Test creation and marks entry working
-8. **Data Sync** - All panels show updated data in real-time
-9. **Calendar** - Extended to 30 years (2011-2041), click year to jump
-10. **Auto Backup** - Runs every 48 hours automatically ✅
+*Note: For security reasons, please change your default credentials under **Settings → Change Password** immediately after your first sign-in.*
 
 ---
 
-## 📋 How to Use
+## 📋 Standard Workflows & Operations
 
-### Adding Students
+### 1. Enrolling Students
+There are three highly flexible options to onboard students:
 
-**Option 1: Single Student Form**
-1. Go to "Admissions & Fees"
-2. Click "Add Student" button
-3. Fill in:
-   - First Name *
-   - Surname/Last Name *
-   - Father's Name *
-   - Mother's Name *
-   - Select Class and Batch
-   - Other details (optional)
-4. Click "Save Student"
+- **Option 1: Single Student Profile Form**
+  1. Navigate to **Admissions & Fees** in the sidebar.
+  2. Click **Add Student**.
+  3. Fill in the standard Indian name fields (First Name, Father's Name, Surname) and map them to their corresponding board, class, and batch.
+  4. Save the profile.
 
-**Option 2: Direct Grid Entry (Bulk)**
-1. Go to "Admissions & Fees"
-2. Click "Direct Grid Entry" button
-3. Select Class and Batch
-4. Enter students in spreadsheet-like grid:
-   - Roll No, First Name, Surname, DOB, Father, Mother, Fees
-5. Press Tab/Enter to navigate, Ctrl+S to save all
+- **Option 2: Direct Grid Entry (Spreadsheet Input)**
+  1. Click **Direct Grid Entry** from the top actions bar.
+  2. Select the Target Class and Batch.
+  3. Enter student data in the spreadsheet-like grid.
+  4. Navigate seamlessly using the arrow keys, Tab, or Enter.
+  5. Use `Ctrl + S` to save all entries instantly.
 
-**Option 3: Excel Import**
-1. Click "Import Excel"
-2. Download template
-3. Fill in Excel
-4. Upload and map columns
-
-### Creating Tests
-
-1. Go to "Tests & Assessments"
-2. Click "Create New Test"
-3. Select:
-   - Class
-   - Batch (optional - leave blank for all students)
-   - Subject
-   - Test name, date, max marks
-4. Click "Save"
-
-### Entering Marks
-
-1. Go to test list
-2. Click "Enter Marks" on any test
-3. Use grid to enter marks
-4. Navigate with Tab/Arrow keys
-5. Mark absent if needed
-6. Auto-saves on close
-
-### Using Calendar
-
-- **Navigate months:** ← → buttons
-- **Navigate years:** « » buttons
-- **Jump to year:** Click on the month/year label
-- **Add notes:** Click any date
-- View all events: holidays 🎉, tests 📝, school exams 🏫
-
-### Search Students
-
-1. Use search bar at top of any panel
-2. Type name or roll number
-3. Results filter automatically (300ms delay)
-4. Filter by class/batch for refined search
+- **Option 3: Bulk Excel Template Import**
+  1. Click **Import Excel** in the sidebar.
+  2. Download the standard `.xlsx` template.
+  3. Populate the spreadsheet with student credentials.
+  4. Upload and verify standard data mappings.
 
 ---
 
-## 🔄 Starting/Stopping Server
+### 2. Creating Assessments & Entering Marks
+1. Go to **Test Scheduler** in the sidebar.
+2. Click **Create New Test**, specify the Class, Subject, Date, and Max Marks, and save.
+3. Select **Enter Marks** on the active test card.
+4. Input scores in the **Rapid Marks Grid**. Use keyboard shortcuts to jump across columns, and toggle attendance states instantly.
+5. Hit save to calculate averages and toppers automatically.
 
-### To Start:
+---
+
+### 3. Fee Collection & Ledgers
+1. Go to **Admissions & Fees** and click the **Fees & Ledger** tab.
+2. Choose a class from the dropdown to review expected vs collected balances.
+3. Click **Record Payment** to log cash/digital receipts.
+4. Download or print professional PDF receipts or bulk class ledger books.
+
+---
+
+### 4. Interactive Operations Calendar
+- **Event Scheduling**: Click on any date to add notices, exam dates, or holidays.
+- **AI Sync**: Coaching prep tests will automatically align with upcoming school exams entered in the calendar.
+- **Year Jump**: Easily navigate decades by clicking on the month/year header.
+
+---
+
+## 💾 Backups & Data Protection
+
+- **Automated Replications**: The system automatically triggers a backup of the SQLite database configuration every 48 hours to the `/backups/` directory.
+- **Manual Data Dumps**: In **Settings → Cloud Synchronization**, click **Export Database** to download a single JSON backup. To restore on another server, click **Import Database** and upload the JSON file.
+
+---
+
+## 🔧 Operational Configuration
+
+### Port Already in Use (Conflict Fix):
+If port 3000 is occupied by another process, execute this command in PowerShell or Command Prompt (Admin) to release it:
 ```cmd
-# Easy way
-START_SERVER.bat
-
-# OR manually
-npm run dev
-```
-
-### To Stop:
-Press `Ctrl+C` in the terminal
-
-### To Restart:
-Type `rs` in the terminal (when using nodemon)
-
----
-
-## 💾 Backups
-
-### Automatic Backups:
-- Server creates backup every 48 hours
-- Saved in `/backups/` folder
-- File format: `backup_YYYY-MM-DD_HH-mm-ss.json`
-
-### Manual Backup:
-1. Go to Settings → Cloud Synchronization
-2. Click "Export Database"
-3. JSON file downloads
-
-### Restore Backup:
-1. Go to Settings → Cloud Synchronization
-2. Click "Import Database"
-3. Select backup JSON file
-4. Confirm restore
-
----
-
-## 🎓 Indian Name Format Explained
-
-In India, names follow this pattern:
-- **First Name** = Given name (e.g., "Rahul")
-- **Father's Name** = Middle name/Patronymic (e.g., "Kumar")
-- **Surname** = Last name/Family name (e.g., "Sharma")
-
-**Full Display:** Rahul Kumar Sharma
-
-This format is now used throughout the system in:
-- ✅ All forms
-- ✅ Student lists
-- ✅ Result cards
-- ✅ PDF reports
-- ✅ Excel exports
-- ✅ Search results
-
----
-
-## 📊 Key Features
-
-- 📚 Multi-board support (CBSE, ICSE, State boards)
-- 👥 Student management with photos
-- 📝 Test creation and marks entry
-- 📊 Result card generation (multiple templates)
-- 💰 Fees tracking and ledger
-- 🎯 Batch management
-- 📅 Calendar with events
-- 📈 Dashboard with statistics
-- 📤 Excel import/export
-- 🖨️ PDF generation
-- 💾 Auto-backup every 48 hours
-- 🔄 Data synchronization across panels
-
----
-
-## 🐛 Troubleshooting
-
-### Port Already in Use:
-```cmd
-# Find process
+# Find the Process ID (PID)
 netstat -ano | findstr :3000
 
-# Kill process
+# Terminate the process
 taskkill /F /PID <PID_NUMBER>
-
-# Restart server
-npm run dev
 ```
 
-### Database Issues:
-- Database file: `/data/result_generator.db`
-- Delete and restart to recreate fresh database
-- Or restore from backup
-
-### Search Not Working:
-- Check browser console (F12)
-- Reload page (Ctrl+F5)
-- Clear browser cache
-
-### Forms Not Saving:
-- Check server terminal for errors
-- Verify all required fields filled
-- Check network tab in browser DevTools
-
 ---
 
-## 📱 Browser Support
-
-Tested and working on:
-- ✅ Chrome/Edge (Recommended)
-- ✅ Firefox
-- ✅ Safari
-
----
-
-## 🎯 Next Steps
-
-1. **Add Your Coaching Info**
-   - Go to Settings → Coaching Profile
-   - Fill in name, logo, address, phone
-   - Upload signature image
-
-2. **Create Classes**
-   - Go to Boards & Classes
-   - Add your boards (CBSE, State, etc.)
-   - Add classes (10th, 12th, etc.)
-
-3. **Add Subjects**
-   - Select a class
-   - Add subjects with max marks
-   - Mark electives vs compulsory
-
-4. **Create Batches**
-   - Select a class
-   - Add batches (Morning, Evening, etc.)
-
-5. **Admit Students**
-   - Use any of the 3 methods above
-   - Assign to classes and batches
-   - Upload photos (optional)
-
-6. **Create Tests**
-   - Plan test cycles
-   - Create individual tests
-   - Enter marks using grid
-
-7. **Generate Results**
-   - Go to Results panel
-   - Select class and exam
-   - Generate PDF result cards
-
----
-
-## 📞 Support
-
-Server running at: **http://localhost:3000**
-
-All bugs are fixed and the system is fully functional! 🎉
-
-Enjoy using Apex Tuition ERP! 🚀
+*For license extensions and custom feature requests, contact **Apex Softwares Support**.*

@@ -442,6 +442,28 @@
   flex: 1;
   padding: var(--space-8);
   overflow-y: auto;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/* Container Centering Helpers */
+.container-centered {
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.center-flex {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.center-grid {
+  display: grid;
+  place-items: center;
 }
 
 .page-header {

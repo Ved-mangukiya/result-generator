@@ -102,12 +102,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ─── Spinner ──────────────────────────────────────
 const Spinner = {
+  _progressInterval: null,
   show(text = 'Please wait...') {
     document.getElementById('spinner-text').textContent = text;
     document.getElementById('spinner-overlay').style.display = 'flex';
+    
+    const bar = document.getElementById('spinner-progress-bar');
+    if (bar) {
+      bar.style.width = '0%';
+      let pct = 0;
+      clearInterval(this._progressInterval);
+      this._progressInterval = setInterval(() => {
+        if (pct < 90) {
+          pct += Math.random() * 15;
+          if (pct > 90) pct = 90;
+          bar.style.width = pct + '%';
+        }
+      }, 250);
+    }
   },
   hide() {
-    document.getElementById('spinner-overlay').style.display = 'none';
+    const bar = document.getElementById('spinner-progress-bar');
+    if (bar) {
+      bar.style.width = '100%';
+      setTimeout(() => {
+        document.getElementById('spinner-overlay').style.display = 'none';
+        clearInterval(this._progressInterval);
+      }, 200);
+    } else {
+      document.getElementById('spinner-overlay').style.display = 'none';
+    }
   }
 };
 
@@ -530,4 +554,183 @@ window.getPhotoThumbPath = function(photoPath) {
   if (lastDot === -1) return photoPath;
   return photoPath.substring(0, lastDot) + '_thumb.jpg';
 };
+
+function setupGridExcelCopyPaste(tbodyElement, addRowFn) {
+  tbodyElement.addEventListener('paste', (e) => {
+    if (e.target.tagName !== 'INPUT') return;
+    const clipboardData = e.clipboardData || window.clipboardData;
+    if (!clipboardData) return;
+    const pastedText = clipboardData.getData('text/plain');
+    if (!pastedText) return;
+
+    const rows = pastedText.split(/\r?\n/).filter(r => r.length > 0);
+    if (rows.length === 0) return;
+
+    e.preventDefault();
+
+    const startInput = e.target;
+    const startRow = parseInt(startInput.dataset.row);
+    const startCol = parseInt(startInput.dataset.col);
+
+    if (isNaN(startRow) || isNaN(startCol)) return;
+
+    rows.forEach((rowText, rOffset) => {
+      const cells = rowText.split('\t');
+      const targetRowIdx = startRow + rOffset;
+
+      if (addRowFn && targetRowIdx >= tbodyElement.children.length) {
+        addRowFn();
+      }
+
+      cells.forEach((cellText, cOffset) => {
+        const targetColIdx = startCol + cOffset;
+        const selector = `input[data-row="${targetRowIdx}"][data-col="${targetColIdx}"]`;
+        const targetInput = tbodyElement.querySelector(selector);
+        if (targetInput && !targetInput.disabled) {
+          targetInput.value = cellText.trim();
+          targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+          targetInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      });
+    });
+  });
+}
+
+function setupSpreadsheetKeyboardNavigation(tbodyElement, addRowFn) {
+  tbodyElement.addEventListener('keydown', (e) => {
+    if (e.target.tagName !== 'INPUT') return;
+    const input = e.target;
+    const row = parseInt(input.dataset.row);
+    const col = parseInt(input.dataset.col);
+    if (isNaN(row) || isNaN(col)) return;
+
+    const maxRows = tbodyElement.children.length;
+    const firstRow = tbodyElement.children[0];
+    const maxColInput = firstRow ? Array.from(firstRow.querySelectorAll('input[data-col]')).reduce((max, inp) => {
+      const colVal = parseInt(inp.dataset.col);
+      return colVal > max ? colVal : max;
+    }, 0) : 0;
+    const maxCols = maxColInput + 1;
+
+    let targetRow = row;
+    let targetCol = col;
+    let handled = false;
+
+    const enterActionEl = document.getElementById('grid-enter-action');
+    const enterAction = enterActionEl ? enterActionEl.value : 'right';
+
+    if (e.key === 'ArrowUp') {
+      targetRow = Math.max(0, row - 1);
+      handled = true;
+    } else if (e.key === 'ArrowDown') {
+      targetRow = Math.min(maxRows - 1, row + 1);
+      handled = true;
+    } else if (e.key === 'ArrowLeft') {
+      if (col > 0) {
+        targetCol = col - 1;
+        handled = true;
+      }
+    } else if (e.key === 'ArrowRight') {
+      if (col < maxCols - 1) {
+        targetCol = col + 1;
+        handled = true;
+      }
+    } else if (e.key === 'Tab') {
+      if (e.shiftKey) {
+        if (col === 0 && row > 0) {
+          targetRow = row - 1;
+          targetCol = maxCols - 1;
+          handled = true;
+        } else if (col > 0) {
+          targetCol = col - 1;
+          handled = true;
+        }
+      } else {
+        if (col === maxCols - 1) {
+          if (row === maxRows - 1) {
+            if (addRowFn) {
+              e.preventDefault();
+              addRowFn();
+              setTimeout(() => {
+                const nextInput = tbodyElement.querySelector(`input[data-row="${row + 1}"][data-col="0"]`);
+                if (nextInput) { nextInput.focus(); nextInput.select(); }
+              }, 20);
+              return;
+            }
+          } else {
+            targetRow = row + 1;
+            targetCol = 0;
+            handled = true;
+          }
+        } else {
+          targetCol = col + 1;
+          handled = true;
+        }
+      }
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (enterAction === 'right') {
+        if (col === maxCols - 1) {
+          if (row === maxRows - 1) {
+            if (addRowFn) {
+              addRowFn();
+              setTimeout(() => {
+                const nextInput = tbodyElement.querySelector(`input[data-row="${row + 1}"][data-col="0"]`);
+                if (nextInput) { nextInput.focus(); nextInput.select(); }
+              }, 20);
+              return;
+            }
+          } else {
+            targetRow = row + 1;
+            targetCol = 0;
+            handled = true;
+          }
+        } else {
+          targetCol = col + 1;
+          handled = true;
+        }
+      } else { // enterAction === 'down'
+        if (row === maxRows - 1) {
+          if (addRowFn) {
+            addRowFn();
+            setTimeout(() => {
+              const nextInput = tbodyElement.querySelector(`input[data-row="${row + 1}"][data-col="${col}"]`);
+              if (nextInput) { nextInput.focus(); nextInput.select(); }
+            }, 20);
+            return;
+          }
+        } else {
+          targetRow = row + 1;
+          handled = true;
+        }
+      }
+    }
+
+    if (handled) {
+      e.preventDefault();
+      // Skip disabled inputs
+      const findEnabledInput = (r, c, dirRow, dirCol) => {
+        const inp = tbodyElement.querySelector(`input[data-row="${r}"][data-col="${c}"]`);
+        if (inp && !inp.disabled) return inp;
+        let nextR = r + dirRow;
+        let nextC = c + dirCol;
+        if (nextR >= 0 && nextR < maxRows && nextC >= 0 && nextC < maxCols) {
+          return findEnabledInput(nextR, nextC, dirRow, dirCol);
+        }
+        return null;
+      };
+
+      const dirRow = targetRow - row;
+      const dirCol = targetCol - col;
+      const nextInput = findEnabledInput(targetRow, targetCol, dirRow, dirCol) || tbodyElement.querySelector(`input[data-row="${targetRow}"][data-col="${targetCol}"]`);
+      if (nextInput && !nextInput.disabled) {
+        nextInput.focus();
+        nextInput.select();
+      }
+    }
+  });
+}
+
+window.setupGridExcelCopyPaste = setupGridExcelCopyPaste;
+window.setupSpreadsheetKeyboardNavigation = setupSpreadsheetKeyboardNavigation;
 

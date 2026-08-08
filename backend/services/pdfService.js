@@ -17,7 +17,7 @@ async function getBrowser() {
 /**
  * Render a result card template to HTML string with all student data injected
  */
-async function buildResultCardHTML(studentId, templatePath) {
+async function buildResultCardHTML(studentId, templatePath, cycleId = null) {
   let student;
   if (studentId && studentId !== 'mock' && studentId !== 'null' && studentId !== 'undefined') {
     student = db.prepare('SELECT * FROM students WHERE id = ?').get(studentId);
@@ -66,36 +66,76 @@ async function buildResultCardHTML(studentId, templatePath) {
     };
   }
 
-  let subjects = db.prepare('SELECT * FROM subjects WHERE standard_id = ? ORDER BY sort_order').all(standard.id);
-  if (subjects.length === 0) {
-    subjects = [
-      { id: 101, name: 'English', max_marks: 100, marks_type: 'total', is_compulsory: 1 },
-      { id: 102, name: 'Mathematics', max_marks: 100, marks_type: 'total', is_compulsory: 1 },
-      { id: 103, name: 'Science', max_marks: 100, marks_type: 'total', is_compulsory: 1 },
-      { id: 104, name: 'Social Science', max_marks: 100, marks_type: 'total', is_compulsory: 1 },
-      { id: 105, name: 'Hindi', max_marks: 100, marks_type: 'total', is_compulsory: 1 }
-    ];
+  let subjects;
+  if (cycleId) {
+    const cycleTests = db.prepare(`
+      SELECT t.id as test_id, t.max_marks, s.id as subject_id, s.name as subject_name, s.is_compulsory, s.sort_order
+      FROM tests t
+      JOIN subjects s ON t.subject_id = s.id
+      WHERE t.cycle_id = ?
+      ORDER BY s.sort_order, s.name
+    `).all(cycleId);
+
+    subjects = cycleTests.map(t => ({
+      id: t.test_id,
+      name: t.subject_name,
+      max_marks: t.max_marks,
+      marks_type: 'total',
+      is_compulsory: t.is_compulsory,
+      is_language: 0
+    }));
+  } else {
+    subjects = db.prepare('SELECT * FROM subjects WHERE standard_id = ? ORDER BY sort_order').all(standard.id);
+    if (subjects.length === 0) {
+      subjects = [
+        { id: 101, name: 'English', max_marks: 100, marks_type: 'total', is_compulsory: 1 },
+        { id: 102, name: 'Mathematics', max_marks: 100, marks_type: 'total', is_compulsory: 1 },
+        { id: 103, name: 'Science', max_marks: 100, marks_type: 'total', is_compulsory: 1 },
+        { id: 104, name: 'Social Science', max_marks: 100, marks_type: 'total', is_compulsory: 1 },
+        { id: 105, name: 'Hindi', max_marks: 100, marks_type: 'total', is_compulsory: 1 }
+      ];
+    }
   }
 
   const marksMap = {};
-  if (studentId !== 'mock') {
-    const marksRows = db.prepare('SELECT * FROM marks WHERE student_id = ?').all(student.id);
-    marksRows.forEach(m => { marksMap[m.subject_id] = m; });
+  if (studentId !== 'mock' && student.id && student.id !== 9999) {
+    if (cycleId) {
+      const marksRows = db.prepare(`
+        SELECT tm.test_id, tm.obtained_marks, tm.is_absent
+        FROM test_marks tm
+        JOIN tests t ON tm.test_id = t.id
+        WHERE tm.student_id = ? AND t.cycle_id = ?
+      `).all(student.id, cycleId);
+      marksRows.forEach(m => {
+        marksMap[m.test_id] = {
+          subject_id: m.test_id,
+          total_marks: m.obtained_marks,
+          internal_marks: 0,
+          external_marks: m.obtained_marks,
+          is_absent: m.is_absent
+        };
+      });
+    } else {
+      const marksRows = db.prepare('SELECT * FROM marks WHERE student_id = ?').all(student.id);
+      marksRows.forEach(m => { marksMap[m.subject_id] = m; });
+    }
   }
 
-  // Seed marksMap with mockup grades if they are missing
-  subjects.forEach(sub => {
-    if (!marksMap[sub.id]) {
-      const obtained = Math.round(sub.max_marks * (0.85 + Math.random() * 0.12));
-      marksMap[sub.id] = {
-        subject_id: sub.id,
-        total_marks: obtained,
-        internal_marks: sub.marks_type === 'split' ? Math.round(sub.internal_max * 0.9) : 0,
-        external_marks: sub.marks_type === 'split' ? Math.round(sub.external_max * 0.9) : obtained,
-        is_absent: 0
-      };
-    }
-  });
+  // Seed marksMap with mockup grades if they are missing ONLY for mock student previews
+  if (studentId === 'mock' || !student.id || student.id === 9999) {
+    subjects.forEach(sub => {
+      if (!marksMap[sub.id]) {
+        const obtained = Math.round(sub.max_marks * (0.85 + Math.random() * 0.12));
+        marksMap[sub.id] = {
+          subject_id: sub.id,
+          total_marks: obtained,
+          internal_marks: sub.marks_type === 'split' ? Math.round(sub.internal_max * 0.9) : 0,
+          external_marks: sub.marks_type === 'split' ? Math.round(sub.external_max * 0.9) : obtained,
+          is_absent: 0
+        };
+      }
+    });
+  }
 
   const result = calculateStudentResult(student, subjects, marksMap, standard.board_id_val);
 
@@ -109,9 +149,27 @@ async function buildResultCardHTML(studentId, templatePath) {
   let rank = '1';
   if (allStudents.length > 0 && studentId !== 'mock') {
     const allResults = allStudents.map(s => {
-      const mRows = db.prepare('SELECT * FROM marks WHERE student_id = ?').all(s.id);
       const mMap = {};
-      mRows.forEach(m => { mMap[m.subject_id] = m; });
+      if (cycleId) {
+        const marksRows = db.prepare(`
+          SELECT tm.test_id, tm.obtained_marks, tm.is_absent
+          FROM test_marks tm
+          JOIN tests t ON tm.test_id = t.id
+          WHERE tm.student_id = ? AND t.cycle_id = ?
+        `).all(s.id, cycleId);
+        marksRows.forEach(m => {
+          mMap[m.test_id] = {
+            subject_id: m.test_id,
+            total_marks: m.obtained_marks,
+            internal_marks: 0,
+            external_marks: m.obtained_marks,
+            is_absent: m.is_absent
+          };
+        });
+      } else {
+        const mRows = db.prepare('SELECT * FROM marks WHERE student_id = ?').all(s.id);
+        mRows.forEach(m => { mMap[m.subject_id] = m; });
+      }
       return { student_id: s.id, ...calculateStudentResult(s, subjects, mMap, standard.board_id_val) };
     });
     const rankMap = calculateRanks(allResults);
@@ -253,6 +311,11 @@ async function buildResultCardHTML(studentId, templatePath) {
     .split-col { display: ${data.SHOW_SPLIT_HEADER} !important; }
     .grade-col { display: ${data.SHOW_GRADE_COL} !important; }
     .pf-col { display: ${data.SHOW_PF_COL} !important; }
+    
+    /* Strict Green/Red/Orange overrides for pass, fail, and absent */
+    .pf-cell.pass, .pass, .pf-cell.pass *, .pass * { color: #2e7d32 !important; }
+    .pf-cell.fail, .fail, .pf-cell.fail *, .fail * { color: #c62828 !important; }
+    .pf-cell.absent, .absent, .pf-cell.absent *, .absent * { color: #ea580c !important; }
   </style>
   </head>`;
 
@@ -260,19 +323,70 @@ async function buildResultCardHTML(studentId, templatePath) {
   const paperSizeClass = settings.paper_size === 'A5 Portrait' ? 'size-a5' : 'size-a4';
   templateHTML = templateHTML.replace('class="page"', `class="page ${paperSizeClass}"`);
 
+  const clientColoringScript = `
+  <script>
+  (function() {
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+    const nodes = [];
+    while(walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(node => {
+      const text = node.nodeValue.trim().toUpperCase();
+      if (text === 'PASS' || text === 'FAIL' || text === 'ABSENT' || text === 'PASSED' || text === 'FAILED') {
+        let color = '#2e7d32'; // green for PASS
+        if (text === 'FAIL' || text === 'FAILED') color = '#c62828'; // red for FAIL
+        else if (text === 'ABSENT') color = '#ea580c'; // orange for ABSENT
+        
+        let el = node.parentElement;
+        while (el && el !== document.body) {
+          const style = el.getAttribute('style') || '';
+          if (el.classList.contains('result-status-box') || 
+              el.classList.contains('rp-value') ||
+              el.classList.contains('rc-value') ||
+              el.classList.contains('sr-value') ||
+              el.classList.contains('sr-v') ||
+              el.classList.contains('srb-v') ||
+              el.classList.contains('summary-val') ||
+              el.classList.contains('rs-value') ||
+              el.classList.contains('sz-result') ||
+              el.classList.contains('sa-result') ||
+              el.classList.contains('sum-result-bubble') ||
+              el.classList.contains('result-card') ||
+              style.includes('var(--overall-grade-color)')) {
+            
+            el.style.setProperty('color', color, 'important');
+            if (el.style.borderColor || style.includes('border-color')) {
+              el.style.setProperty('border-color', color, 'important');
+            }
+            // Check if there is an outer result status box parent and color its border too
+            let parentBox = el.parentElement;
+            if (parentBox && (parentBox.classList.contains('result-status-box') || parentBox.getAttribute('style')?.includes('border-color'))) {
+              parentBox.style.setProperty('border-color', color, 'important');
+              parentBox.style.setProperty('color', color, 'important');
+            }
+          }
+          el = el.parentElement;
+        }
+      }
+    });
+  })();
+  </script>
+  </body>`;
+
+  templateHTML = templateHTML.replace('</body>', clientColoringScript);
+
   return templateHTML;
 }
 
 /**
  * Generate PDF for a single student
  */
-async function generateSinglePDF(studentId, templatePath) {
+async function generateSinglePDF(studentId, templatePath, cycleId = null) {
   const student = db.prepare('SELECT * FROM students WHERE id = ?').get(studentId);
   if (!student) throw new Error('Student not found');
   const settings = db.prepare('SELECT * FROM result_card_settings WHERE standard_id = ?').get(student.standard_id) || {};
   const paperFormat = settings.paper_size === 'A5 Portrait' ? 'A5' : 'A4';
 
-  const html = await buildResultCardHTML(studentId, templatePath);
+  const html = await buildResultCardHTML(studentId, templatePath, cycleId);
 
   const standard = db.prepare(`SELECT s.display_name, b.short_name FROM standards s JOIN boards b ON s.board_id = b.id 
     JOIN students st ON st.standard_id = s.id WHERE st.id = ?`).get(studentId);
@@ -304,7 +418,7 @@ async function generateSinglePDF(studentId, templatePath) {
 /**
  * Generate bulk PDF for all students in a standard (one page per student + cover page)
  */
-async function generateBulkPDF(standardId, templateId = 1, batchId = null) {
+async function generateBulkPDF(standardId, templateId = 1, batchId = null, cycleId = null) {
   const settings = db.prepare('SELECT * FROM result_card_settings WHERE standard_id = ?').get(standardId) || {};
   const paperFormat = settings.paper_size === 'A5 Portrait' ? 'A5' : 'A4';
 
@@ -324,6 +438,12 @@ async function generateBulkPDF(standardId, templateId = 1, batchId = null) {
   const coaching = db.prepare('SELECT * FROM coaching_profile').get() || {};
   const templatePath = path.join(__dirname, `../../templates/template${templateId}.html`);
 
+  let cycle = null;
+  if (cycleId) {
+    cycle = db.prepare('SELECT * FROM test_cycles WHERE id = ?').get(cycleId);
+  }
+  const titleText = cycle ? `${standard.display_name} — ${cycle.title}` : `${standard.display_name} — Result Sheet`;
+
   const coachingName = (coaching.name || 'Result').replace(/[^a-zA-Z0-9]/g, '_');
   const stdName = (standard?.display_name || '').replace(/[^a-zA-Z0-9]/g, '_');
   const filename = `${coachingName}_${stdName}_BulkResults.pdf`;
@@ -340,7 +460,7 @@ async function generateBulkPDF(standardId, templateId = 1, batchId = null) {
     </style></head><body>
       <div>
         <h1>${coaching.name || 'Result Generator'}</h1>
-        <h2>${standard.display_name} — Result Sheet</h2>
+        <h2>${titleText}</h2>
         <div class="meta">
           Total Students: ${students.length}<br>
           Board: ${standard.board_name}<br>
@@ -363,7 +483,7 @@ async function generateBulkPDF(standardId, templateId = 1, batchId = null) {
 
     // Each student
     for (const { id: studentId } of students) {
-      const html = await buildResultCardHTML(studentId, templatePath);
+      const html = await buildResultCardHTML(studentId, templatePath, cycleId);
       await page.setContent(html, { waitUntil: 'networkidle0' });
       const buffer = await page.pdf({
         format: 'A4',
@@ -384,13 +504,13 @@ async function generateBulkPDF(standardId, templateId = 1, batchId = null) {
     combinedHTML += `<div class="page-break" style="display:flex;align-items:center;justify-content:center;height:100vh;background:#1a3a6b;color:white;text-align:center;font-family:Georgia,serif;">
       <div>
         <h1 style="font-size:2.5rem">${coaching.name || 'Result Generator'}</h1>
-        <h2 style="font-weight:normal;opacity:0.8">${standard.display_name} — Result Sheet</h2>
+        <h2 style="font-weight:normal;opacity:0.8">${titleText}</h2>
         <p style="opacity:0.7">Total Students: ${students.length} | Board: ${standard.board_name}</p>
       </div>
     </div>`;
 
     for (let i = 0; i < students.length; i++) {
-      const cardHTML = await buildResultCardHTML(students[i].id, templatePath);
+      const cardHTML = await buildResultCardHTML(students[i].id, templatePath, cycleId);
       // Extract just the body content from card HTML
       const bodyMatch = cardHTML.match(/<body[^>]*>([\s\S]*)<\/body>/i);
       const bodyContent = bodyMatch ? bodyMatch[1] : cardHTML;

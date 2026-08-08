@@ -129,7 +129,16 @@ function switchReminderTab(tab, params = {}) {
         <textarea class="form-control" id="rem-message" rows="3" placeholder="Syllabus guidelines, rules, etc...">${defaultMsg}</textarea>
       </div>
       
-      <p class="form-section-title">Schedule Table Grid</p>
+      <div class="flex justify-between items-center mb-2">
+        <p class="form-section-title mb-0">Schedule Table Grid</p>
+        <div class="flex items-center gap-2">
+          <label class="form-label mb-0" style="font-weight:600; font-size:0.85rem">Enter Key Action:</label>
+          <select class="form-control form-control-sm" id="grid-enter-action" style="width:160px; padding:2px 8px; height:auto;">
+            <option value="right" selected>➡️ Right Then Next Row</option>
+            <option value="down">⬇️ Down Then Next Col</option>
+          </select>
+        </div>
+      </div>
       <div class="table-wrap mb-4" style="overflow-x:auto">
         <table style="width:100%; border-collapse:collapse;" id="exam-timetable-grid">
           <thead>
@@ -144,11 +153,11 @@ function switchReminderTab(tab, params = {}) {
           <tbody id="exam-timetable-rows">
             <!-- Row 1 -->
             <tr>
-              <td style="padding:4px"><input type="date" class="form-control t-date" value="${defaultDate}" style="height:32px;font-size:0.75rem;padding:0 6px"></td>
-              <td style="padding:4px"><input type="text" class="form-control t-subj" value="${defaultSubj}" style="height:32px;font-size:0.75rem;padding:0 6px"></td>
-              <td style="padding:4px"><input type="text" class="form-control t-time" value="09:00 AM" style="height:32px;font-size:0.75rem;padding:0 6px"></td>
-              <td style="padding:4px"><input type="text" class="form-control t-syll" value="${defaultSyll}" style="height:32px;font-size:0.75rem;padding:0 6px"></td>
-              <td style="padding:4px; text-align:center"><button class="btn btn-ghost btn-icon-sm" onclick="this.closest('tr').remove()" style="height:30px;width:30px;min-width:30px">🗑</button></td>
+              <td style="padding:4px"><input type="date" class="form-control t-date" value="${defaultDate}" data-row="0" data-col="0" style="height:32px;font-size:0.75rem;padding:0 6px"></td>
+              <td style="padding:4px"><input type="text" class="form-control t-subj" value="${defaultSubj}" data-row="0" data-col="1" style="height:32px;font-size:0.75rem;padding:0 6px"></td>
+              <td style="padding:4px"><input type="text" class="form-control t-time" value="09:00 AM" data-row="0" data-col="2" style="height:32px;font-size:0.75rem;padding:0 6px"></td>
+              <td style="padding:4px"><input type="text" class="form-control t-syll" value="${defaultSyll}" data-row="0" data-col="3" style="height:32px;font-size:0.75rem;padding:0 6px"></td>
+              <td style="padding:4px; text-align:center"><button class="btn btn-ghost btn-icon-sm" onclick="this.closest('tr').remove(); refreshExamTimetableRowIndices()" style="height:30px;width:30px;min-width:30px">🗑</button></td>
             </tr>
           </tbody>
         </table>
@@ -163,6 +172,16 @@ function switchReminderTab(tab, params = {}) {
         if (stdSelect) stdSelect.value = params.standardId;
       }
     });
+    
+    // Bind excel paste and keys navigation to timetable rows
+    setTimeout(() => {
+      const tbody = document.getElementById('exam-timetable-rows');
+      if (tbody) {
+        refreshExamTimetableRowIndices(tbody);
+        setupGridExcelCopyPaste(tbody, addExamTimetableRow);
+        setupSpreadsheetKeyboardNavigation(tbody, addExamTimetableRow);
+      }
+    }, 120);
   } else if (tab === 'starting_date') {
     formTitle.textContent = '🚀 Compose New Batch Start Announcement';
     formBody.innerHTML = `
@@ -212,6 +231,19 @@ Management Board</textarea>
   }
 }
 
+function refreshExamTimetableRowIndices(tbody) {
+  if (!tbody) tbody = document.getElementById('exam-timetable-rows');
+  if (!tbody) return;
+  Array.from(tbody.children).forEach((tr, rIdx) => {
+    const inputs = tr.querySelectorAll('input');
+    inputs.forEach((input, cIdx) => {
+      input.dataset.row = rIdx;
+      input.dataset.col = cIdx;
+    });
+  });
+}
+window.refreshExamTimetableRowIndices = refreshExamTimetableRowIndices;
+
 function addExamTimetableRow() {
   const tbody = document.getElementById('exam-timetable-rows');
   if (!tbody) return;
@@ -221,9 +253,10 @@ function addExamTimetableRow() {
     <td style="padding:4px"><input type="text" class="form-control t-subj" placeholder="e.g. Science" style="height:32px;font-size:0.75rem;padding:0 6px"></td>
     <td style="padding:4px"><input type="text" class="form-control t-time" placeholder="e.g. 10:00 AM" style="height:32px;font-size:0.75rem;padding:0 6px"></td>
     <td style="padding:4px"><input type="text" class="form-control t-syll" placeholder="e.g. Chapters 4 & 5" style="height:32px;font-size:0.75rem;padding:0 6px"></td>
-    <td style="padding:4px; text-align:center"><button class="btn btn-ghost btn-icon-sm" onclick="this.closest('tr').remove()" style="height:30px;width:30px;min-width:30px">🗑</button></td>
+    <td style="padding:4px; text-align:center"><button class="btn btn-ghost btn-icon-sm" onclick="this.closest('tr').remove(); refreshExamTimetableRowIndices()" style="height:30px;width:30px;min-width:30px">🗑</button></td>
   `;
   tbody.appendChild(tr);
+  refreshExamTimetableRowIndices(tbody);
 }
 
 async function exportNoticePDF() {

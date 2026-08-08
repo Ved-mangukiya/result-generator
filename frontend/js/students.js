@@ -41,6 +41,7 @@ async function renderStudents(params = {}) {
       <button class="btn ${_currentStudentsTab === 'directory' ? 'btn-primary' : 'btn-outline'} btn-sm" id="btn-tab-directory" onclick="switchStudentsTab('directory')">${Icons?.render?.('students',{size:14}) || ''} Student Directory</button>
       <button class="btn ${_currentStudentsTab === 'admissions' ? 'btn-primary' : 'btn-outline'} btn-sm" id="btn-tab-admissions" onclick="switchStudentsTab('admissions')">${Icons?.render?.('school',{size:14}) || ''} Admissions &amp; Status</button>
       <button class="btn ${_currentStudentsTab === 'fees' ? 'btn-primary' : 'btn-outline'} btn-sm" id="btn-tab-fees" onclick="switchStudentsTab('fees')">${Icons?.render?.('fees',{size:14}) || ''} Fees &amp; Ledger</button>
+      <button class="btn ${_currentStudentsTab === 'graduated' ? 'btn-primary' : 'btn-outline'} btn-sm" id="btn-tab-graduated" onclick="switchStudentsTab('graduated')">${Icons?.render?.('school',{size:14}) || ''} Graduated Records</button>
     </div>
 
     <div id="students-tab-content">
@@ -58,10 +59,12 @@ async function switchStudentsTab(tab) {
   const btnDir = document.getElementById('btn-tab-directory');
   const btnAdm = document.getElementById('btn-tab-admissions');
   const btnFees = document.getElementById('btn-tab-fees');
+  const btnGrad = document.getElementById('btn-tab-graduated');
   
   if (btnDir) btnDir.className = `btn ${tab === 'directory' ? 'btn-primary' : 'btn-outline'} btn-sm`;
   if (btnAdm) btnAdm.className = `btn ${tab === 'admissions' ? 'btn-primary' : 'btn-outline'} btn-sm`;
   if (btnFees) btnFees.className = `btn ${tab === 'fees' ? 'btn-primary' : 'btn-outline'} btn-sm`;
+  if (btnGrad) btnGrad.className = `btn ${tab === 'graduated' ? 'btn-primary' : 'btn-outline'} btn-sm`;
   
   const container = document.getElementById('students-tab-content');
   if (!container) return;
@@ -93,7 +96,7 @@ async function switchStudentsTab(tab) {
           <h3>Student Records</h3>
           <span class="badge badge-primary" id="student-count">0</span>
         </div>
-        <div id="students-body">
+        <div class="card-body" id="students-body" style="padding: var(--space-6);">
           <div class="empty-state" style="padding:var(--space-12)">
             <div class="animate-pulse" style="font-size:2.5rem">👥</div>
             <p class="text-muted text-sm mt-2">Loading students...</p>
@@ -161,7 +164,157 @@ async function switchStudentsTab(tab) {
       </div>
     `;
     await loadFeesDropdown();
+  } else if (tab === 'graduated') {
+    container.innerHTML = `
+      <!-- Filters -->
+      <div class="card mb-4">
+        <div class="card-body" style="padding:var(--space-4)">
+          <div class="flex gap-3 flex-wrap">
+            <div class="search-input-wrap" style="flex:1;min-width:200px">
+              <span class="search-icon">🔍</span>
+              <input type="text" class="form-control" id="graduated-search" placeholder="Search by graduated student name..." 
+                value="${_graduatedStudentsSearch}" oninput="debouncedSearchGraduatedStudents(this.value)">
+            </div>
+            <select class="form-control" style="width:260px" id="graduated-filter-std" onchange="filterGraduatedByStandard(this.value)">
+              <option value="">All Classes</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Graduated List -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Graduated Students History</h3>
+          <span class="badge badge-success" id="graduated-count">0</span>
+        </div>
+        <div class="card-body" id="graduated-body" style="padding: var(--space-6);">
+          <div class="empty-state" style="padding:var(--space-12)">
+            <div class="animate-pulse" style="font-size:2.5rem">🎓</div>
+            <p class="text-muted text-sm mt-2">Loading graduated students...</p>
+          </div>
+        </div>
+      </div>
+    `;
+    await loadGraduatedStandardsDropdown();
+    await loadGraduatedStudents();
   }
+}
+
+let _graduatedStudentsList = [];
+let _graduatedStudentsSearch = '';
+let _graduatedStandardId = null;
+
+async function loadGraduatedStudents() {
+  try {
+    const body = document.getElementById('graduated-body');
+    const stdId = document.getElementById('graduated-filter-std')?.value || _graduatedStandardId;
+    const search = document.getElementById('graduated-search')?.value || '';
+    
+    _graduatedStudentsList = await API.students.list(stdId, null, search, 'Completed');
+    
+    document.getElementById('graduated-count').textContent = _graduatedStudentsList.length;
+    
+    if (_graduatedStudentsList.length === 0) {
+      body.innerHTML = `
+        <div class="empty-state" style="padding:var(--space-12)">
+          <div class="empty-state-icon">${Icons?.render?.('school',{size:36}) || ''}</div>
+          <h3>No Graduated Students</h3>
+          <p>No historical records match the active criteria.</p>
+        </div>`;
+      return;
+    }
+    
+    body.innerHTML = `
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Photo</th>
+              <th>Roll No.</th>
+              <th>Student Name</th>
+              <th>Class</th>
+              <th>Board</th>
+              <th>Admission Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+             ${_graduatedStudentsList.map(s => {
+                return `
+                <tr>
+                  <td>
+                    <div class="student-avatar" style="width:36px;height:42px;border-radius:var(--radius-sm)">
+                      ${s.photo_path ? `<img src="/${getPhotoThumbPath(s.photo_path)}" alt="${s.name}">` : s.name[0].toUpperCase()}
+                    </div>
+                  </td>
+                  <td><span class="badge badge-gray">${s.roll_number}</span></td>
+                  <td class="td-primary">${s.name}</td>
+                  <td class="text-sm">${s.standard_name || '—'}</td>
+                  <td><span class="badge badge-primary">${s.board_short || '—'}</span></td>
+                  <td>${Format.date(s.admission_date)}</td>
+                  <td>
+                    <div class="td-actions">
+                      <button class="btn btn-ghost btn-icon-sm" onclick="showStudentLedgerModal(${s.id}, '${s.name.replace(/'/g, "\\'")}')" title="View Fee Ledger">${Icons?.render?.('fees',{size:14}) || ''}</button>
+                      <button class="btn btn-outline btn-sm" onclick="revertGraduation(${s.id}, '${s.name.replace(/'/g, "\\'")}')" style="font-size:0.75rem; padding: 2px 6px;">Restore Active</button>
+                    </div>
+                  </td>
+                </tr>`;
+              }).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } catch (err) {
+    Toast.error('Failed to load graduated students', err.message);
+  }
+}
+
+async function revertGraduation(studentId, name) {
+  const ok = await Confirm.show('Undo Graduation?', `Are you sure you want to revert graduation for ${name}? This will restore them as an Active current student.`, 'Restore Student', 'btn-primary', Icons?.render?.('school',{size:28}) || '');
+  if (!ok) return;
+
+  try {
+    const student = await API.students.get(studentId);
+    student.status = 'Active';
+    await API.students.update(studentId, student);
+    Toast.success('Student Restored', `${name} is now marked as Active.`);
+    await loadGraduatedStudents();
+  } catch (err) {
+    Toast.error('Restore Failed', err.message);
+  }
+}
+
+async function loadGraduatedStandardsDropdown() {
+  try {
+    const boards = await API.boards.list();
+    const sel = document.getElementById('graduated-filter-std');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">All Classes</option>';
+    for (const board of boards) {
+      const standards = await API.boards.getStandards(board.id);
+      if (standards.length > 0) {
+        const grp = document.createElement('optgroup');
+        grp.label = board.short_name;
+        standards.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s.id;
+          opt.textContent = s.display_name;
+          grp.appendChild(opt);
+        });
+        sel.appendChild(grp);
+      }
+    }
+  } catch {}
+}
+
+const debouncedSearchGraduatedStudents = debounce((val) => {
+  _graduatedStudentsSearch = val;
+  loadGraduatedStudents();
+}, 300);
+
+function filterGraduatedByStandard(val) {
+  _graduatedStandardId = val ? parseInt(val) : null;
+  loadGraduatedStudents();
 }
 
 async function loadStandardsDropdown() {
@@ -992,6 +1145,10 @@ window.selectAllSubjects = selectAllSubjects;
 window.toggleStudentRollMode = toggleStudentRollMode;
 window.downloadStudentLedgerPDF = downloadStudentLedgerPDF;
 window.downloadBulkLedgerPDF = downloadBulkLedgerPDF;
+window.loadGraduatedStudents = loadGraduatedStudents;
+window.revertGraduation = revertGraduation;
+window.filterGraduatedByStandard = filterGraduatedByStandard;
+window.debouncedSearchGraduatedStudents = debouncedSearchGraduatedStudents;
 
 // ─── Tuition ERP Page Views ───────────────────────
 async function loadAdmissionsTab(standardId) {
@@ -1036,39 +1193,41 @@ async function loadAdmissionsTab(standardId) {
           <h3>Admission Enrollment Statuses</h3>
           <span class="badge badge-primary">${students.length} Total</span>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Roll No</th>
-                <th>Student Name</th>
-                <th>Admission Date</th>
-                <th>Course Fee</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${students.map(s => `
+        <div class="card-body">
+          <div class="table-wrap">
+            <table>
+              <thead>
                 <tr>
-                  <td><span class="badge badge-gray">${s.roll_number}</span></td>
-                  <td class="td-primary">${s.name}</td>
-                  <td>${s.admission_date ? Format.date(s.admission_date) : '—'}</td>
-                  <td>₹${s.total_fees || 0}</td>
-                  <td>
-                    <select class="form-control" style="width:140px;height:32px;padding:0 8px;font-size:0.8rem;" onchange="updateStudentAdmissionStatus(${s.id}, this.value)">
-                      <option value="Active" ${s.status === 'Active' ? 'selected' : ''}>Active</option>
-                      <option value="Completed" ${s.status === 'Completed' ? 'selected' : ''}>Completed</option>
-                      <option value="Terminated" ${s.status === 'Terminated' ? 'selected' : ''}>Terminated</option>
-                    </select>
-                  </td>
-                  <td>
-                    <button class="btn btn-outline btn-sm" onclick="showEditStudentModal(${s.id})">${Icons?.render?.('edit',{size:14}) || ''} Edit</button>
-                  </td>
+                  <th>Roll No</th>
+                  <th>Student Name</th>
+                  <th>Admission Date</th>
+                  <th>Course Fee</th>
+                  <th>Status</th>
+                  <th>Actions</th>
                 </tr>
-              `).join('')}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                ${students.map(s => `
+                  <tr>
+                    <td><span class="badge badge-gray">${s.roll_number}</span></td>
+                    <td class="td-primary">${s.name}</td>
+                    <td>${s.admission_date ? Format.date(s.admission_date) : '—'}</td>
+                    <td>₹${s.total_fees || 0}</td>
+                    <td>
+                      <select class="form-control" style="width:140px;height:32px;padding:0 8px;font-size:0.8rem;" onchange="updateStudentAdmissionStatus(${s.id}, this.value)">
+                        <option value="Active" ${s.status === 'Active' ? 'selected' : ''}>Active</option>
+                        <option value="Completed" ${s.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                        <option value="Terminated" ${s.status === 'Terminated' ? 'selected' : ''}>Terminated</option>
+                      </select>
+                    </td>
+                    <td>
+                      <button class="btn btn-outline btn-sm" onclick="showEditStudentModal(${s.id})">${Icons?.render?.('edit',{size:14}) || ''} Edit</button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     `;
@@ -1135,55 +1294,57 @@ async function loadFeesTab(standardId) {
             </button>
           </div>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Roll No</th>
-                <th>Student Name</th>
-                <th>Total Fee</th>
-                <th>Paid</th>
-                <th>Outstanding</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${students.map(s => {
-                const total = parseFloat(s.total_fees) || 0;
-                const paid  = parseFloat(s.paid_fees) || 0;
-                const bal   = Math.max(0, total - paid);
-                const paidPct = total > 0 ? Math.round((paid / total) * 100) : 0;
-                let statusBadge = '';
-                if (paid >= total && total > 0) statusBadge = `<span class="badge badge-success">Fully Paid</span>`;
-                else if (paid > 0) statusBadge = `<span class="badge badge-warning">Partial</span>`;
-                else statusBadge = `<span class="badge badge-danger">Unpaid</span>`;
-                return `
-                  <tr>
-                    <td><span class="badge badge-gray">${s.roll_number}</span></td>
-                    <td class="td-primary">${s.name}</td>
-                    <td>${fmt(total)}</td>
-                    <td class="text-success font-semibold">${fmt(paid)}</td>
-                    <td class="${bal > 0 ? 'text-danger' : 'text-success'} font-semibold">${fmt(bal)}</td>
-                    <td>${statusBadge}</td>
-                    <td>
-                      <div class="td-actions">
-                        <button class="btn btn-outline btn-sm" onclick="showRecordPaymentModal(${s.id}, ${JSON.stringify(s.name).replace(/"/g, '&quot;')})" title="Record a new payment">
-                          ${Icons?.render?.('fees',{size:13}) || ''} Record Payment
-                        </button>
-                        <button class="btn btn-ghost btn-sm" onclick="showStudentLedgerModal(${s.id}, ${JSON.stringify(s.name).replace(/"/g, '&quot;')})" title="View full ledger">
-                          ${Icons?.render?.('results',{size:13}) || ''} Ledger
-                        </button>
-                        <button class="btn btn-ghost btn-icon-sm" onclick="downloadStudentLedgerPDF(${s.id})" title="Download PDF ledger">
-                          ${Icons?.render?.('download',{size:13}) || ''}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                `;
-              }).join('')}
-            </tbody>
-          </table>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Roll No</th>
+                  <th>Student Name</th>
+                  <th>Total Fee</th>
+                  <th>Paid</th>
+                  <th>Outstanding</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${students.map(s => {
+                  const total = parseFloat(s.total_fees) || 0;
+                  const paid  = parseFloat(s.paid_fees) || 0;
+                  const bal   = Math.max(0, total - paid);
+                  const paidPct = total > 0 ? Math.round((paid / total) * 100) : 0;
+                  let statusBadge = '';
+                  if (paid >= total && total > 0) statusBadge = `<span class="badge badge-success">Fully Paid</span>`;
+                  else if (paid > 0) statusBadge = `<span class="badge badge-warning">Partial</span>`;
+                  else statusBadge = `<span class="badge badge-danger">Unpaid</span>`;
+                  return `
+                    <tr>
+                      <td><span class="badge badge-gray">${s.roll_number}</span></td>
+                      <td class="td-primary">${s.name}</td>
+                      <td>${fmt(total)}</td>
+                      <td class="text-success font-semibold">${fmt(paid)}</td>
+                      <td class="${bal > 0 ? 'text-danger' : 'text-success'} font-semibold">${fmt(bal)}</td>
+                      <td>${statusBadge}</td>
+                      <td>
+                        <div class="td-actions">
+                          <button class="btn btn-outline btn-sm" onclick="showRecordPaymentModal(${s.id}, ${JSON.stringify(s.name).replace(/"/g, '&quot;')})" title="Record a new payment">
+                            ${Icons?.render?.('fees',{size:13}) || ''} Record Payment
+                          </button>
+                          <button class="btn btn-ghost btn-sm" onclick="showStudentLedgerModal(${s.id}, ${JSON.stringify(s.name).replace(/"/g, '&quot;')})" title="View full ledger">
+                            ${Icons?.render?.('results',{size:13}) || ''} Ledger
+                          </button>
+                          <button class="btn btn-ghost btn-icon-sm" onclick="downloadStudentLedgerPDF(${s.id})" title="Download PDF ledger">
+                            ${Icons?.render?.('download',{size:13}) || ''}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     `;
@@ -1440,6 +1601,13 @@ async function showDirectGridAdmissionModal() {
             <option value="">— Select Batch (Optional) —</option>
           </select>
         </div>
+        <div class="form-group" style="flex:1;min-width:200px">
+          <label class="form-label" style="font-weight:600">Enter Key Action</label>
+          <select class="form-control" id="grid-enter-action">
+            <option value="right" selected>➡️ Right Then Next Row</option>
+            <option value="down">⬇️ Down Then Next Col</option>
+          </select>
+        </div>
       </div>
       <div style="max-height:450px; overflow-y:auto; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg-elevated)" class="mb-4">
         <table style="width:100%; border-collapse:collapse" class="marks-table">
@@ -1462,7 +1630,7 @@ async function showDirectGridAdmissionModal() {
       </div>
       <div class="flex justify-between items-center bg-surface p-3 rounded" style="border:1px solid var(--border)">
         <button class="btn btn-outline btn-sm" onclick="addGridAdmissionRow()">${Icons?.render?.('add',{size:14}) || ''} Add Row</button>
-        <p class="text-xs text-muted" style="margin:0">💡 Press <kbd>Enter</kbd> or <kbd>Tab</kbd> on the last cell to append a new row. Use Arrow keys to navigate. Press <kbd>Ctrl + S</kbd> to Save.</p>
+        <p class="text-xs text-muted" style="margin:0">💡 Press <kbd>Enter</kbd> or <kbd>Tab</kbd> on the last cell to append a new row. Use Arrow keys to navigate. Press <kbd>Ctrl + S</kbd> to Save. Copy/Paste from Excel supported.</p>
       </div>
     </div>`,
     `<button class="btn btn-outline" onclick="closeModal('direct-grid-admission-modal')">Cancel</button>
@@ -1477,6 +1645,11 @@ async function showDirectGridAdmissionModal() {
   for (let i = 0; i < 5; i++) {
     addGridAdmissionRow();
   }
+  
+  // Bind excel paste and keys navigation
+  const tbody = document.getElementById('grid-adm-tbody');
+  setupGridExcelCopyPaste(tbody, addGridAdmissionRow);
+  setupSpreadsheetKeyboardNavigation(tbody, addGridAdmissionRow);
   
   // Load standard and batches
   await loadGridAdmissionStandardsDropdown(_studentsStandardId);
@@ -1513,95 +1686,6 @@ function addGridAdmissionRow() {
     <td style="padding:4px;"><input type="number" class="form-control grid-adm-paid-fees" placeholder="0" data-row="${rowCount}" data-col="7" style="padding:var(--space-1) var(--space-2)"></td>
   `;
   tbody.appendChild(tr);
-  setupGridAdmissionKeyboardNavigation();
-}
-
-function setupGridAdmissionKeyboardNavigation() {
-  const tbody = document.getElementById('grid-adm-tbody');
-  if (!tbody || tbody.dataset.keyboardNavBound) return;
-  tbody.dataset.keyboardNavBound = 'true';
-  
-  tbody.addEventListener('keydown', (e) => {
-    if (e.target.tagName !== 'INPUT') return;
-    const input = e.target;
-    const row = parseInt(input.dataset.row);
-    const col = parseInt(input.dataset.col);
-    const maxRows = tbody.children.length;
-    
-    let targetRow = row;
-    let targetCol = col;
-    let handled = false;
-    
-    if (e.key === 'ArrowUp') {
-      targetRow = Math.max(0, row - 1);
-      handled = true;
-    } else if (e.key === 'ArrowDown') {
-      targetRow = Math.min(maxRows - 1, row + 1);
-      handled = true;
-    } else if (e.key === 'Tab') {
-      if (e.shiftKey) {
-        if (col === 0 && row > 0) {
-          targetRow = row - 1;
-          targetCol = 7;
-          handled = true;
-        } else if (col > 0) {
-          targetCol = col - 1;
-          handled = true;
-        }
-      } else {
-        if (col === 7) {
-          if (row === maxRows - 1) {
-            e.preventDefault();
-            addGridAdmissionRow();
-            setTimeout(() => {
-              const nextInput = document.querySelector(`#grid-adm-tbody input[data-row="${row + 1}"][data-col="0"]`);
-              if (nextInput) {
-                nextInput.focus();
-                nextInput.select();
-              }
-            }, 10);
-            return;
-          } else {
-            targetRow = row + 1;
-            targetCol = 0;
-            handled = true;
-          }
-        } else {
-          targetCol = col + 1;
-          handled = true;
-        }
-      }
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      if (row === maxRows - 1 && col === 7) {
-        addGridAdmissionRow();
-        setTimeout(() => {
-          const nextInput = document.querySelector(`#grid-adm-tbody input[data-row="${row + 1}"][data-col="0"]`);
-          if (nextInput) {
-            nextInput.focus();
-            nextInput.select();
-          }
-        }, 10);
-        return;
-      } else if (col === 7) {
-        targetRow = row + 1;
-        targetCol = 0;
-        handled = true;
-      } else {
-        targetCol = col + 1;
-        handled = true;
-      }
-    }
-    
-    if (handled) {
-      e.preventDefault();
-      const nextInput = document.querySelector(`#grid-adm-tbody input[data-row="${targetRow}"][data-col="${targetCol}"]`);
-      if (nextInput) {
-        nextInput.focus();
-        nextInput.select();
-      }
-    }
-  });
 }
 
 async function loadGridAdmissionStandardsDropdown(selectedStandardId) {
@@ -1718,78 +1802,36 @@ async function saveDirectGridAdmissions() {
     return;
   }
   
+  Spinner.show('Admitting students...');
   try {
     let successCount = 0;
     for (const stu of studentsToInsert) {
       try {
-        await API.students.add(stu);
+        const res = await API.students.add(stu);
+        const studentId = res.id;
         successCount++;
+        
+        if (stu.paid_fees > 0 && studentId) {
+          await API.fees.addPayment(studentId, {
+            amount: stu.paid_fees,
+            payment_date: new Date().toISOString().split('T')[0],
+            payment_method: 'Cash',
+            remarks: 'Initial Admission Payment'
+          });
+        }
       } catch (err) {
         console.error('Failed to add student:', stu, err);
         Toast.error('Error', `Failed to add ${stu.first_name}: ${err.message}`);
       }
     }
     
+    Spinner.hide();
     Toast.success('Bulk Admission Success', `${successCount} student(s) admitted successfully.`);
     closeModal('direct-grid-admission-modal');
     await loadStudents();
   } catch (err) {
+    Spinner.hide();
     Toast.error('Bulk Admission Failed', err.message);
-  }
-}
-    
-    studentsToInsert.push({
-      name,
-      roll_number: roll || null,
-      dob: dobParsed,
-      father_name: father,
-      mother_name: mother,
-      total_fees: totalFees,
-      paid_fees: paidFees
-    });
-  }
-  
-  if (studentsToInsert.length === 0) {
-    Toast.warning('Empty Data', 'Please enter at least one student.');
-    return;
-  }
-  
-  Spinner.show('Creating students...');
-  try {
-    for (const student of studentsToInsert) {
-      const data = {
-        standard_id: parseInt(stdId),
-        batch_id: batchId ? parseInt(batchId) : null,
-        name: student.name,
-        roll_number: student.roll_number,
-        dob: student.dob,
-        father_name: student.father_name,
-        mother_name: student.mother_name,
-        total_fees: student.total_fees,
-        status: 'Active',
-        admission_date: new Date().toISOString().split('T')[0]
-      };
-      
-      const res = await API.students.add(data);
-      const studentId = res.id;
-      
-      if (student.paid_fees > 0 && studentId) {
-        await API.post(`/api/fees/student/${studentId}/payments`, {
-          amount: student.paid_fees,
-          payment_date: new Date().toISOString().split('T')[0],
-          payment_method: 'Cash',
-          remarks: 'Initial Admission Payment'
-        });
-      }
-    }
-    
-    Spinner.hide();
-    closeModal('direct-grid-admission-modal');
-    Toast.success('Success', `Successfully admitted ${studentsToInsert.length} students!`);
-    await loadStudents();
-  } catch (err) {
-    Spinner.hide();
-    Toast.error('Save Failed', err.message);
   }
 }
 
