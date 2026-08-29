@@ -12,11 +12,13 @@ async function renderStudents(params = {}) {
   setPageTitle('Admissions & Fees', 'Admissions & Fees');
   
   if (params.standardId) {
-    _studentsStandardId = parseInt(params.standardId);
-    localStorage.setItem('tuition_erp_students_standard_id', _studentsStandardId);
+    const parsed = parseInt(params.standardId);
+    _studentsStandardId = !isNaN(parsed) ? parsed : null;
+    if (_studentsStandardId) localStorage.setItem('tuition_erp_students_standard_id', _studentsStandardId);
   } else {
     const cachedStd = localStorage.getItem('tuition_erp_students_standard_id');
-    _studentsStandardId = (cachedStd && cachedStd !== 'null') ? parseInt(cachedStd) : null;
+    const parsed = parseInt(cachedStd);
+    _studentsStandardId = (!isNaN(parsed) && cachedStd !== 'null' && cachedStd !== 'undefined') ? parsed : null;
   }
   
   _studentsSearch = localStorage.getItem('tuition_erp_students_search') || '';
@@ -40,6 +42,7 @@ async function renderStudents(params = {}) {
     <!-- ERP Navigation Tabs -->
     <div class="tabs mb-6">
       <button class="btn ${_currentStudentsTab === 'directory' ? 'btn-primary' : 'btn-outline'} btn-sm" id="btn-tab-directory" onclick="switchStudentsTab('directory')">${Icons?.render?.('students',{size:14}) || ''} Student Directory</button>
+      <button class="btn ${_currentStudentsTab === 'credentials' ? 'btn-primary' : 'btn-outline'} btn-sm" id="btn-tab-credentials" onclick="switchStudentsTab('credentials')">🔑 Portal Credentials</button>
       <button class="btn ${_currentStudentsTab === 'admissions' ? 'btn-primary' : 'btn-outline'} btn-sm" id="btn-tab-admissions" onclick="switchStudentsTab('admissions')">${Icons?.render?.('school',{size:14}) || ''} Admissions &amp; Status</button>
       <button class="btn ${_currentStudentsTab === 'fees' ? 'btn-primary' : 'btn-outline'} btn-sm" id="btn-tab-fees" onclick="switchStudentsTab('fees')">${Icons?.render?.('fees',{size:14}) || ''} Fees &amp; Ledger</button>
       <button class="btn ${_currentStudentsTab === 'graduated' ? 'btn-primary' : 'btn-outline'} btn-sm" id="btn-tab-graduated" onclick="switchStudentsTab('graduated')">${Icons?.render?.('school',{size:14}) || ''} Graduated Records</button>
@@ -58,17 +61,93 @@ async function switchStudentsTab(tab) {
   localStorage.setItem('tuition_erp_students_tab', tab);
   
   const btnDir = document.getElementById('btn-tab-directory');
+  const btnCred = document.getElementById('btn-tab-credentials');
   const btnAdm = document.getElementById('btn-tab-admissions');
   const btnFees = document.getElementById('btn-tab-fees');
   const btnGrad = document.getElementById('btn-tab-graduated');
   
   if (btnDir) btnDir.className = `btn ${tab === 'directory' ? 'btn-primary' : 'btn-outline'} btn-sm`;
+  if (btnCred) btnCred.className = `btn ${tab === 'credentials' ? 'btn-primary' : 'btn-outline'} btn-sm`;
   if (btnAdm) btnAdm.className = `btn ${tab === 'admissions' ? 'btn-primary' : 'btn-outline'} btn-sm`;
   if (btnFees) btnFees.className = `btn ${tab === 'fees' ? 'btn-primary' : 'btn-outline'} btn-sm`;
   if (btnGrad) btnGrad.className = `btn ${tab === 'graduated' ? 'btn-primary' : 'btn-outline'} btn-sm`;
   
   const container = document.getElementById('students-tab-content');
   if (!container) return;
+
+  if (tab === 'credentials') {
+    container.innerHTML = `
+      <!-- Credentials Sub-tab Switcher -->
+      <div class="flex gap-2 mb-4">
+        <button class="btn ${_credActiveSubTab === 'students' ? 'btn-primary' : 'btn-outline'} btn-sm" id="subtab-cred-students" onclick="switchCredentialsSubTab('students')">
+          🎓 Student &amp; Parent Credentials
+        </button>
+        <button class="btn ${_credActiveSubTab === 'teachers' ? 'btn-primary' : 'btn-outline'} btn-sm" id="subtab-cred-teachers" onclick="switchCredentialsSubTab('teachers')">
+          👨‍🏫 Faculty &amp; Teacher Credentials
+        </button>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="card mb-4" id="cred-toolbar-card">
+        <div class="card-body" style="padding:var(--space-4)">
+          <div class="flex gap-3 flex-wrap items-center justify-between">
+            <div class="flex gap-3 flex-wrap items-center" style="flex:1;">
+              <div class="search-input-wrap" style="flex:1;min-width:220px">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="form-control" id="cred-search" placeholder="Search by name, roll, or username..." 
+                  oninput="debouncedSearchCredentials(this.value)">
+              </div>
+              <div id="cred-student-filters" class="flex gap-2" style="${_credActiveSubTab === 'teachers' ? 'display:none;' : 'display:flex;'}">
+                <select class="form-control" style="width:220px" id="cred-filter-std" onchange="filterCredentialsStandard(this.value)">
+                  <option value="all">All Classes</option>
+                </select>
+                <select class="form-control" style="width:180px; display:none" id="cred-filter-batch" onchange="filterCredentialsBatch(this.value)">
+                  <option value="all">All Batches</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="flex gap-2" id="cred-action-buttons">
+              ${_credActiveSubTab === 'students' ? `
+                <button class="btn btn-teal btn-sm" onclick="showBulkCredentialGeneratorModal()" style="background:linear-gradient(135deg,#d97706,#b45309);color:white;border:none;font-weight:700;">
+                  ⚡ Bulk Generator / Randomizer
+                </button>
+                <button class="btn btn-outline btn-sm" onclick="showCredentialExportModal()">
+                  📇 Export All Slips (PDF)
+                </button>
+              ` : `
+                <button class="btn btn-primary btn-sm" onclick="showAddFacultyModal()">
+                  ➕ Add Faculty Member
+                </button>
+              `}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Credentials Live Table -->
+      <div class="card">
+        <div class="card-header flex justify-between items-center">
+          <div>
+            <h3 style="margin:0;" id="cred-table-title">${_credActiveSubTab === 'students' ? 'Student &amp; Parent Web Portal Credentials' : 'Faculty &amp; Teacher Web Portal Credentials'}</h3>
+            <p class="text-xs text-muted" style="margin:0;" id="cred-table-desc">Edit login IDs or passwords in realtime. Changes sync instantly with database.</p>
+          </div>
+          <span class="badge badge-primary" id="cred-count">0</span>
+        </div>
+        <div class="card-body" id="credentials-body" style="padding: var(--space-6);">
+          <div class="empty-state" style="padding:var(--space-12)">
+            <div class="animate-pulse" style="font-size:2.5rem">🔑</div>
+            <p class="text-muted text-sm mt-2">Loading credentials...</p>
+          </div>
+        </div>
+      </div>
+    `;
+    if (_credActiveSubTab === 'students') {
+      await loadCredentialsStandardsDropdown();
+    }
+    await loadCredentialsData();
+    return;
+  }
   
   if (tab === 'directory') {
     container.innerHTML = `
@@ -318,6 +397,568 @@ function filterGraduatedByStandard(val) {
   loadGraduatedStudents();
 }
 
+// ─── Credentials Hub Tab Helpers ─────────────────────────────────────────────
+let _credentialsList = [];
+let _teachersCredList = [];
+let _credActiveSubTab = 'students';
+let _credSearch = '';
+let _credStandardId = 'all';
+let _credBatchId = 'all';
+
+function switchCredentialsSubTab(subtab) {
+  _credActiveSubTab = subtab;
+  _credSearch = '';
+  const searchInp = document.getElementById('cred-search');
+  if (searchInp) searchInp.value = '';
+
+  const btnStudents = document.getElementById('subtab-cred-students');
+  const btnTeachers = document.getElementById('subtab-cred-teachers');
+  if (btnStudents) btnStudents.className = `btn ${subtab === 'students' ? 'btn-primary' : 'btn-outline'} btn-sm`;
+  if (btnTeachers) btnTeachers.className = `btn ${subtab === 'teachers' ? 'btn-primary' : 'btn-outline'} btn-sm`;
+
+  const studentFilters = document.getElementById('cred-student-filters');
+  if (studentFilters) studentFilters.style.display = subtab === 'students' ? 'flex' : 'none';
+
+  const actionButtons = document.getElementById('cred-action-buttons');
+  if (actionButtons) {
+    actionButtons.innerHTML = subtab === 'students' ? `
+      <button class="btn btn-teal btn-sm" onclick="showBulkCredentialGeneratorModal()" style="background:linear-gradient(135deg,#d97706,#b45309);color:white;border:none;font-weight:700;">
+        ⚡ Bulk Generator / Randomizer
+      </button>
+      <button class="btn btn-outline btn-sm" onclick="showCredentialExportModal()">
+        📇 Export All Slips (PDF)
+      </button>
+    ` : `
+      <button class="btn btn-primary btn-sm" onclick="showAddFacultyModal()">
+        ➕ Add Faculty Member
+      </button>
+    `;
+  }
+
+  const tableTitle = document.getElementById('cred-table-title');
+  const tableDesc = document.getElementById('cred-table-desc');
+  if (tableTitle) tableTitle.textContent = subtab === 'students' ? 'Student & Parent Web Portal Credentials' : 'Faculty & Teacher Web Portal Credentials';
+  if (tableDesc) tableDesc.textContent = subtab === 'students' 
+    ? 'Edit login IDs or passwords in realtime. Changes sync instantly with database.' 
+    : 'Manage teacher usernames, passwords, phone numbers, and portal credentials with instant database sync.';
+
+  loadCredentialsData();
+}
+window.switchCredentialsSubTab = switchCredentialsSubTab;
+
+async function loadCredentialsStandardsDropdown() {
+  try {
+    const boards = await API.boards.list();
+    const sel = document.getElementById('cred-filter-std');
+    if (!sel) return;
+    sel.innerHTML = '<option value="all">All Classes</option>';
+    for (const board of boards) {
+      const standards = await API.boards.getStandards(board.id);
+      if (standards.length > 0) {
+        const grp = document.createElement('optgroup');
+        grp.label = board.short_name;
+        standards.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s.id;
+          opt.textContent = s.display_name;
+          if (String(s.id) === String(_credStandardId)) opt.selected = true;
+          grp.appendChild(opt);
+        });
+        sel.appendChild(grp);
+      }
+    }
+  } catch(e) {
+    console.error('Error loading credentials standards:', e);
+  }
+}
+
+const debouncedSearchCredentials = debounce((val) => {
+  _credSearch = val;
+  loadCredentialsData();
+}, 250);
+window.debouncedSearchCredentials = debouncedSearchCredentials;
+
+function filterCredentialsStandard(val) {
+  _credStandardId = val;
+  const batchSel = document.getElementById('cred-filter-batch');
+  if (val && val !== 'all') {
+    API.batches.list(val).then(batches => {
+      if (batchSel) {
+        batchSel.innerHTML = '<option value="all">All Batches</option>' + (batches || []).map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+        batchSel.style.display = 'block';
+      }
+      loadCredentialsData();
+    }).catch(() => loadCredentialsData());
+  } else {
+    if (batchSel) {
+      batchSel.style.display = 'none';
+      batchSel.value = 'all';
+    }
+    _credBatchId = 'all';
+    loadCredentialsData();
+  }
+}
+window.filterCredentialsStandard = filterCredentialsStandard;
+
+function filterCredentialsBatch(val) {
+  _credBatchId = val;
+  loadCredentialsData();
+}
+window.filterCredentialsBatch = filterCredentialsBatch;
+
+async function loadCredentialsData() {
+  const body = document.getElementById('credentials-body');
+  if (!body) return;
+
+  if (_credActiveSubTab === 'teachers') {
+    try {
+      const res = await API.teachers.list();
+      let teachers = res.teachers || [];
+
+      if (_credSearch && _credSearch.trim() !== '') {
+        const q = _credSearch.trim().toLowerCase();
+        teachers = teachers.filter(t => 
+          (t.name && t.name.toLowerCase().includes(q)) ||
+          (t.username && t.username.toLowerCase().includes(q)) ||
+          (t.email && t.email.toLowerCase().includes(q)) ||
+          (t.phone && t.phone.toLowerCase().includes(q)) ||
+          (t.subjects_taught && t.subjects_taught.toLowerCase().includes(q))
+        );
+      }
+
+      _teachersCredList = teachers;
+      const countEl = document.getElementById('cred-count');
+      if (countEl) countEl.textContent = teachers.length;
+
+      if (teachers.length === 0) {
+        body.innerHTML = `
+          <div class="empty-state" style="padding:var(--space-12)">
+            <div class="empty-state-icon">👩‍🏫</div>
+            <h3>No Faculty Credentials Found</h3>
+            <p>${_credSearch ? `No faculty accounts match "${_credSearch}".` : 'No faculty records created yet. Click "Add Faculty Member" to create one.'}</p>
+          </div>`;
+        return;
+      }
+
+      renderFacultyCredentialsTable();
+    } catch (err) {
+      body.innerHTML = `<div class="empty-state text-danger"><p>Failed to load faculty credentials: ${err.message}</p></div>`;
+    }
+    return;
+  }
+
+  // Students Subtab
+  try {
+    _credentialsList = await API.students.listCredentials(_credStandardId, _credBatchId, _credSearch);
+    const countEl = document.getElementById('cred-count');
+    if (countEl) countEl.textContent = _credentialsList.length;
+
+    if (_credentialsList.length === 0) {
+      body.innerHTML = `
+        <div class="empty-state" style="padding:var(--space-12)">
+          <div class="empty-state-icon">🔑</div>
+          <h3>No Student Credentials Found</h3>
+          <p>${_credSearch ? `No students match "${_credSearch}".` : 'No active student records available.'}</p>
+        </div>`;
+      return;
+    }
+
+    renderCredentialsTable();
+  } catch(err) {
+    body.innerHTML = `<div class="empty-state text-danger"><p>Failed to load credentials: ${err.message}</p></div>`;
+  }
+}
+window.loadCredentialsData = loadCredentialsData;
+
+function renderCredentialsTable() {
+  const body = document.getElementById('credentials-body');
+  if (!body) return;
+
+  const portalUrl = window.location.origin;
+
+  body.innerHTML = `
+    <div class="table-wrap">
+      <table class="table" style="vertical-align:middle;">
+        <thead>
+          <tr>
+            <th style="width:50px;">Roll</th>
+            <th style="min-width:170px;">Student Name</th>
+            <th style="min-width:140px;">Class / Batch</th>
+            <th style="min-width:190px;">Username / Login ID</th>
+            <th style="min-width:200px;">Portal Password</th>
+            <th style="min-width:150px; text-align:center;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${_credentialsList.map(st => `
+            <tr id="cred-row-${st.id}">
+              <td>
+                <span class="badge badge-gray font-mono font-bold">#${st.roll_number || st.id}</span>
+              </td>
+              <td>
+                <div style="font-weight:700; color:var(--text-primary); font-size:0.95rem;">${st.name}</div>
+                <div class="text-xs text-muted">Roll: #${st.roll_number || '—'}</div>
+              </td>
+              <td class="text-sm">
+                <div>${st.standard_name || 'Class'}</div>
+                <div class="text-xs text-muted">${st.batch_name || 'All Batches'}</div>
+              </td>
+              <td>
+                <div style="position:relative; display:flex; align-items:center;">
+                  <input type="text" class="form-control form-control-sm font-mono font-bold" 
+                    id="cred-user-${st.id}"
+                    value="${st.parent_username || st.roll_number}" 
+                    style="color:#38bdf8; background:rgba(0,0,0,0.04); border:1px solid #cbd5e1; padding-right:28px;"
+                    onchange="updateStudentCredentialInline(${st.id}, 'username', this.value, this)"
+                    title="Click to edit username. Press Enter or click away to save.">
+                  <span id="cred-user-status-${st.id}" style="position:absolute; right:8px; font-size:0.8rem; pointer-events:none;"></span>
+                </div>
+              </td>
+              <td>
+                <div style="position:relative; display:flex; align-items:center; gap:4px;">
+                  <input type="password" class="form-control form-control-sm font-mono font-bold" 
+                    id="cred-pass-${st.id}"
+                    value="${st.parent_password || 'parent123'}" 
+                    style="color:#10b981; background:rgba(0,0,0,0.04); border:1px solid #cbd5e1; padding-right:32px;"
+                    onchange="updateStudentCredentialInline(${st.id}, 'password', this.value, this)"
+                    title="Click to edit password. Press Enter or click away to save.">
+                  <button type="button" class="btn btn-ghost btn-icon-sm" style="position:absolute; right:4px; opacity:0.65;" 
+                    onclick="togglePasswordVisibility('cred-pass-${st.id}', this)" title="Show/Hide Password">
+                    👁️
+                  </button>
+                </div>
+              </td>
+              <td style="text-align:center;">
+                <div class="flex gap-1 justify-center items-center">
+                  <button class="btn btn-ghost btn-icon-sm" onclick="copyStudentCredentialsToClipboard('${st.name.replace(/'/g, "\\'")}', '${st.roll_number}', document.getElementById('cred-user-${st.id}').value, document.getElementById('cred-pass-${st.id}').value, '${portalUrl}')" title="Copy Login Details">
+                    📋
+                  </button>
+                  <button class="btn btn-ghost btn-icon-sm" onclick="downloadStudentCredentialSlip(${st.id}, '${st.name.replace(/'/g, "\\'")}', '${st.roll_number}')" title="Download Credential Slip (PDF)">
+                    📥
+                  </button>
+                  <button class="btn btn-ghost btn-icon-sm" onclick="shareStudentCredentialsWhatsApp('${st.name.replace(/'/g, "\\'")}', '${st.roll_number}', document.getElementById('cred-user-${st.id}').value, document.getElementById('cred-pass-${st.id}').value, '${portalUrl}')" title="Share via WhatsApp">
+                    📱
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderFacultyCredentialsTable() {
+  const body = document.getElementById('credentials-body');
+  if (!body) return;
+
+  const portalUrl = window.location.origin;
+
+  body.innerHTML = `
+    <div class="table-wrap">
+      <table class="table" style="vertical-align:middle;">
+        <thead>
+          <tr>
+            <th style="min-width:180px;">Faculty Member</th>
+            <th style="min-width:180px;">Login Username</th>
+            <th style="min-width:180px;">Email Address</th>
+            <th style="min-width:190px;">Portal Password</th>
+            <th style="min-width:130px;">Phone</th>
+            <th style="min-width:140px;">Assigned Classes</th>
+            <th style="min-width:170px; text-align:center;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${_teachersCredList.map(t => {
+            const safePass = t.plain_password || 'teacher123';
+            const safeUser = t.username || t.email.split('@')[0];
+
+            return `
+              <tr id="fac-cred-row-${t.id}">
+                <td>
+                  <div style="font-weight:700; color:var(--text-primary); font-size:0.95rem;">${t.name}</div>
+                  <div class="text-xs text-muted">${t.subjects_taught || 'Faculty'}</div>
+                </td>
+                <td>
+                  <div style="position:relative; display:flex; align-items:center;">
+                    <input type="text" class="form-control form-control-sm font-mono font-bold" 
+                      id="fac-user-inp-${t.id}"
+                      value="${safeUser}" 
+                      style="color:#38bdf8; background:rgba(0,0,0,0.04); border:1px solid #cbd5e1;"
+                      onchange="updateTeacherCredentialHub(${t.id}, 'username', this.value, this)"
+                      title="Click to edit username. Auto-saves to database.">
+                  </div>
+                </td>
+                <td>
+                  <div style="position:relative; display:flex; align-items:center;">
+                    <input type="email" class="form-control form-control-sm font-mono" 
+                      id="fac-email-inp-${t.id}"
+                      value="${t.email}" 
+                      style="background:rgba(0,0,0,0.04); border:1px solid #cbd5e1;"
+                      onchange="updateTeacherCredentialHub(${t.id}, 'email', this.value, this)"
+                      title="Click to edit email. Auto-saves to database.">
+                  </div>
+                </td>
+                <td>
+                  <div style="position:relative; display:flex; align-items:center; gap:4px;">
+                    <input type="password" class="form-control form-control-sm font-mono font-bold" 
+                      id="fac-pass-inp-${t.id}"
+                      value="${safePass}" 
+                      style="color:#10b981; background:rgba(0,0,0,0.04); border:1px solid #cbd5e1; padding-right:32px;"
+                      onchange="updateTeacherCredentialHub(${t.id}, 'password', this.value, this)"
+                      title="Click to edit password. Auto-saves to database.">
+                    <button type="button" class="btn btn-ghost btn-icon-sm" style="position:absolute; right:4px; opacity:0.65;" 
+                      onclick="togglePasswordVisibility('fac-pass-inp-${t.id}', this)" title="Show/Hide Password">
+                      👁️
+                    </button>
+                  </div>
+                </td>
+                <td>
+                  <div class="font-mono text-sm">${t.phone || '—'}</div>
+                </td>
+                <td>
+                  <span class="badge badge-gray text-xs">${t.assigned_standards || 'All Classes'}</span>
+                </td>
+                <td style="text-align:center;">
+                  <div class="flex gap-1 justify-center items-center">
+                    <button class="btn btn-outline btn-sm" onclick="showEditFacultyModal(${t.id})" title="Full Edit Faculty &amp; Credentials">
+                      ✏️ Edit
+                    </button>
+                    <button class="btn btn-ghost btn-icon-sm" onclick="showFacultyPermissionsModal(${t.id}, '${t.name.replace(/'/g, "\\'")}')" title="Access Permissions">
+                      🔑
+                    </button>
+                    <button class="btn btn-ghost btn-icon-sm" onclick="copyFacultyCredentialsToClipboard('${t.name.replace(/'/g, "\\'")}', document.getElementById('fac-user-inp-${t.id}').value, document.getElementById('fac-email-inp-${t.id}').value, document.getElementById('fac-pass-inp-${t.id}').value, '${portalUrl}')" title="Copy Login Details">
+                      📋
+                    </button>
+                    <button class="btn btn-ghost btn-icon-sm" onclick="shareFacultyCredentialsWhatsApp('${t.name.replace(/'/g, "\\'")}', document.getElementById('fac-user-inp-${t.id}').value, document.getElementById('fac-email-inp-${t.id}').value, document.getElementById('fac-pass-inp-${t.id}').value, '${t.phone || ''}', '${portalUrl}')" title="Share via WhatsApp">
+                      📱
+                    </button>
+                    <button class="btn btn-ghost btn-icon-sm" onclick="deleteFacultyAccount(${t.id})" style="color:var(--danger);" title="Delete Faculty Account">
+                      🗑️
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+async function updateTeacherCredentialHub(teacherId, field, val, inputEl) {
+  const userInp = document.getElementById(`fac-user-inp-${teacherId}`);
+  const emailInp = document.getElementById(`fac-email-inp-${teacherId}`);
+  const passInp = document.getElementById(`fac-pass-inp-${teacherId}`);
+  if (!userInp || !passInp) return;
+
+  const username = userInp.value.trim();
+  const email = emailInp ? emailInp.value.trim() : '';
+  const password = passInp.value.trim();
+
+  if (!username || !password) {
+    Toast.warning('Validation Error', 'Username and Password cannot be empty.');
+    return;
+  }
+
+  try {
+    inputEl.style.borderColor = '#fbbf24';
+    await API.teachers.updateCredentials(teacherId, {
+      username,
+      email,
+      password
+    });
+
+    inputEl.style.borderColor = '#10b981';
+    Toast.success('Saved to Database', `Updated credentials for Faculty #${teacherId}`);
+    setTimeout(() => {
+      if (inputEl) inputEl.style.borderColor = '#cbd5e1';
+    }, 1500);
+  } catch(err) {
+    inputEl.style.borderColor = '#ef4444';
+    Toast.error('Save Failed', err.message);
+  }
+}
+window.updateTeacherCredentialHub = updateTeacherCredentialHub;
+
+function shareFacultyCredentialsWhatsApp(name, username, email, password, phone, portalUrl) {
+  const cleanPhone = phone ? phone.replace(/[^0-9]/g, '') : '';
+  const text = `👨‍🏫 *APEX TUITION ERP — FACULTY PORTAL LOGIN*\n\nHello *${name}*,\nHere are your faculty portal login credentials:\n\n🌐 *Portal URL:* ${portalUrl}\n👤 *Username:* ${username}\n📧 *Email:* ${email}\n🔑 *Password:* ${password}\n\nPlease sign in to take attendance, enter test marks, and manage schedules.`;
+  const url = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}` : `https://wa.me/?text=${encodeURIComponent(text)}`;
+  window.open(url, '_blank');
+}
+window.shareFacultyCredentialsWhatsApp = shareFacultyCredentialsWhatsApp;
+
+function togglePasswordVisibility(inputId, btnEl) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    btnEl.style.opacity = '1';
+  } else {
+    input.type = 'password';
+    btnEl.style.opacity = '0.65';
+  }
+}
+window.togglePasswordVisibility = togglePasswordVisibility;
+
+async function updateStudentCredentialInline(studentId, field, val, inputEl) {
+  const userInp = document.getElementById(`cred-user-${studentId}`);
+  const passInp = document.getElementById(`cred-pass-${studentId}`);
+  if (!userInp || !passInp) return;
+
+  const username = userInp.value.trim();
+  const password = passInp.value.trim();
+
+  if (!username || !password) {
+    Toast.warning('Validation Error', 'Username and Password cannot be empty.');
+    return;
+  }
+
+  try {
+    inputEl.style.borderColor = '#fbbf24';
+    await API.students.updateCredentials(studentId, {
+      parent_username: username,
+      parent_password: password
+    });
+
+    inputEl.style.borderColor = '#10b981';
+    Toast.success('Saved to Database', `Updated credentials for student #${studentId}`);
+    setTimeout(() => {
+      if (inputEl) inputEl.style.borderColor = '#cbd5e1';
+    }, 1500);
+  } catch(err) {
+    inputEl.style.borderColor = '#ef4444';
+    Toast.error('Save Failed', err.message);
+  }
+}
+window.updateStudentCredentialInline = updateStudentCredentialInline;
+
+function copyStudentCredentialsToClipboard(name, roll, username, password, portalUrl) {
+  const text = `🎓 APEX TUITION PORTAL LOGIN\nStudent: ${name} (Roll: #${roll})\n🌐 Portal URL: ${portalUrl}\n👤 Username: ${username}\n🔑 Password: ${password}`;
+  navigator.clipboard.writeText(text).then(() => {
+    Toast.success('Copied!', `Login info for ${name} copied to clipboard.`);
+  }).catch(() => {
+    Toast.info('Login Info', `Username: ${username} | Password: ${password}`);
+  });
+}
+window.copyStudentCredentialsToClipboard = copyStudentCredentialsToClipboard;
+
+function showBulkCredentialGeneratorModal() {
+  const stdId = _credStandardId || 'all';
+
+  const modalHtml = `
+    <div class="modal-overlay" id="bulk-cred-gen-modal" style="z-index:99999;">
+      <div class="modal modal-md animate-scale-in" style="max-width:560px;">
+        <div class="modal-header" style="background:linear-gradient(135deg,#0f172a,#1e293b); color:white;">
+          <div>
+            <h3 style="color:white; margin:0; font-size:1.15rem;">⚡ Bulk Credential Generator &amp; Randomizer</h3>
+            <p style="font-size:0.75rem; color:#94a3b8; margin:0;">Mass-generate customized or randomized passwords and login IDs</p>
+          </div>
+          <button class="modal-close" style="color:white;" onclick="document.getElementById('bulk-cred-gen-modal').remove()">✕</button>
+        </div>
+        
+        <div class="modal-body" style="padding:20px;">
+          <!-- Target Class -->
+          <div class="form-group mb-3">
+            <label class="form-label font-bold">Apply To Class / Standard</label>
+            <select class="form-control" id="gen-modal-std">
+              <option value="all">🌐 All Active Students (${_credentialsList.length} Students)</option>
+              ${document.getElementById('cred-filter-std')?.innerHTML || ''}
+            </select>
+          </div>
+
+          <!-- Generation Pattern -->
+          <div class="form-group mb-3">
+            <label class="form-label font-bold">Credential &amp; Password Pattern</label>
+            <select class="form-control" id="gen-modal-pattern" onchange="onCredentialPatternChange(this.value)">
+              <option value="roll_default">📌 Roll Number + Default Password ("parent123")</option>
+              <option value="name_pin">🎲 Student First Name + Random 4-digit PIN (e.g. "aarav@4821")</option>
+              <option value="random_alpha">🔒 Roll Number + Random Alpha-Numeric Passcode (e.g. "9kX2pL")</option>
+              <option value="unique_digits">🔢 Roll Number + 6-Digit Secure Number PIN (e.g. "749201")</option>
+              <option value="custom_prefix">🏷️ Custom Institute Prefix + Custom Master Password</option>
+            </select>
+          </div>
+
+          <!-- Custom Options (Hidden by default) -->
+          <div id="gen-custom-fields" style="display:none; background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #cbd5e1; margin-bottom:14px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+              <div class="form-group mb-0">
+                <label class="form-label text-xs font-bold">Username Prefix</label>
+                <input type="text" class="form-control form-control-sm" id="gen-custom-prefix" value="APEX" placeholder="e.g. APEX">
+              </div>
+              <div class="form-group mb-0">
+                <label class="form-label text-xs font-bold">Master Password</label>
+                <input type="text" class="form-control form-control-sm" id="gen-custom-pass" value="welcome2026" placeholder="e.g. welcome2026">
+              </div>
+            </div>
+          </div>
+
+          <!-- Preview Callout -->
+          <div style="background:#fffbeb; border-left:4px solid #f59e0b; padding:10px 14px; border-radius:4px; font-size:0.8rem; color:#92400e; margin-bottom:14px;" id="gen-pattern-preview">
+            Preview: Username: <strong>101</strong> · Password: <strong>parent123</strong>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display:flex; justify-content:flex-end; gap:10px; padding:14px 20px;">
+          <button type="button" class="btn btn-outline" onclick="document.getElementById('bulk-cred-gen-modal').remove()">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="applyBulkCredentials()" style="background:linear-gradient(135deg,#d97706,#b45309); border:none; font-weight:700;">
+            ⚡ Generate &amp; Apply to Database
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+window.showBulkCredentialGeneratorModal = showBulkCredentialGeneratorModal;
+
+function onCredentialPatternChange(pattern) {
+  const customFields = document.getElementById('gen-custom-fields');
+  const preview = document.getElementById('gen-pattern-preview');
+  if (!preview) return;
+
+  if (pattern === 'custom_prefix') {
+    if (customFields) customFields.style.display = 'block';
+    preview.innerHTML = `Preview: Username: <strong>APEX_101</strong> · Password: <strong>welcome2026</strong>`;
+  } else {
+    if (customFields) customFields.style.display = 'none';
+    if (pattern === 'roll_default') preview.innerHTML = `Preview: Username: <strong>101</strong> · Password: <strong>parent123</strong>`;
+    else if (pattern === 'name_pin') preview.innerHTML = `Preview: Username: <strong>aarav_101</strong> · Password: <strong>aarav@4821</strong>`;
+    else if (pattern === 'random_alpha') preview.innerHTML = `Preview: Username: <strong>101</strong> · Password: <strong>9kX2pL</strong>`;
+    else if (pattern === 'unique_digits') preview.innerHTML = `Preview: Username: <strong>101</strong> · Password: <strong>749201</strong>`;
+  }
+}
+window.onCredentialPatternChange = onCredentialPatternChange;
+
+async function applyBulkCredentials() {
+  const stdId = document.getElementById('gen-modal-std')?.value || 'all';
+  const pattern = document.getElementById('gen-modal-pattern')?.value || 'roll_default';
+  const customPrefix = document.getElementById('gen-custom-prefix')?.value || 'APEX';
+  const customPass = document.getElementById('gen-custom-pass')?.value || 'parent123';
+
+  Spinner.show('Mass-generating credentials in database...');
+  try {
+    const res = await API.students.bulkGenerateCredentials({
+      standard_id: stdId,
+      pattern,
+      custom_prefix: customPrefix,
+      custom_password: customPass
+    });
+
+    document.getElementById('bulk-cred-gen-modal')?.remove();
+    Spinner.hide();
+    Toast.success('Credentials Updated!', `Successfully updated ${res.count} student credentials.`);
+    await loadCredentialsData();
+  } catch(err) {
+    Spinner.hide();
+    Toast.error('Bulk Generation Failed', err.message);
+  }
+}
+window.applyBulkCredentials = applyBulkCredentials;
+
 async function loadStandardsDropdown() {
   try {
     const boards = await API.boards.list();
@@ -411,6 +1052,7 @@ async function loadStudents() {
                   <td><span class="badge badge-primary">${s.board_short || '—'}</span></td>
                   <td>
                     <div class="td-actions">
+                      <button class="btn btn-ghost btn-icon-sm" onclick="downloadStudentCredentialSlip(${s.id}, '${s.name.replace(/'/g, "\\'")}', '${s.roll_number}')" title="Download Login Credential Slip (PDF)">📇</button>
                       <button class="btn btn-ghost btn-icon-sm" onclick="showEditStudentModal(${s.id})" title="Edit">${Icons?.render?.('edit',{size:14}) || ''}</button>
                       <button class="btn btn-ghost btn-icon-sm" onclick="confirmDeleteStudent(${s.id}, '${s.name}')" title="Delete">${Icons?.render?.('delete',{size:14}) || ''}</button>
                     </div>
@@ -580,16 +1222,19 @@ function buildStudentForm(s) {
         <p class="form-section-title">Tuition ERP & Admission Details</p>
         <div class="form-grid mb-4">
           <div class="form-group">
-            <label class="form-label">Total Course Fees (₹)</label>
-            <input type="number" class="form-control" id="st-total-fees" value="${s?.total_fees ?? 0}" min="0" placeholder="e.g. 15000">
+            <label class="form-label font-bold">Total Course Fees (₹) <span class="required">*</span></label>
+            <input type="number" class="form-control font-mono font-bold" id="st-total-fees" value="${s?.total_fees ?? 0}" min="0" placeholder="e.g. 25000">
+            <div id="st-fees-hint" class="form-hint" style="font-size:0.72rem; color:var(--text-muted); margin-top:3px;">
+              Default class fee auto-fills upon class selection. Customize freely for scholarships or poor parent concessions.
+            </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Admission Date</label>
+            <label class="form-label font-bold">Admission Date</label>
             <input type="date" class="form-control" id="st-admission-date" value="${s?.admission_date || new Date().toISOString().split('T')[0]}">
           </div>
         </div>
         <div class="form-group mb-4">
-          <label class="form-label">Enrollment Status</label>
+          <label class="form-label font-bold">Enrollment Status</label>
           <select class="form-control" id="st-status">
             <option value="Active" ${(s?.status || 'Active') === 'Active' ? 'selected' : ''}>Active (Enrolled)</option>
             <option value="Completed" ${s?.status === 'Completed' ? 'selected' : ''}>Completed (Graduated)</option>
@@ -615,6 +1260,21 @@ async function onStudentStandardChange(standardId, student = null, currentBatchI
   await autoFillNextRoll(standardId);
   await renderElectiveSubjectsChecklist(standardId, student);
   
+  // Auto-populate default fees from standard if adding a new student or fee is 0
+  const feesInput = document.getElementById('st-total-fees');
+  const feeHint = document.getElementById('st-fees-hint');
+  try {
+    const std = await API.standards.get(standardId);
+    if (std && std.default_fees !== undefined) {
+      if (!student || !student.total_fees || parseFloat(student.total_fees) === 0) {
+        if (feesInput) feesInput.value = std.default_fees || 0;
+      }
+      if (feeHint) {
+        feeHint.innerHTML = `Standard default fee: <strong>₹${(parseFloat(std.default_fees) || 0).toLocaleString('en-IN')}</strong> (Adjust freely for concessions/scholarships).`;
+      }
+    }
+  } catch (e) {}
+
   // Load batches
   const batchSelect = document.getElementById('st-batch');
   if (batchSelect) {
@@ -859,8 +1519,7 @@ async function saveStudent(studentId) {
       }
 
       if (res.credentials) {
-        Toast.success('Student Enrolled & Parent Login Created!', 
-          `Parent Credentials -> Roll No / Login: ${res.credentials.username} | Password: ${res.credentials.password}`);
+        showEnrollmentCredentialsModal(res.id, `${data.first_name} ${data.surname}`, res.credentials.username || roll, standardId, res.credentials);
       }
     }
     
@@ -873,12 +1532,120 @@ async function saveStudent(studentId) {
     }
     
     closeModal(studentId ? 'edit-student-modal' : 'add-student-modal');
-    Toast.success(studentId ? 'Student Updated' : 'Student Added', name);
+    Toast.success(studentId ? 'Student Updated' : 'Student Added', `${data.first_name} ${data.surname}`);
     await loadStudents();
   } catch (err) {
     Toast.error('Save Failed', err.message);
   }
 }
+
+function downloadStudentCredentialSlip(studentId, name, roll) {
+  Spinner.show('Generating Credential Slip PDF...');
+  try {
+    const url = API.export.credentialSlipSingle(studentId);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Credential_Slip_${roll || studentId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => Spinner.hide(), 1500);
+    Toast.success('Downloading Slip', `Credential slip for ${name || 'Student'} is downloading.`);
+  } catch(err) {
+    Spinner.hide();
+    Toast.error('Download Failed', err.message);
+  }
+}
+window.downloadStudentCredentialSlip = downloadStudentCredentialSlip;
+
+function showEnrollmentCredentialsModal(studentId, studentName, rollNo, standardId, credentials) {
+  const username = credentials.username || rollNo;
+  const password = credentials.password || 'parent123';
+  const portalUrl = window.location.origin;
+
+  const modalHtml = `
+    <div class="modal-overlay" id="enroll-cred-modal-overlay" style="z-index:99999;">
+      <div class="modal modal-md animate-scale-in" style="max-width:540px;">
+        <div class="modal-header" style="background:linear-gradient(135deg,#0f172a,#1e293b); color:white; border-bottom:2px solid var(--gold);">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:1.5rem;">🎓</span>
+            <div>
+              <h3 style="color:white; margin:0; font-size:1.15rem;">Student Enrolled Successfully!</h3>
+              <p style="font-size:0.75rem; color:#94a3b8; margin:0;">Login credentials have been automatically generated</p>
+            </div>
+          </div>
+          <button class="modal-close" style="color:white;" onclick="document.getElementById('enroll-cred-modal-overlay').remove()">✕</button>
+        </div>
+        
+        <div class="modal-body" style="padding:20px;">
+          <!-- Student Banner -->
+          <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:12px 16px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-weight:800; font-size:1.05rem; color:var(--text-primary);">${studentName}</div>
+              <div style="font-size:0.8rem; color:var(--text-muted);">Roll Number: <strong>#${rollNo}</strong></div>
+            </div>
+            <span class="badge badge-success">✓ Active Admission</span>
+          </div>
+
+          <!-- Credentials Card -->
+          <div style="background:linear-gradient(135deg,#0f172a,#1e293b); color:white; border-radius:10px; padding:18px; border:1.5px solid #d97706; margin-bottom:18px; box-shadow:0 6px 18px rgba(0,0,0,0.15);">
+            <div style="font-size:0.75rem; font-weight:800; color:#fbbf24; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:12px;">
+              🔐 Student &amp; Parent Web Portal Login
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+              <div style="background:rgba(255,255,255,0.08); padding:10px 12px; border-radius:6px; border:1px solid rgba(255,255,255,0.12);">
+                <div style="font-size:0.68rem; color:#94a3b8; text-transform:uppercase;">Username / Login ID</div>
+                <div style="font-size:1.05rem; font-weight:800; font-family:monospace; color:#38bdf8;">${username}</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.08); padding:10px 12px; border-radius:6px; border:1px solid rgba(255,255,255,0.12);">
+                <div style="font-size:0.68rem; color:#94a3b8; text-transform:uppercase;">Default Password</div>
+                <div style="font-size:1.05rem; font-weight:800; font-family:monospace; color:#4ade80;">${password}</div>
+              </div>
+            </div>
+            <div style="font-size:0.72rem; color:#94a3b8;">
+              🌐 Portal Address: <span style="color:#ffffff; font-family:monospace;">${portalUrl}</span>
+            </div>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <button class="btn btn-primary w-full flex items-center justify-center gap-2" style="font-weight:700; padding:11px;" onclick="downloadStudentCredentialSlip(${studentId}, '${studentName.replace(/'/g, "\\'")}', '${rollNo}')">
+              📥 Download Official Credential Slip (PDF)
+            </button>
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+              <button class="btn btn-outline flex items-center justify-center gap-2" onclick="shareStudentCredentialsWhatsApp('${studentName.replace(/'/g, "\\'")}', '${rollNo}', '${username}', '${password}', '${portalUrl}')">
+                📱 Share on WhatsApp
+              </button>
+              <button class="btn btn-outline flex items-center justify-center gap-2" onclick="printStudentCredentialSlipPopup(${studentId})">
+                🖨️ Print Slip
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="padding:12px 20px;">
+          <button type="button" class="btn btn-ghost w-full text-center" onclick="document.getElementById('enroll-cred-modal-overlay').remove()">Done / Close</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+window.showEnrollmentCredentialsModal = showEnrollmentCredentialsModal;
+
+function shareStudentCredentialsWhatsApp(studentName, rollNo, username, password, portalUrl) {
+  const msg = `*🎓 Welcome to Apex Tuition Classes!*\n\nDear Parent/Student,\nAdmission for *${studentName}* (Roll: ${rollNo}) is confirmed.\n\n*Your Web Portal Login Details:*\n🌐 *Portal URL:* ${portalUrl}\n👤 *Username:* ${username}\n🔑 *Password:* ${password}\n\nYou can track live attendance, test marks, exam timetables, fee receipts, and notices on the portal.\n\nThank you!`;
+  const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+  window.open(waUrl, '_blank');
+}
+window.shareStudentCredentialsWhatsApp = shareStudentCredentialsWhatsApp;
+
+function printStudentCredentialSlipPopup(studentId) {
+  const url = API.export.credentialSlipSingle(studentId);
+  window.open(url, '_blank');
+}
+window.printStudentCredentialSlipPopup = printStudentCredentialSlipPopup;
 
 async function confirmDeleteStudent(id, name) {
   const ok = await Confirm.show(`Delete ${name}?`, 'All marks and records for this student will be permanently deleted.', 'Delete Student');
@@ -1255,100 +2022,201 @@ async function updateStudentAdmissionStatus(studentId, newStatus) {
   }
 }
 
-async function loadFeesTab(standardId) {
+async function loadFeesTab(standardId, statusFilter = 'all') {
   if (!standardId) return;
   _studentsStandardId = parseInt(standardId);
   localStorage.setItem('tuition_erp_students_standard_id', _studentsStandardId);
   const container = document.getElementById('fees-tab-body');
   if (!container) return;
-  container.innerHTML = `<div class="empty-state"><div style="font-size:2rem">${Icons?.render?.('fees',{size:36}) || ''}</div><p class="text-muted text-sm mt-2">Loading fees ledger…</p></div>`;
+  container.innerHTML = `<div class="empty-state"><div style="font-size:2rem">${Icons?.render?.('fees',{size:36}) || ''}</div><p class="text-muted text-sm mt-2">Loading financial ledger accounts…</p></div>`;
   
   try {
-    const students = await API.students.list(standardId);
+    const allStudents = await API.students.list(standardId);
     
-    const totalExpected  = students.reduce((s, st) => s + (parseFloat(st.total_fees) || 0), 0);
-    const totalCollected = students.reduce((s, st) => s + (parseFloat(st.paid_fees) || 0), 0);
+    const totalExpected    = allStudents.reduce((s, st) => s + (parseFloat(st.total_fees) || 0), 0);
+    const totalCollected   = allStudents.reduce((s, st) => s + (parseFloat(st.paid_fees) || 0), 0);
     const totalOutstanding = Math.max(0, totalExpected - totalCollected);
+    const collectionPct    = totalExpected > 0 ? Math.round((totalCollected / totalExpected) * 100) : 100;
+
+    let fullyPaidCount = 0, partialCount = 0, unpaidCount = 0;
+    allStudents.forEach(st => {
+      const tot = parseFloat(st.total_fees) || 0;
+      const paid = parseFloat(st.paid_fees) || 0;
+      if (paid >= tot && tot > 0) fullyPaidCount++;
+      else if (paid > 0) partialCount++;
+      else unpaidCount++;
+    });
 
     const fmt = (n) => '₹' + (parseFloat(n)||0).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
 
-    const standard = await API.standards?.get?.(standardId).catch(() => null);
-    
+    // Filter students by status
+    let filteredStudents = allStudents;
+    if (statusFilter === 'dues') {
+      filteredStudents = allStudents.filter(s => (parseFloat(s.total_fees) || 0) > (parseFloat(s.paid_fees) || 0));
+    } else if (statusFilter === 'settled') {
+      filteredStudents = allStudents.filter(s => {
+        const tot = parseFloat(s.total_fees) || 0;
+        const paid = parseFloat(s.paid_fees) || 0;
+        return paid >= tot && tot > 0;
+      });
+    }
+
     container.innerHTML = `
-      <!-- Summary Row -->
+      <!-- Executive Financial Ledger Summary -->
       <div class="grid grid-3 gap-4 mb-5">
-        <div class="stat-card hover-lift" style="border-left:4px solid var(--gold);">
-          <div class="stat-card-value" style="font-size:1.5rem;">${fmt(totalExpected)}</div>
-          <div class="stat-card-label">Total Fees Expected</div>
+        <div class="stat-card hover-lift" style="border-left:4px solid #6366f1; background:linear-gradient(135deg, rgba(255,255,255,0.95), rgba(238,242,255,0.85));">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+              <div class="stat-card-value" style="font-size:1.6rem; color:#3730a3;">${fmt(totalExpected)}</div>
+              <div class="stat-card-label">Total Agreed Course Fees</div>
+            </div>
+            <span class="badge badge-primary font-mono">${allStudents.length} Accounts</span>
+          </div>
         </div>
-        <div class="stat-card hover-lift" style="border-left:4px solid var(--success);">
-          <div class="stat-card-value" style="font-size:1.5rem;color:var(--success);">${fmt(totalCollected)}</div>
-          <div class="stat-card-label">Total Collected</div>
+
+        <div class="stat-card hover-lift" style="border-left:4px solid #10b981; background:linear-gradient(135deg, rgba(255,255,255,0.95), rgba(236,253,245,0.85));">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+              <div class="stat-card-value" style="font-size:1.6rem; color:#065f46;">${fmt(totalCollected)}</div>
+              <div class="stat-card-label">Total Realized Revenue</div>
+            </div>
+            <span class="badge badge-success font-bold font-mono">${collectionPct}% Paid</span>
+          </div>
         </div>
-        <div class="stat-card hover-lift" style="border-left:4px solid var(--danger);">
-          <div class="stat-card-value" style="font-size:1.5rem;color:var(--danger);">${fmt(totalOutstanding)}</div>
-          <div class="stat-card-label">Total Outstanding</div>
+
+        <div class="stat-card hover-lift" style="border-left:4px solid #ef4444; background:linear-gradient(135deg, rgba(255,255,255,0.95), rgba(254,242,242,0.85));">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+              <div class="stat-card-value" style="font-size:1.6rem; color:#991b1b;">${fmt(totalOutstanding)}</div>
+              <div class="stat-card-label">Total Outstanding Dues</div>
+            </div>
+            <span class="badge badge-danger font-mono font-bold">${unpaidCount + partialCount} Pending</span>
+          </div>
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-header">
-          <h3>Student Tuition Fee Accounts</h3>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <span class="badge badge-primary">${students.length} Students</span>
-            <button class="btn btn-primary btn-sm" onclick="downloadBulkLedgerPDF(${standardId})" title="Download all student ledgers in one PDF">
-              ${Icons?.render?.('download',{size:13}) || ''} Bulk Ledger PDF
+      <!-- Ledger Filter Bar & Action Hub -->
+      <div class="card mb-4" style="padding:14px 20px; background:var(--bg-surface);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button class="btn ${statusFilter === 'all' ? 'btn-primary' : 'btn-outline'} btn-sm" onclick="loadFeesTab(${standardId}, 'all')">
+              📑 All Accounts (${allStudents.length})
+            </button>
+            <button class="btn ${statusFilter === 'dues' ? 'btn-danger' : 'btn-outline'} btn-sm" onclick="loadFeesTab(${standardId}, 'dues')">
+              🔴 Pending Dues (${unpaidCount + partialCount})
+            </button>
+            <button class="btn ${statusFilter === 'settled' ? 'btn-success' : 'btn-outline'} btn-sm" onclick="loadFeesTab(${standardId}, 'settled')">
+              🟢 Fully Settled (${fullyPaidCount})
+            </button>
+          </div>
+
+          <div style="display:flex; gap:8px; align-items:center;">
+            <button class="btn btn-outline btn-sm" onclick="downloadBulkLedgerPDF(${standardId})" title="Download all student ledgers in one consolidated PDF">
+              ${Icons?.render?.('download',{size:14}) || ''} 🖨️ Consolidated Class Ledger PDF
             </button>
           </div>
         </div>
-        <div class="card-body">
-          <div class="table-wrap">
+      </div>
+
+      <!-- Traditional Student Account Ledger Table -->
+      <div class="card">
+        <div class="card-header" style="background:linear-gradient(135deg, rgba(27,42,74,0.04), rgba(27,42,74,0.01)); border-bottom:1.5px solid var(--border-medium);">
+          <div>
+            <h3 style="margin:0; font-size:1.1rem; color:var(--navy);">📖 Student Tuition Account Books (खाता बही)</h3>
+            <p class="text-xs text-muted" style="margin-top:2px;">Individual student course fee agreements, running transaction balances, and payment vouchers.</p>
+          </div>
+          <span class="badge badge-primary font-mono font-bold">${filteredStudents.length} Displayed</span>
+        </div>
+        <div class="card-body" style="padding:0;">
+          <div class="table-wrap" style="border:none; border-radius:0;">
             <table>
               <thead>
-                <tr>
-                  <th>Roll No</th>
-                  <th>Student Name</th>
-                  <th>Total Fee</th>
-                  <th>Paid</th>
-                  <th>Outstanding</th>
-                  <th>Status</th>
-                  <th>Actions</th>
+                <tr style="background:rgba(241,245,249,0.85);">
+                  <th style="width:75px; text-align:center;">Roll No</th>
+                  <th>Student &amp; Guardian Info</th>
+                  <th style="text-align:right;">Course Fee (₹)</th>
+                  <th style="text-align:right; color:#16a34a;">Paid (Credit)</th>
+                  <th style="text-align:right; color:#dc2626;">Dues (Debit)</th>
+                  <th style="width:140px; text-align:center;">Progress</th>
+                  <th style="text-align:center;">Ledger Status</th>
+                  <th style="width:230px; text-align:center;">Quick Actions</th>
                 </tr>
               </thead>
               <tbody>
-                ${students.map(s => {
+                ${filteredStudents.length > 0 ? filteredStudents.map(s => {
                   const total = parseFloat(s.total_fees) || 0;
                   const paid  = parseFloat(s.paid_fees) || 0;
                   const bal   = Math.max(0, total - paid);
-                  const paidPct = total > 0 ? Math.round((paid / total) * 100) : 0;
+                  const paidPct = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 100;
+                  
                   let statusBadge = '';
-                  if (paid >= total && total > 0) statusBadge = `<span class="badge badge-success">Fully Paid</span>`;
-                  else if (paid > 0) statusBadge = `<span class="badge badge-warning">Partial</span>`;
-                  else statusBadge = `<span class="badge badge-danger">Unpaid</span>`;
+                  if (paid >= total && total > 0) {
+                    statusBadge = `<span class="badge badge-success" style="font-size:0.72rem;">🟢 Settled</span>`;
+                  } else if (paid > 0) {
+                    statusBadge = `<span class="badge badge-warning" style="font-size:0.72rem;">🟡 Installments (${paidPct}%)</span>`;
+                  } else {
+                    statusBadge = `<span class="badge badge-danger" style="font-size:0.72rem;">🔴 Due (0%)</span>`;
+                  }
+
+                  const sNameEsc = s.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
                   return `
-                    <tr>
-                      <td><span class="badge badge-gray">${s.roll_number}</span></td>
-                      <td class="td-primary">${s.name}</td>
-                      <td>${fmt(total)}</td>
-                      <td class="text-success font-semibold">${fmt(paid)}</td>
-                      <td class="${bal > 0 ? 'text-danger' : 'text-success'} font-semibold">${fmt(bal)}</td>
-                      <td>${statusBadge}</td>
+                    <tr class="stagger-item">
+                      <td style="text-align:center;">
+                        <span class="badge badge-primary font-mono font-bold">${s.roll_number || '—'}</span>
+                      </td>
+                      <td class="td-primary">
+                        <div style="font-weight:700; color:var(--navy); font-size:0.92rem;">${s.first_name ? `${s.first_name} ${s.surname || ''}` : s.name}</div>
+                        <div class="text-xs text-muted">Father: <strong>${s.father_name || 'N/A'}</strong> | Ph: ${s.phone || s.father_phone || '—'}</div>
+                      </td>
+                      <td style="text-align:right; font-family:monospace; font-weight:700;">
+                        <div style="display:flex; align-items:center; justify-content:flex-end; gap:4px;">
+                          <span>${fmt(total)}</span>
+                          <button class="btn btn-ghost btn-icon-sm" onclick="showAdjustStudentFeeModal(${s.id}, '${sNameEsc}', ${total})" title="Adjust Course Fee / Grant Concession" style="padding:2px; height:20px; width:20px;">
+                            ✏️
+                          </button>
+                        </div>
+                      </td>
+                      <td style="text-align:right; font-family:monospace; font-weight:700; color:#16a34a;">
+                        ${fmt(paid)}
+                      </td>
+                      <td style="text-align:right; font-family:monospace; font-weight:800; color:${bal > 0 ? '#dc2626' : '#16a34a'};">
+                        ${fmt(bal)}
+                      </td>
+                      <td style="text-align:center; padding:10px 14px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                          <div class="progress-bar" style="flex:1; height:6px; background:#e2e8f0;">
+                            <div class="progress-bar-fill" style="width:${paidPct}%; background:${paidPct >= 100 ? '#10b981' : (paidPct >= 50 ? '#3b82f6' : '#f59e0b')};"></div>
+                          </div>
+                          <span style="font-size:0.72rem; font-weight:700; font-family:monospace; color:var(--navy);">${paidPct}%</span>
+                        </div>
+                      </td>
+                      <td style="text-align:center;">
+                        ${statusBadge}
+                      </td>
                       <td>
-                        <div class="td-actions">
-                          <button class="btn btn-outline btn-sm" onclick="showRecordPaymentModal(${s.id}, ${JSON.stringify(s.name).replace(/"/g, '&quot;')})" title="Record a new payment">
-                            ${Icons?.render?.('fees',{size:13}) || ''} Record Payment
+                        <div class="td-actions" style="justify-content:center;">
+                          <button class="btn btn-primary btn-sm" onclick="showRecordPaymentModal(${s.id}, '${sNameEsc}', ${bal})" title="Record fee payment">
+                            <span>💳 + Pay</span>
                           </button>
-                          <button class="btn btn-ghost btn-sm" onclick="showStudentLedgerModal(${s.id}, ${JSON.stringify(s.name).replace(/"/g, '&quot;')})" title="View full ledger">
-                            ${Icons?.render?.('results',{size:13}) || ''} Ledger
+                          <button class="btn btn-outline btn-sm" onclick="showStudentLedgerModal(${s.id}, '${sNameEsc}')" title="Open complete account ledger journal">
+                            <span>📖 Khata</span>
                           </button>
-                          <button class="btn btn-ghost btn-icon-sm" onclick="downloadStudentLedgerPDF(${s.id})" title="Download PDF ledger">
-                            ${Icons?.render?.('download',{size:13}) || ''}
+                          <button class="btn btn-ghost btn-icon-sm" onclick="downloadStudentLedgerPDF(${s.id})" title="Download Student Ledger Statement PDF">
+                            📥
                           </button>
                         </div>
                       </td>
                     </tr>
                   `;
-                }).join('')}
+                }).join('') : `
+                  <tr>
+                    <td colspan="8" class="text-center text-muted" style="padding:var(--space-12);">
+                      <div style="font-size:2.5rem; margin-bottom:8px;">💳</div>
+                      <div style="font-weight:700; font-size:1rem; color:var(--navy);">No Student Accounts Found</div>
+                      <p class="text-xs text-muted mt-1">Try changing the status filter or admit new students into this class.</p>
+                    </td>
+                  </tr>
+                `}
               </tbody>
             </table>
           </div>
@@ -1361,64 +2229,115 @@ async function loadFeesTab(standardId) {
 }
 
 async function downloadStudentLedgerPDF(studentId) {
-  Spinner.show('Generating fee ledger PDF…');
+  Spinner.show('Generating fee ledger statement PDF…');
   try {
-    const a = document.createElement('a');
-    a.href = `/api/fees/student/${studentId}/ledger-pdf`;
-    a.target = '_blank';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    const url = `/api/fees/student/${studentId}/ledger-pdf`;
+    await downloadBlobFile(url, `Student_FeeLedger_${studentId}.pdf`);
+    Toast.success('PDF Ready', 'Fee ledger statement downloaded successfully.');
+  } catch (err) {
+    Toast.error('Download Failed', err.message);
   } finally {
-    setTimeout(() => Spinner.hide(), 1500);
+    Spinner.hide();
   }
 }
 
 async function downloadBulkLedgerPDF(standardId) {
-  Spinner.show('Generating bulk fee ledger PDF… This may take a moment.');
+  Spinner.show('Generating consolidated class ledger PDF…');
   try {
-    const a = document.createElement('a');
-    a.href = `/api/fees/standard/${standardId}/bulk-ledger-pdf`;
-    a.target = '_blank';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    const url = `/api/fees/standard/${standardId}/bulk-ledger-pdf`;
+    await downloadBlobFile(url, `Class_FeeLedger_${standardId}.pdf`);
+    Toast.success('PDF Ready', 'Bulk class ledger statement downloaded.');
+  } catch (err) {
+    Toast.error('Download Failed', err.message);
   } finally {
-    setTimeout(() => Spinner.hide(), 2500);
+    Spinner.hide();
   }
 }
 
+function showAdjustStudentFeeModal(studentId, name, currentFee) {
+  createModal('adjust-fee-modal', `💰 Adjust Agreed Course Fee — ${name}`,
+    `<div class="form-group mb-4">
+      <label class="form-label font-bold">Total Agreed Course Fee (₹) <span class="required">*</span></label>
+      <input type="number" class="form-control font-mono font-bold" id="adj-total-fees" value="${currentFee || 0}" min="0" required style="font-size:1.15rem; padding:10px 14px;">
+      <div class="form-hint mt-2">Modify the total course fee agreement for concessions, scholarships, or special parent accommodations. The outstanding balance will re-calculate automatically.</div>
+    </div>`,
+    `<button class="btn btn-outline" onclick="closeModal('adjust-fee-modal')">Cancel</button>
+     <button class="btn btn-primary" onclick="submitAdjustStudentFee(${studentId})">💾 Save Adjusted Fee</button>`,
+    'modal-sm'
+  );
+}
 
-function showRecordPaymentModal(studentId, name) {
-  createModal('record-payment-modal', `${Icons?.render?.('fees',{size:16}) || ''} Record Fee Payment — ${name}`,
+async function submitAdjustStudentFee(studentId) {
+  const newFee = parseFloat(document.getElementById('adj-total-fees')?.value) || 0;
+  try {
+    const student = await API.students.get(studentId);
+    student.total_fees = newFee;
+    await API.students.update(studentId, student);
+    closeModal('adjust-fee-modal');
+    Toast.success('Fee Agreement Updated', `Agreed fee updated to ₹${newFee.toLocaleString('en-IN')}`);
+    if (_studentsStandardId) await loadFeesTab(_studentsStandardId);
+  } catch (err) {
+    Toast.error('Update Failed', err.message);
+  }
+}
+
+function showRecordPaymentModal(studentId, name, currentDue = 0) {
+  const due = Math.max(0, parseFloat(currentDue) || 0);
+  const halfDue = Math.round(due / 2);
+
+  createModal('record-payment-modal', `💳 Record Fee Payment Voucher — ${name}`,
     `<form id="payment-form">
+      ${due > 0 ? `
+        <div class="alert alert-info mb-4" style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px;">
+          <span>Current Outstanding Balance: <strong style="color:#dc2626; font-size:1rem; font-family:monospace;">₹${due.toLocaleString('en-IN')}</strong></span>
+          <div style="display:flex; gap:6px;">
+            <button type="button" class="btn btn-xs btn-primary" onclick="document.getElementById('p-amount').value = ${due}">Full: ₹${due}</button>
+            ${halfDue > 0 && halfDue < due ? `<button type="button" class="btn btn-xs btn-outline" onclick="document.getElementById('p-amount').value = ${halfDue}">Half: ₹${halfDue}</button>` : ''}
+          </div>
+        </div>
+      ` : ''}
+
       <div class="form-group mb-4">
-        <label class="form-label">Payment Amount (₹) <span class="required">*</span></label>
-        <input type="number" class="form-control" id="p-amount" placeholder="e.g. 5000" required min="1">
+        <label class="form-label font-bold">Payment Amount (₹) <span class="required">*</span></label>
+        <input type="number" class="form-control font-mono font-bold" id="p-amount" placeholder="e.g. 5000" required min="1" value="${due > 0 ? due : ''}" style="font-size:1.2rem; padding:10px 14px;">
+        <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
+          <button type="button" class="btn btn-xs btn-ghost" onclick="document.getElementById('p-amount').value = 1000">+ ₹1,000</button>
+          <button type="button" class="btn btn-xs btn-ghost" onclick="document.getElementById('p-amount').value = 2000">+ ₹2,000</button>
+          <button type="button" class="btn btn-xs btn-ghost" onclick="document.getElementById('p-amount').value = 5000">+ ₹5,000</button>
+          <button type="button" class="btn btn-xs btn-ghost" onclick="document.getElementById('p-amount').value = 10000">+ ₹10,000</button>
+        </div>
       </div>
+
       <div class="form-grid mb-4">
         <div class="form-group">
-          <label class="form-label">Payment Date <span class="required">*</span></label>
-          <input type="date" class="form-control" id="p-date" value="${new Date().toISOString().split('T')[0]}" required>
+          <label class="form-label font-bold">Payment Date <span class="required">*</span></label>
+          <input type="date" class="form-control font-bold" id="p-date" value="${new Date().toISOString().split('T')[0]}" required>
         </div>
         <div class="form-group">
-          <label class="form-label">Payment Method <span class="required">*</span></label>
+          <label class="form-label font-bold">Payment Method <span class="required">*</span></label>
           <select class="form-control" id="p-method" required>
-            <option value="Cash">Cash</option>
-            <option value="UPI">UPI (GPay / PhonePe / Paytm)</option>
-            <option value="Bank Transfer">Bank Transfer / NetBanking</option>
-            <option value="Cheque">Cheque</option>
+            <option value="Cash">💵 Cash</option>
+            <option value="UPI">📱 UPI (GPay / PhonePe / Paytm / BHIM)</option>
+            <option value="Bank Transfer">🏦 Bank Transfer / NEFT / RTGS</option>
+            <option value="Cheque">📜 Cheque</option>
+            <option value="Debit Card">💳 Debit / Credit Card</option>
           </select>
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Remarks</label>
-        <input type="text" class="form-control" id="p-remarks" placeholder="e.g. Inst-2 payment receipt #442">
+
+      <div class="form-group mb-4">
+        <label class="form-label font-bold">Voucher / Transaction Remarks</label>
+        <input type="text" class="form-control" id="p-remarks" placeholder="e.g. Term-1 installment receipt / Cheque #88412">
+      </div>
+
+      <div style="display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" id="p-download-receipt" checked style="cursor:pointer;">
+        <label for="p-download-receipt" class="text-xs" style="cursor:pointer; margin:0; font-weight:600;">Download Official PDF Receipt automatically after recording</label>
       </div>
     </form>`,
     `<button class="btn btn-outline" onclick="closeModal('record-payment-modal')">Cancel</button>
-     <button class="btn btn-primary" onclick="submitFeePayment(${studentId})">${Icons?.render?.('save',{size:14}) || ''} Record Transaction</button>`,
-    'modal-sm'
+     <button class="btn btn-primary" onclick="submitFeePayment(${studentId})">💾 Record &amp; Generate Voucher</button>`,
+    'modal-md'
   );
 }
 
@@ -1427,6 +2346,7 @@ async function submitFeePayment(studentId) {
   const payment_date = getVal('p-date');
   const payment_method = getVal('p-method');
   const remarks = getVal('p-remarks');
+  const autoDownload = document.getElementById('p-download-receipt')?.checked;
   
   if (!amount || isNaN(amount) || parseFloat(amount) <= 0 || !payment_date || !payment_method) {
     Toast.error('Validation Error', 'Amount, date, and method are required.');
@@ -1434,77 +2354,116 @@ async function submitFeePayment(studentId) {
   }
   
   try {
-    await API.fees.addPayment(studentId, {
+    const res = await API.fees.addPayment(studentId, {
       amount: parseFloat(amount),
       payment_date,
       payment_method,
       remarks
     });
     closeModal('record-payment-modal');
-    Toast.success('Payment Recorded', `Recorded transaction of ₹${amount} successfully.`);
-    await loadFeesTab(_studentsStandardId);
+    Toast.success('Payment Recorded', `Recorded transaction voucher of ₹${amount} successfully.`);
+    
+    if (autoDownload && res.paymentId) {
+      downloadReceiptPDF(res.paymentId);
+    }
+
+    if (_studentsStandardId) await loadFeesTab(_studentsStandardId);
   } catch (err) {
     Toast.error('Failed to save payment', err.message);
   }
 }
 
+async function downloadReceiptPDF(paymentId) {
+  try {
+    const url = `/api/fees/payments/${paymentId}/receipt-pdf`;
+    await downloadBlobFile(url, `Receipt_Voucher_${paymentId}.pdf`);
+  } catch (e) {
+    console.error('Receipt download error:', e);
+  }
+}
+
 async function showStudentLedgerModal(studentId, name) {
-  Spinner.show('Loading student transaction ledger...');
+  Spinner.show('Loading student financial ledger account...');
   try {
     const data = await API.fees.getLedger(studentId);
     Spinner.hide();
     
     const fmt = (n) => '₹' + (parseFloat(n)||0).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
-    const rows = data.payments.map(p => `
+    const totalFees = parseFloat(data.student.total_fees) || 0;
+    const paidFees  = parseFloat(data.student.paid_fees) || 0;
+    const balance   = Math.max(0, totalFees - paidFees);
+
+    let runningBalance = totalFees;
+    // Calculate running balances in chronological order
+    const chronPayments = [...data.payments].reverse().map((p, idx) => {
+      runningBalance -= parseFloat(p.amount) || 0;
+      return { ...p, voucherNo: `VCH-${String(idx + 1).padStart(4, '0')}`, balanceAfter: Math.max(0, runningBalance) };
+    }).reverse();
+
+    const rows = chronPayments.map(p => `
       <tr>
-        <td style="padding:var(--space-2) var(--space-3)">${Format.date(p.payment_date)}</td>
-        <td style="padding:var(--space-2) var(--space-3)" class="text-success font-semibold">${fmt(p.amount)}</td>
-        <td style="padding:var(--space-2) var(--space-3)"><span class="badge badge-gray">${p.payment_method}</span></td>
-        <td style="padding:var(--space-2) var(--space-3)">${p.remarks || '—'}</td>
-        <td style="padding:var(--space-2) var(--space-3)">
-          <div style="display:flex;gap:4px;">
-            <a href="/api/fees/payments/${p.id}/receipt-pdf" target="_blank" class="btn btn-ghost btn-icon-sm" title="Download Receipt PDF">${Icons?.render?.('download',{size:13}) || ''}</a>
-            <button class="btn btn-ghost btn-icon-sm" onclick="deleteFeePayment(${p.id}, ${studentId}, '${name.replace(/'/g, "\\'").replace(/`/g,"'")}', ${p.amount})" title="Delete Payment">${Icons?.render?.('delete',{size:13}) || ''}</button>
+        <td class="font-mono font-bold" style="padding:10px 14px; text-align:center;">${p.voucherNo}</td>
+        <td style="padding:10px 14px;" class="font-bold">${Format.date(p.payment_date)}</td>
+        <td style="padding:10px 14px;">${p.remarks || 'Tuition Fee Installment'}</td>
+        <td style="padding:10px 14px;"><span class="badge badge-gray font-mono">${p.payment_method}</span></td>
+        <td style="padding:10px 14px; text-align:right; font-family:monospace; color:#16a34a; font-weight:800;">+ ${fmt(p.amount)}</td>
+        <td style="padding:10px 14px; text-align:right; font-family:monospace; font-weight:700; color:${p.balanceAfter > 0 ? '#dc2626' : '#16a34a'};">${fmt(p.balanceAfter)}</td>
+        <td style="padding:10px 14px; text-align:center;">
+          <div style="display:flex; gap:6px; justify-content:center;">
+            <button class="btn btn-ghost btn-icon-sm" onclick="downloadReceiptPDF(${p.id})" title="Download Voucher Receipt PDF">🧾</button>
+            <button class="btn btn-ghost btn-icon-sm" onclick="deleteFeePayment(${p.id}, ${studentId}, '${name.replace(/'/g, "\\'").replace(/`/g,"'")}', ${p.amount})" title="Delete Payment Entry" style="color:var(--danger)">🗑️</button>
           </div>
         </td>
       </tr>
     `).join('');
     
-    createModal('ledger-modal', `${Icons?.render?.('results',{size:16}) || ''} Student Fee Ledger — ${name}`,
-      `<div class="grid grid-2 gap-4 mb-6 bg-surface p-4 rounded" style="border:1px solid var(--border)">
+    createModal('ledger-modal', `📖 Financial Account Ledger (खाता बही) — ${name}`,
+      `<div class="grid grid-3 gap-4 mb-5" style="background:var(--bg-surface); padding:16px; border-radius:12px; border:1px solid var(--border-medium);">
         <div>
-          <div class="text-xs text-muted">Total Course Fees</div>
-          <div style="font-size:1.4rem;font-weight:700;color:var(--text-primary)">₹${data.student.total_fees || 0}</div>
+          <div class="text-xs text-muted font-bold uppercase">Agreed Course Fees (Debit)</div>
+          <div style="font-size:1.4rem; font-weight:900; color:#3730a3; font-family:monospace;">${fmt(totalFees)}</div>
         </div>
         <div>
-          <div class="text-xs text-muted">Outstanding Balance</div>
-          <div style="font-size:1.4rem;font-weight:700;color:var(--danger)">₹${data.outstanding}</div>
+          <div class="text-xs text-muted font-bold uppercase">Total Received (Credit)</div>
+          <div style="font-size:1.4rem; font-weight:900; color:#16a34a; font-family:monospace;">${fmt(paidFees)}</div>
+        </div>
+        <div>
+          <div class="text-xs text-muted font-bold uppercase">Current Net Outstanding Due</div>
+          <div style="font-size:1.4rem; font-weight:900; color:${balance > 0 ? '#dc2626' : '#16a34a'}; font-family:monospace;">${fmt(balance)}</div>
         </div>
       </div>
       
-      <h3>Transaction History Ledger</h3>
-      <div class="table-wrap mt-2" style="max-height:350px;overflow-y:auto">
-        <table style="width:100%;border-collapse:collapse">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <h4 style="margin:0; font-size:0.95rem; color:var(--navy);">📑 Chronological Journal Entries</h4>
+        <span class="badge badge-info">${data.payments.length} Vouchers Logged</span>
+      </div>
+
+      <div class="table-wrap" style="max-height:350px; overflow-y:auto; border:1px solid var(--border-medium); border-radius:10px;">
+        <table>
           <thead>
-            <tr>
-              <th style="text-align:left;padding:var(--space-2) var(--space-3)">Date</th>
-              <th style="text-align:left;padding:var(--space-2) var(--space-3)">Amount Paid</th>
-              <th style="text-align:left;padding:var(--space-2) var(--space-3)">Method</th>
-              <th style="text-align:left;padding:var(--space-2) var(--space-3)">Remarks</th>
-              <th style="padding:var(--space-2) var(--space-3)"></th>
+            <tr style="background:#f8fafc;">
+              <th style="width:90px; text-align:center;">Voucher #</th>
+              <th>Date</th>
+              <th>Particulars</th>
+              <th>Mode</th>
+              <th style="text-align:right;">Credit (Paid)</th>
+              <th style="text-align:right;">Balance (Due)</th>
+              <th style="width:90px; text-align:center;">Actions</th>
             </tr>
           </thead>
           <tbody>
-            ${rows.length === 0 ? '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:var(--space-6)">No payments recorded yet.</td></tr>' : rows}
+            ${rows.length === 0 ? '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:32px;">No payment vouchers recorded in this student ledger yet.</td></tr>' : rows}
           </tbody>
         </table>
       </div>`,
-      `<div style="display:flex;gap:8px;">
+      `<div style="display:flex; gap:8px; justify-content:space-between; width:100%; flex-wrap:wrap;">
         <button class="btn btn-outline" onclick="closeModal('ledger-modal')">Close</button>
-        <button class="btn btn-primary" onclick="downloadStudentLedgerPDF(${studentId})">${Icons?.render?.('download',{size:14}) || ''} Download Ledger PDF</button>
-        <button class="btn btn-outline btn-sm" onclick="showRecordPaymentModal(${studentId}, '${name.replace(/'/g,"'")}')">${Icons?.render?.('fees',{size:14}) || ''} + Add Payment</button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-primary" onclick="downloadStudentLedgerPDF(${studentId})">📥 Download Ledger PDF</button>
+          <button class="btn btn-outline" onclick="closeModal('ledger-modal'); showRecordPaymentModal(${studentId}, '${name.replace(/'/g,"'")}', ${balance})">💳 + Record Payment</button>
+        </div>
       </div>`,
-      'modal-md'
+      'modal-lg'
     );
   } catch (err) {
     Spinner.hide();
@@ -1513,18 +2472,29 @@ async function showStudentLedgerModal(studentId, name) {
 }
 
 async function deleteFeePayment(paymentId, studentId, name, amount) {
-  const ok = await Confirm.show(`Delete payment?`, `Are you sure you want to delete this payment of ₹${amount}? This will increase outstanding balance.`, 'Delete Transaction');
+  const ok = await Confirm.show(`Delete payment voucher?`, `Are you sure you want to delete this payment of ₹${amount}? The outstanding ledger balance will increase accordingly.`, 'Delete Voucher');
   if (!ok) return;
   
   try {
     await API.fees.deletePayment(paymentId);
     closeModal('ledger-modal');
-    Toast.success('Transaction Deleted', 'Fee payment has been removed.');
-    await loadFeesTab(_studentsStandardId);
+    Toast.success('Voucher Deleted', 'Fee payment has been removed from ledger.');
+    if (_studentsStandardId) await loadFeesTab(_studentsStandardId);
   } catch (err) {
     Toast.error('Delete Failed', err.message);
   }
 }
+
+window.showAdjustStudentFeeModal = showAdjustStudentFeeModal;
+window.submitAdjustStudentFee = submitAdjustStudentFee;
+window.downloadReceiptPDF = downloadReceiptPDF;
+window.loadFeesTab = loadFeesTab;
+window.showRecordPaymentModal = showRecordPaymentModal;
+window.submitFeePayment = submitFeePayment;
+window.showStudentLedgerModal = showStudentLedgerModal;
+window.deleteFeePayment = deleteFeePayment;
+window.downloadStudentLedgerPDF = downloadStudentLedgerPDF;
+window.downloadBulkLedgerPDF = downloadBulkLedgerPDF;
 
 async function loadAdmissionsDropdown() {
   try {
@@ -1952,9 +2922,19 @@ async function generateCredentialsPDF(mode) {
     }
 
     const coachingRes = await API.coaching.get().catch(() => ({}));
-    const coachingName = coachingRes.name || 'Apex Executive Coaching Institute';
-    const coachingAddress = coachingRes.address || 'Surat, Gujarat';
-    const coachingPhone = coachingRes.phone || '+91 98250 12345';
+    if (mode === 'slips') {
+      Spinner.show('Generating Bulk Credential Slips PDF...');
+      const url = API.export.credentialSlipBulk(stdId);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Bulk_Credential_Slips_${stdId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => Spinner.hide(), 2500);
+      Toast.success('Downloading Slips', 'Bulk Credential Slips PDF is downloading.');
+      return;
+    }
 
     const printWin = window.open('', '_blank');
     if (!printWin) {
@@ -2115,7 +3095,7 @@ async function generateCredentialsPDF(mode) {
               </div>
 
               <div class="footer">
-                <span>Direct Support: contact@apexcoaching.edu.in</span>
+                <span>Direct Support: contact@edutrack.local</span>
                 <span>${coachingName} © 2026</span>
               </div>
             </div>

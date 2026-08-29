@@ -1,6 +1,6 @@
-# 🚀 Apex Tuition ERP — Getting Started Guide
+# 🚀 EduTrack ERP — Getting Started Guide
 
-Welcome to **Apex Tuition ERP**, the premier administration and academic management platform. Follow this guide to set up, launch, and operate the platform for your coaching institute.
+Welcome to **EduTrack ERP**, the premier administration and academic management platform. Follow this guide to set up, launch, and operate the platform for your coaching institute.
 
 ---
 
@@ -86,4 +86,4 @@ taskkill /F /PID <PID_NUMBER>
 
 ---
 
-*For license extensions and custom feature requests, contact **Apex Softwares Support**.*
+*For license extensions and custom feature requests, contact **EduTrack Softwares Support**.*

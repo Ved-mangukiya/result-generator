@@ -11,6 +11,10 @@ const FacultyModule = (() => {
   let _selectedTeacherId = null;
 
   async function renderFacultyPage(container) {
+    if (typeof setPageTitle === 'function') {
+      setPageTitle('Faculty Management', 'Faculty Management');
+    }
+
     container.innerHTML = `
       <div class="page-header">
         <div class="page-header-left">

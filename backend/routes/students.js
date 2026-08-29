@@ -14,10 +14,10 @@ router.get('/', (req, res) => {
   const params = [];
   const clauses = [];
 
-  if (standard_id) {
+  if (standard_id && standard_id !== 'null' && standard_id !== 'undefined' && standard_id !== 'NaN' && standard_id !== '') {
     clauses.push('s.standard_id = ?');
     params.push(standard_id);
-    if (batch_id && batch_id !== '' && batch_id !== 'null' && batch_id !== 'undefined') {
+    if (batch_id && batch_id !== '' && batch_id !== 'null' && batch_id !== 'undefined' && batch_id !== 'NaN') {
       clauses.push('s.batch_id = ?');
       params.push(batch_id);
     }
@@ -349,6 +349,143 @@ router.get('/:id/result', (req, res) => {
   const { calculateStudentResult } = require('../services/gradeService');
   const result = calculateStudentResult(student, subjects, marksMap, standard.board_id_val);
   res.json(result);
+});
+
+// ─── Student Credentials Management ─────────────────────────────────────────
+
+// GET /api/students/credentials — List all student credentials
+router.get('/credentials/all', (req, res) => {
+  try {
+    const { standard_id, batch_id, search } = req.query;
+    let query = `
+      SELECT s.id, s.name, s.first_name, s.surname, s.roll_number, s.standard_id, s.batch_id,
+             s.parent_username, s.parent_password, s.status,
+             std.display_name as standard_name, b.short_name as board_short, bt.name as batch_name
+      FROM students s
+      JOIN standards std ON s.standard_id = std.id
+      JOIN boards b ON std.board_id = b.id
+      LEFT JOIN batches bt ON s.batch_id = bt.id
+    `;
+    const params = [];
+    const clauses = [];
+
+    if (standard_id && standard_id !== 'all') {
+      clauses.push('s.standard_id = ?');
+      params.push(standard_id);
+    }
+    if (batch_id && batch_id !== 'all') {
+      clauses.push('s.batch_id = ?');
+      params.push(batch_id);
+    }
+    if (search) {
+      clauses.push('(s.name LIKE ? OR s.roll_number LIKE ? OR s.parent_username LIKE ?)');
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+    }
+
+    if (clauses.length > 0) query += ' WHERE ' + clauses.join(' AND ');
+    query += ' ORDER BY CAST(s.roll_number AS INTEGER) ASC, s.name ASC';
+
+    const credentials = db.prepare(query).all(...params).map(row => ({
+      ...row,
+      parent_username: row.parent_username || row.roll_number,
+      parent_password: row.parent_password || 'parent123'
+    }));
+
+    res.json(credentials);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/students/:id/credentials — Update single student credentials in realtime
+router.put('/:id/credentials', (req, res) => {
+  try {
+    const { parent_username, parent_password } = req.body;
+    if (!parent_username || !parent_password) {
+      return res.status(400).json({ error: 'Username and password cannot be empty' });
+    }
+
+    // Check if username is already taken by another student
+    const existing = db.prepare('SELECT id, name FROM students WHERE parent_username = ? AND id != ?').get(parent_username.trim(), req.params.id);
+    if (existing) {
+      return res.status(409).json({ error: `Username "${parent_username}" is already assigned to ${existing.name}` });
+    }
+
+    db.prepare('UPDATE students SET parent_username = ?, parent_password = ? WHERE id = ?')
+      .run(parent_username.trim(), parent_password.trim(), req.params.id);
+
+    const student = db.prepare('SELECT name, roll_number FROM students WHERE id = ?').get(req.params.id);
+    logActivity('CREDENTIALS_UPDATE', `Updated portal credentials for ${student ? student.name : req.params.id}`);
+
+    res.json({ success: true, username: parent_username.trim(), password: parent_password.trim() });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/students/credentials/bulk-generate — Bulk randomize or generate credentials
+router.post('/credentials/bulk-generate', (req, res) => {
+  try {
+    const { standard_id, pattern, custom_prefix, custom_password, password_length } = req.body;
+    let query = 'SELECT id, name, first_name, surname, roll_number FROM students WHERE status = "Active"';
+    const params = [];
+
+    if (standard_id && standard_id !== 'all') {
+      query += ' AND standard_id = ?';
+      params.push(standard_id);
+    }
+    const students = db.prepare(query).all(...params);
+    if (students.length === 0) {
+      return res.status(404).json({ error: 'No active students found for credential generation' });
+    }
+
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+    function getRandomPin(len = 6) {
+      let result = '';
+      for (let i = 0; i < len; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
+      return result;
+    }
+
+    const updateStmt = db.prepare('UPDATE students SET parent_username = ?, parent_password = ? WHERE id = ?');
+    const updatedList = [];
+
+    const doBulk = db.transaction(() => {
+      for (const s of students) {
+        let username = s.roll_number || String(s.id);
+        let password = 'parent123';
+
+        const cleanFirst = (s.first_name || s.name.split(' ')[0] || 'student').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+        if (pattern === 'roll_default') {
+          username = s.roll_number || String(s.id);
+          password = custom_password || 'parent123';
+        } else if (pattern === 'name_pin') {
+          username = cleanFirst + '_' + (s.roll_number || s.id);
+          const randNum = Math.floor(1000 + Math.random() * 9000);
+          password = `${cleanFirst}@${randNum}`;
+        } else if (pattern === 'random_alpha') {
+          username = (custom_prefix ? `${custom_prefix}_` : '') + (s.roll_number || s.id);
+          password = getRandomPin(parseInt(password_length) || 6);
+        } else if (pattern === 'custom_prefix') {
+          const prefix = custom_prefix || 'APEX';
+          username = `${prefix}_${s.roll_number || s.id}`;
+          password = custom_password || 'parent123';
+        } else if (pattern === 'unique_digits') {
+          username = s.roll_number || String(s.id);
+          password = String(Math.floor(100000 + Math.random() * 900000));
+        }
+
+        updateStmt.run(username, password, s.id);
+        updatedList.push({ id: s.id, name: s.name, roll_number: s.roll_number, username, password });
+      }
+    });
+
+    doBulk();
+    logActivity('CREDENTIALS_BULK_GEN', `Bulk updated credentials for ${students.length} students (Pattern: ${pattern || 'default'})`);
+    res.json({ success: true, count: students.length, updated: updatedList });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;

@@ -28,6 +28,7 @@ const calendarNotesRoutes = require('./routes/calendarNotes');
 const attendanceRoutes = require('./routes/attendance');
 const teachersRoutes = require('./routes/teachers');
 const timetableRoutes = require('./routes/timetable');
+const reminderNoticesRoutes = require('./routes/reminderNotices');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -89,14 +90,15 @@ app.use('/exports', express.static(path.join(__dirname, '../exports')));
 app.use('/templates', express.static(path.join(__dirname, '../templates')));
 app.use(express.static(path.join(__dirname, '../frontend')));
 
-// Auth middleware for API routes
+// Auth middleware for API routes — supports Admin, Teacher, and Parent/Student sessions
 function requireAuth(req, res, next) {
   const token = req.query.token;
   if (token && tokenService.verifyToken(token)) {
     return next();
   }
-  if (!req.session.adminId) return res.status(401).json({ error: 'Authentication required' });
-  next();
+  // Allow if admin, teacher, or student (parent) session exists
+  if (req.session.adminId || req.session.teacherId || req.session.studentId) return next();
+  return res.status(401).json({ error: 'Authentication required' });
 }
 
 // API Routes
@@ -121,6 +123,7 @@ app.use('/api/calendar-notes', requireAuth, calendarNotesRoutes);
 app.use('/api/attendance', requireAuth, attendanceRoutes);
 app.use('/api/teachers', requireAuth, teachersRoutes);
 app.use('/api/timetable', requireAuth, timetableRoutes);
+app.use('/api/reminder-notices', requireAuth, reminderNoticesRoutes);
 
 // Dashboard stats
 app.get('/api/dashboard', requireAuth, (req, res) => {
@@ -221,7 +224,7 @@ app.use((err, req, res, next) => {
 const server = app.listen(PORT, () => {
   console.log(`
 ╔════════════════════════════════════════════╗
-║     🎓 Apex Tuition ERP — Server Running   ║
+║     🎓 EduTrack ERP — Server Running   ║
 ║     ➤  http://localhost:${PORT}               ║
 ║     Login: admin@result.local / admin123   ║
 ╚════════════════════════════════════════════╝

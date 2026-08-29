@@ -136,6 +136,6 @@ After clearing browser cache, test these:
 All bugs fixed. All features working.
 Ready for production use!
 
-Enjoy your Apex Tuition ERP! 🎉
+Enjoy your EduTrack ERP! 🎉
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

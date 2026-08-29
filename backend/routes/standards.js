@@ -54,17 +54,27 @@ router.get('/:id', (req, res) => {
 
 // POST /api/standards — create a standard under a board
 router.post('/', (req, res) => {
-  const { board_id, standard_number, stream, display_name, subjects } = req.body;
+  const { board_id, standard_number, stream, display_name, default_fees, subjects } = req.body;
   if (!board_id || !standard_number) return res.status(400).json({ error: 'board_id and standard_number required' });
 
   const streamVal = stream || 'General';
   const displayName = display_name || buildDisplayName(standard_number, streamVal);
+  const defaultFeesVal = parseFloat(default_fees) || 0;
+  const normStream = streamVal.toLowerCase().replace(/\s*\(gseb\)|\s*\(cbse\)|\s*\(icse\)/gi, '').trim();
 
-  // Check duplicate
-  const existing = db.prepare('SELECT id FROM standards WHERE board_id = ? AND standard_number = ? AND stream = ?').get(board_id, standard_number, streamVal);
+  // Check duplicate with stream normalization and display_name check
+  const existing = db.prepare(`
+    SELECT id FROM standards 
+    WHERE board_id = ? AND standard_number = ? 
+    AND (
+      LOWER(stream) = LOWER(?) 
+      OR LOWER(REPLACE(REPLACE(REPLACE(stream, ' (GSEB)', ''), ' (CBSE)', ''), ' (ICSE)', '')) = ? 
+      OR display_name = ?
+    )
+  `).get(board_id, standard_number, streamVal, normStream, displayName);
   if (existing) return res.status(409).json({ error: 'This standard/stream combination already exists for this board' });
 
-  const result = db.prepare('INSERT INTO standards (board_id, standard_number, stream, display_name) VALUES (?, ?, ?, ?)').run(board_id, standard_number, streamVal, displayName);
+  const result = db.prepare('INSERT INTO standards (board_id, standard_number, stream, display_name, default_fees) VALUES (?, ?, ?, ?, ?)').run(board_id, standard_number, streamVal, displayName, defaultFeesVal);
   const standardId = result.lastInsertRowid;
 
   // Auto-seed subjects
@@ -107,6 +117,21 @@ router.post('/', (req, res) => {
 });
 
 // DELETE /api/standards/:id
+// PUT /api/standards/:id — update standard details and default fees
+router.put('/:id', (req, res) => {
+  const { display_name, stream, default_fees } = req.body;
+  const existing = db.prepare('SELECT * FROM standards WHERE id = ?').get(req.params.id);
+  if (!existing) return res.status(404).json({ error: 'Standard not found' });
+
+  const dName = display_name || existing.display_name;
+  const sStream = stream || existing.stream;
+  const fees = default_fees !== undefined ? parseFloat(default_fees) || 0 : existing.default_fees;
+
+  db.prepare('UPDATE standards SET display_name = ?, stream = ?, default_fees = ? WHERE id = ?').run(dName, sStream, fees, req.params.id);
+  logActivity('STANDARD_UPDATE', `Updated class ${dName} default fees: ₹${fees}`);
+  res.json({ success: true, standard: db.prepare('SELECT * FROM standards WHERE id = ?').get(req.params.id) });
+});
+
 router.delete('/:id', (req, res) => {
   const std = db.prepare('SELECT display_name FROM standards WHERE id = ?').get(req.params.id);
   if (!std) return res.status(404).json({ error: 'Standard not found' });

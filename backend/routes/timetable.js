@@ -40,9 +40,13 @@ router.get('/config/:standard_id', (req, res) => {
         start_time: '08:00',
         end_time: '15:00',
         break_duration_mins: 20,
-        working_days: '["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]'
+        working_days: '["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]',
+        breaks_json: '[]'
       };
     }
+    // Parse JSON fields
+    try { config.working_days = typeof config.working_days === 'string' ? JSON.parse(config.working_days) : config.working_days; } catch { config.working_days = []; }
+    try { config.breaks_json = typeof config.breaks_json === 'string' ? JSON.parse(config.breaks_json || '[]') : (config.breaks_json || []); } catch { config.breaks_json = []; }
     res.json(config);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -52,15 +56,17 @@ router.get('/config/:standard_id', (req, res) => {
 // PUT /api/timetable/config/:standard_id
 router.put('/config/:standard_id', (req, res) => {
   try {
-    const { batch_id, lectures_per_day, slot_duration_mins, start_time, end_time, break_duration_mins, working_days } = req.body;
+    const { batch_id, lectures_per_day, slot_duration_mins, start_time, end_time, break_duration_mins, working_days, breaks_json } = req.body;
+    const wdStr = typeof working_days === 'string' ? working_days : JSON.stringify(working_days || []);
+    const bjStr = typeof breaks_json === 'string' ? breaks_json : JSON.stringify(breaks_json || []);
     const existing = db.prepare('SELECT id FROM timetable_configs WHERE standard_id = ? AND (batch_id = ? OR batch_id IS NULL)')
       .get(req.params.standard_id, batch_id || null);
     if (existing) {
-      db.prepare(`UPDATE timetable_configs SET lectures_per_day=?, slot_duration_mins=?, start_time=?, end_time=?, break_duration_mins=?, working_days=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`)
-        .run(lectures_per_day || 6, slot_duration_mins || 60, start_time || '08:00', end_time || '15:00', break_duration_mins || 20, typeof working_days === 'string' ? working_days : JSON.stringify(working_days), existing.id);
+      db.prepare(`UPDATE timetable_configs SET lectures_per_day=?, slot_duration_mins=?, start_time=?, end_time=?, break_duration_mins=?, working_days=?, breaks_json=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`)
+        .run(lectures_per_day || 6, slot_duration_mins || 60, start_time || '08:00', end_time || '15:00', break_duration_mins || 20, wdStr, bjStr, existing.id);
     } else {
-      db.prepare(`INSERT INTO timetable_configs (standard_id, batch_id, lectures_per_day, slot_duration_mins, start_time, end_time, break_duration_mins, working_days) VALUES (?,?,?,?,?,?,?,?)`)
-        .run(req.params.standard_id, batch_id || null, lectures_per_day || 6, slot_duration_mins || 60, start_time || '08:00', end_time || '15:00', break_duration_mins || 20, typeof working_days === 'string' ? working_days : JSON.stringify(working_days));
+      db.prepare(`INSERT INTO timetable_configs (standard_id, batch_id, lectures_per_day, slot_duration_mins, start_time, end_time, break_duration_mins, working_days, breaks_json) VALUES (?,?,?,?,?,?,?,?,?)`)
+        .run(req.params.standard_id, batch_id || null, lectures_per_day || 6, slot_duration_mins || 60, start_time || '08:00', end_time || '15:00', break_duration_mins || 20, wdStr, bjStr);
     }
     res.json({ success: true });
   } catch (err) {
@@ -333,6 +339,54 @@ router.post('/automate', (req, res) => {
     const count = insertAll();
     logActivity('TIMETABLE_AUTO', `Auto-generated ${count} slots for ${standard.display_name}`);
     res.json({ success: true, slots_created: count, message: `Auto-generated ${count} lecture slots for ${standard.display_name}` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/timetable/bulk-save — Bulk replace or save timetable slots in one transaction
+router.post('/bulk-save', (req, res) => {
+  const { standard_id, batch_id, slots } = req.body;
+  if (!standard_id || !Array.isArray(slots)) {
+    return res.status(400).json({ error: 'standard_id and slots array are required' });
+  }
+
+  try {
+    const clearStmt = batch_id 
+      ? db.prepare('DELETE FROM timetable WHERE standard_id = ? AND batch_id = ?')
+      : db.prepare('DELETE FROM timetable WHERE standard_id = ?');
+
+    const insertStmt = db.prepare(`
+      INSERT INTO timetable (standard_id, batch_id, day_of_week, time_slot, start_time, end_time, subject_name, subject_id, teacher_name, teacher_id, room_no)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const doSave = db.transaction(() => {
+      if (batch_id) clearStmt.run(standard_id, batch_id);
+      else clearStmt.run(standard_id);
+
+      for (const s of slots) {
+        if (!s.subject_name || !s.day_of_week) continue;
+        const timeSlotStr = (s.start_time && s.end_time) ? `${s.start_time}–${s.end_time}` : (s.time_slot || '');
+        insertStmt.run(
+          standard_id,
+          batch_id || null,
+          s.day_of_week,
+          timeSlotStr,
+          s.start_time || '',
+          s.end_time || '',
+          s.subject_name,
+          s.subject_id || null,
+          s.teacher_name || '',
+          s.teacher_id || null,
+          s.room_no || 'Room 101'
+        );
+      }
+    });
+
+    doSave();
+    logActivity('TIMETABLE_SAVE', `Saved ${slots.length} slots for standard #${standard_id}`);
+    res.json({ success: true, count: slots.length });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

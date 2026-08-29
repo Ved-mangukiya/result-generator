@@ -91,9 +91,11 @@ const API = {
 
   // ─── Standards ─────────────────────────────────
   standards: {
+    list:           ()          => API.get('/api/standards'),
     get:            (id)        => API.get(`/api/standards/${id}`),
     streams:        ()          => API.get('/api/standards/streams'),
     add:            (data)      => API.post('/api/standards', data),
+    update:         (id, data)  => API.put(`/api/standards/${id}`, data),
     delete:         (id)        => API.delete(`/api/standards/${id}`),
     getSettings:    (id)        => API.get(`/api/standards/${id}/result-settings`),
     saveSettings:   (id, data)  => API.put(`/api/standards/${id}/result-settings`, data),
@@ -141,6 +143,17 @@ const API = {
     getNextRoll:(standardId)    => API.get(`/api/students/next-roll?standard_id=${standardId}`),
     resequence: (standardId)    => API.post('/api/students/resequence', { standard_id: standardId }),
     graduateBulk:(standardId)   => API.post('/api/students/graduate-bulk', { standard_id: standardId }),
+    listCredentials: (stdId, batchId, search) => {
+      let url = '/api/students/credentials/all';
+      const p = [];
+      if (stdId && stdId !== 'all') p.push(`standard_id=${stdId}`);
+      if (batchId && batchId !== 'all') p.push(`batch_id=${batchId}`);
+      if (search) p.push(`search=${encodeURIComponent(search)}`);
+      if (p.length) url += '?' + p.join('&');
+      return API.get(url);
+    },
+    updateCredentials: (id, data) => API.put(`/api/students/${id}/credentials`, data),
+    bulkGenerateCredentials: (data) => API.post('/api/students/credentials/bulk-generate', data),
   },
 
   // ─── Tests ─────────────────────────────────────
@@ -202,6 +215,19 @@ const API = {
     import: (data) => API.post('/api/sync/import', data),
   },
 
+  // ─── Timetable ───────────────────────────────────────
+  timetable: {
+    list:        (standardId, batchId) => API.get(`/api/timetable${standardId ? `?standard_id=${standardId}` : ''}${batchId ? `&batch_id=${batchId}` : ''}`),
+    getConfig:   (standardId, batchId) => API.get(`/api/timetable/config/${standardId}${batchId ? `?batch_id=${batchId}` : ''}`),
+    saveConfig:  (standardId, data)    => API.put(`/api/timetable/config/${standardId}`, data),
+    addSlot:     (data)                => API.post('/api/timetable', data),
+    updateSlot:  (id, data)            => API.put(`/api/timetable/${id}`, data),
+    deleteSlot:  (id)                  => API.delete(`/api/timetable/${id}`),
+    clear:       (standardId, batchId) => API.delete(`/api/timetable/clear/${standardId}${batchId ? `?batch_id=${batchId}` : ''}`),
+    automate:    (data)                => API.post('/api/timetable/automate', data),
+    bulkSave:    (data)                => API.post('/api/timetable/bulk-save', data),
+  },
+
   // ─── Import ────────────────────────────────────
   import: {
     parse:   (formData)         => API.uploadFile('/api/upload/import', formData),
@@ -228,6 +254,8 @@ const API = {
     pdfSingle:      (studentId, templateId)   => `/api/export/pdf/single/${studentId}/download${templateId ? `?template_id=${templateId}` : ''}`,
     pdfBulk:        (standardId, templateId, batchId, cycleId)  => `/api/export/pdf/bulk/${standardId}/download?template_id=${templateId || ''}${batchId ? `&batch_id=${batchId}` : ''}${cycleId ? `&cycle_id=${cycleId}` : ''}`,
     excel:          (standardId, batchId)              => `/api/export/excel/${standardId}/download${batchId ? `?batch_id=${batchId}` : ''}`,
+    credentialSlipSingle: (studentId) => `/api/export/credential-slip/${studentId}`,
+    credentialSlipBulk:   (standardId) => `/api/export/credential-slip-bulk${standardId && standardId !== 'all' ? `?standard_id=${standardId}` : ''}`,
     reminderPDF:    (data)                    => API.post('/api/export/reminder-pdf', data),
     noticeboardPDF: (data)                    => API.post('/api/export/noticeboard-pdf', data),
   },
@@ -236,6 +264,36 @@ const API = {
     getData: (standardId, cycleId) => API.get(`/api/promotions/data?standard_id=${standardId}&cycle_id=${cycleId}`),
   },
 
+  // ─── Reminder Notices (12 types) ─────────────────
+  reminderNotices: {
+    list:    (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return API.get(`/api/reminder-notices${q ? '?' + q : ''}`);
+    },
+    get:     (id)          => API.get(`/api/reminder-notices/${id}`),
+    create:  (data)        => API.post('/api/reminder-notices', data),
+    update:  (id, data)    => API.put(`/api/reminder-notices/${id}`, data),
+    publish: (id)          => API.post(`/api/reminder-notices/${id}/publish`),
+    delete:  (id)          => API.delete(`/api/reminder-notices/${id}`),
+  },
+
+  // ─── Teachers / Faculty ─────────────────────────
+  teachers: {
+    list:              ()                       => API.get('/api/teachers'),
+    get:               (id)                     => API.get(`/api/teachers/${id}`),
+    add:               (data)                   => API.post('/api/teachers', data),
+    update:            (id, data)               => API.put(`/api/teachers/${id}`, data),
+    updateCredentials: (id, data)               => API.put(`/api/teachers/${id}/credentials`, data),
+    delete:            (id)                     => API.delete(`/api/teachers/${id}`),
+    assignments:       (id)                     => API.get(`/api/teachers/${id}/assignments`),
+    addAssignment:     (id, data)               => API.post(`/api/teachers/${id}/assignments`, data),
+    deleteAssignment:  (id, assignmentId)       => API.delete(`/api/teachers/${id}/assignments/${assignmentId}`),
+  },
+
+  // ─── Teacher Permissions (Admin use) ─────────────
+  teacherPermissions: {
+    update: (teacherId, permissions) => API.put(`/api/teachers/${teacherId}/permissions`, { permissions }),
+  },
 };
 
 window.API = API;

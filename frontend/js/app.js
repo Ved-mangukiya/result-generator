@@ -3,22 +3,35 @@
    ═══════════════════════════════════════════════ */
 
 const PAGES = {
-  dashboard:   { render: () => renderDashboard(),     title: 'Dashboard' },
-  boards:      { render: () => renderBoards(),         title: 'Boards & Classes' },
+  dashboard:   { render: (p) => renderDashboard(p),     title: 'Dashboard' },
+  boards:      { render: (p) => renderBoards(p),         title: 'Boards & Classes' },
   students:    { render: (p) => renderStudents(p),    title: 'Students' },
-  attendance:  { render: () => window.AttendanceModule.renderAttendancePage(document.getElementById('page-content')), title: 'Attendance Tracker' },
-  teachers:    { render: () => window.TeachersModule.renderTeachersPage(document.getElementById('page-content')), title: 'Teachers Portal' },
-  parents:     { render: () => window.ParentsModule.renderParentsPage(document.getElementById('page-content')), title: 'Parent Portal' },
-  faculty:     { render: () => window.FacultyModule.renderFacultyPage(document.getElementById('page-content')), title: 'Faculty Management' },
-  timetable:   { render: () => window.TimetableBuilder.renderPage(document.getElementById('page-content')), title: 'Timetable Builder' },
+  attendance:  { render: (p) => window.AttendanceModule.renderAttendancePage(document.getElementById('page-content'), p), title: 'Attendance Tracker' },
+  teachers:    { render: (p) => window.TeachersModule.renderTeachersPage(document.getElementById('page-content'), p), title: 'Teachers Portal' },
+  parents:     { render: (p) => window.ParentsModule.renderParentsPage(document.getElementById('page-content'), p), title: 'Parent Portal' },
+  faculty:     { render: (p) => window.FacultyModule.renderFacultyPage(document.getElementById('page-content'), p), title: 'Faculty Management' },
+  timetable:   { render: (p) => window.TimetableBuilder.renderPage(document.getElementById('page-content'), p), title: 'Timetable Studio' },
   results:     { render: (p) => renderResults(p),     title: 'Results' },
   tests:       { render: (p) => renderTests(p),       title: 'Test Scheduler' },
-  reminders:   { render: (p) => renderReminders(p),  title: 'Notices & Reminders' },
+  reminders:   { render: (p) => (typeof renderReminders === 'function' ? renderReminders(p) : window.renderReminders ? window.renderReminders(p) : console.error('reminders.js not loaded')),  title: 'Notices & Reminders' },
   promotions:  { render: (p) => renderPromotions(p), title: 'Promotions' },
-  templates:   { render: () => renderTemplates(),     title: 'Templates' },
-  import:      { render: () => renderImport(),        title: 'Import Excel' },
-  settings:    { render: () => renderSettings(),      title: 'Settings' },
+  templates:   { render: (p) => renderTemplates(p),     title: 'Templates' },
+  import:      { render: (p) => renderImport(p),        title: 'Import Excel' },
+  settings:    { render: (p) => renderSettings(p),      title: 'Settings' },
 };
+
+function parseCurrentHash() {
+  const raw = window.location.hash.replace('#', '') || 'dashboard';
+  const [page, query] = raw.split('?');
+  const params = {};
+  if (query) {
+    const sp = new URLSearchParams(query);
+    for (const [k, v] of sp.entries()) {
+      params[k] = v;
+    }
+  }
+  return { page: page || 'dashboard', params };
+}
 
 const Router = {
   current: null,
@@ -45,7 +58,11 @@ const Router = {
 
     // Update hash without triggering hashchange loop
     this._ignoreHashChange = true;
-    window.location.hash = page;
+    let queryStr = '';
+    if (Object.keys(params).length > 0) {
+      queryStr = '?' + new URLSearchParams(params).toString();
+    }
+    window.location.hash = page + queryStr;
     setTimeout(() => { this._ignoreHashChange = false; }, 50);
 
     // Animate out
@@ -81,9 +98,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Hashchange listener for browser back/forward buttons
   window.addEventListener('hashchange', () => {
     if (Router._ignoreHashChange) return;
-    const page = window.location.hash.replace('#', '') || 'dashboard';
-    if (Router.current !== page && PAGES[page]) {
-      Router.navigate(page);
+    const { page, params } = parseCurrentHash();
+    if (PAGES[page]) {
+      Router.navigate(page, params);
     }
   });
 
@@ -117,6 +134,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('sidebar')?.classList.remove('open');
     setTimeout(() => showAddStudentModal?.(), 100);
   });
+
+  // Multi-window role test dropdown toggle
+  const roleSwitchBtn = document.getElementById('topbar-role-switch-btn');
+  const roleMenu = document.getElementById('topbar-role-menu');
+  if (roleSwitchBtn && roleMenu) {
+    roleSwitchBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      roleMenu.style.display = roleMenu.style.display === 'none' ? 'block' : 'none';
+    });
+    document.addEventListener('click', () => {
+      if (roleMenu) roleMenu.style.display = 'none';
+    });
+  }
   
   // Handle hash on load
   const hash = window.location.hash.replace('#', '');

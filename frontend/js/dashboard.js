@@ -740,113 +740,143 @@ async function renderCalendarWidget() {
 
     let gridHTML = `
       <style>
+        .calendar-scroll-wrap {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          width: 100%;
+          padding-bottom: 4px;
+        }
         .calendar-grid {
           display: grid;
-          grid-template-columns: repeat(7, 1fr);
-          gap: 8px;
-          margin-top: 10px;
+          grid-template-columns: repeat(7, minmax(105px, 1fr));
+          gap: 6px;
+          min-width: 720px;
+          width: 100%;
+          box-sizing: border-box;
         }
         .calendar-weekday {
           text-align: center;
           font-weight: 700;
           color: var(--text-muted);
-          font-size: 0.8rem;
+          font-size: 0.75rem;
           padding: 8px 0;
           text-transform: uppercase;
-          letter-spacing: 0.05em;
-          border-bottom: 1px solid var(--border-medium);
+          letter-spacing: 0.06em;
+          border-bottom: 1.5px solid var(--border-medium);
+          background: rgba(255,255,255,0.02);
+          border-radius: var(--radius-sm);
         }
         .calendar-day {
-          min-height: 105px;
+          height: 112px;
+          min-height: 112px;
+          max-height: 112px;
+          box-sizing: border-box;
           background: var(--bg-card);
           border: 1px solid var(--border-medium);
           border-radius: var(--radius);
-          padding: 8px;
+          padding: 6px 8px;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: all 0.18s ease;
           position: relative;
+          overflow: hidden;
         }
         .calendar-day:hover {
           border-color: var(--accent);
           transform: translateY(-2px);
-          box-shadow: var(--shadow-sm);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.12);
         }
         .calendar-day.prev-month, .calendar-day.next-month {
-          opacity: 0.3;
+          opacity: 0.28;
           cursor: default;
-          background: transparent;
+          background: rgba(0,0,0,0.02);
           pointer-events: none;
+          border-style: dashed;
         }
         .calendar-day.today {
-          border: 2px solid var(--primary-light);
-          background: rgba(var(--primary-rgb), 0.03);
+          border: 2px solid var(--primary-light) !important;
+          background: rgba(59, 130, 246, 0.05);
         }
         .calendar-day.has-note {
-          border: 1px dashed var(--accent) !important;
+          border: 1.5px dashed var(--accent) !important;
+        }
+        .calendar-day-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          line-height: 1;
         }
         .calendar-day-num {
           font-weight: 800;
-          font-size: 0.95rem;
+          font-size: 0.88rem;
           color: var(--text-secondary);
         }
         .calendar-day.today .calendar-day-num {
           color: var(--primary-light);
+          font-weight: 900;
         }
         .calendar-events {
           display: flex;
           flex-direction: column;
-          gap: 3px;
-          margin-top: 4px;
+          gap: 2.5px;
+          margin-top: 3px;
+          flex: 1;
           overflow: hidden;
         }
         .calendar-event-badge {
-          font-size: 0.65rem;
-          padding: 1px 4px;
+          font-size: 0.62rem;
+          padding: 2px 4px;
           border-radius: 3px;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
           font-weight: 600;
+          line-height: 1.2;
+          display: block;
         }
         .calendar-event-badge.holiday {
-          background: rgba(239, 68, 68, 0.08);
-          color: #c53030;
-          border: 1px solid rgba(239, 68, 68, 0.18);
+          background: rgba(239, 68, 68, 0.12);
+          color: #ef4444;
+          border: 1px solid rgba(239, 68, 68, 0.25);
         }
         .calendar-event-badge.test {
-          background: rgba(59, 130, 246, 0.08);
-          color: #2b6cb0;
-          border: 1px solid rgba(59, 130, 246, 0.18);
+          background: rgba(59, 130, 246, 0.12);
+          color: #3b82f6;
+          border: 1px solid rgba(59, 130, 246, 0.25);
         }
         .calendar-event-badge.school {
-          background: rgba(234, 179, 8, 0.08);
-          color: #b7791f;
-          border: 1px solid rgba(234, 179, 8, 0.18);
+          background: rgba(234, 179, 8, 0.12);
+          color: #eab308;
+          border: 1px solid rgba(234, 179, 8, 0.25);
+        }
+        .calendar-event-badge.more {
+          background: rgba(255, 255, 255, 0.08);
+          color: var(--text-muted);
+          font-size: 0.6rem;
+          text-align: center;
         }
         .calendar-note-indicator {
-          position: absolute;
-          top: 8px;
-          right: 8px;
           width: 6px;
           height: 6px;
           border-radius: 50%;
           background: var(--accent);
+          box-shadow: 0 0 4px var(--accent);
         }
         .calendar-range-bars {
           display: flex;
           flex-direction: column;
           gap: 2px;
-          margin-top: 4px;
+          margin-top: 3px;
         }
         .calendar-range-bar {
-          height: 5px;
+          height: 4px;
           border-radius: 2px;
         }
       </style>
-      <div class="calendar-grid">
+      <div class="calendar-scroll-wrap">
+        <div class="calendar-grid">
     `;
 
     const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -858,7 +888,9 @@ async function renderCalendarWidget() {
       const dayNum = prevDaysInMonth - i;
       gridHTML += `
         <div class="calendar-day prev-month">
-          <span class="calendar-day-num">${dayNum}</span>
+          <div class="calendar-day-header">
+            <span class="calendar-day-num">${dayNum}</span>
+          </div>
         </div>`;
     }
 
@@ -898,25 +930,34 @@ async function renderCalendarWidget() {
       if (isToday) dayClasses.push('today');
       if (hasNote) dayClasses.push('has-note');
 
+      // Collect all badge items
+      const badges = [];
+      if (holidayName) badges.push({ type: 'holiday', title: `Holiday: ${holidayName}`, label: `🎉 ${holidayName}` });
+      dayTests.forEach(t => badges.push({ type: 'test', title: `Test: ${t.name} (${t.standard_name})`, label: `📝 ${t.subject_name}` }));
+      dayExams.forEach(e => badges.push({ type: 'school', title: `School Exam: ${e.exam_name} (${e.standard_name})`, label: `🏫 ${e.subject_name}` }));
+
+      const maxVisibleBadges = 2;
+      const visibleBadges = badges.slice(0, maxVisibleBadges);
+      const remainingCount = badges.length - maxVisibleBadges;
+
       gridHTML += `
         <div class="calendar-day ${dayClasses.join(' ')}" onclick="openCalendarNoteModal('${dayDateStr}')">
-          <div class="flex justify-between items-start">
+          <div class="calendar-day-header">
             <span class="calendar-day-num">${d}</span>
             ${hasNote ? '<span class="calendar-note-indicator" title="Custom note added"></span>' : ''}
           </div>
           
           <div class="calendar-events">
-            ${holidayName ? `<div class="calendar-event-badge holiday" title="Holiday: ${holidayName}">🎉 ${holidayName}</div>` : ''}
-            ${dayTests.map(t => `<div class="calendar-event-badge test" title="Coaching Test: ${t.name} (Class: ${t.standard_name})">📝 Prep: ${t.subject_name} (${t.standard_name})</div>`).join('')}
-            ${dayExams.map(e => `<div class="calendar-event-badge school" title="School Exam: ${e.exam_name} (Class: ${e.standard_name})">🏫 School: ${e.subject_name} (${e.standard_name})</div>`).join('')}
+            ${visibleBadges.map(b => `<div class="calendar-event-badge ${b.type}" title="${b.title}">${b.label}</div>`).join('')}
+            ${remainingCount > 0 ? `<div class="calendar-event-badge more">+${remainingCount} more</div>` : ''}
           </div>
           <div class="calendar-range-bars">
-            ${activeCycles.map(tc => {
+            ${activeCycles.slice(0, 2).map(tc => {
               let color = '#3b82f6';
               const name = tc.standard_name || '';
               if (name.includes('10')) color = '#a855f7';
               else if (name.includes('12')) color = '#14b8a6';
-              return `<div class="calendar-range-bar" style="background:${color}" title="Series: ${tc.title} (${name}) - Prep Active"></div>`;
+              return `<div class="calendar-range-bar" style="background:${color}" title="Series: ${tc.title} (${name})"></div>`;
             }).join('')}
           </div>
         </div>`;
@@ -928,12 +969,14 @@ async function renderCalendarWidget() {
       for (let i = 1; i <= nextDaysNeeded; i++) {
         gridHTML += `
           <div class="calendar-day next-month">
-            <span class="calendar-day-num">${i}</span>
+            <div class="calendar-day-header">
+              <span class="calendar-day-num">${i}</span>
+            </div>
           </div>`;
       }
     }
 
-    gridHTML += `</div>`;
+    gridHTML += `</div></div>`;
     container.innerHTML = gridHTML;
 
   } catch (err) {

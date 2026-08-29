@@ -117,12 +117,16 @@ router.get('/pdf/single/:studentId/download', async (req, res) => {
     const coachingClean = (coaching.name || 'Coaching').replace(/[^a-zA-Z0-9]/g, '_');
     const stdClean = (standard?.display_name || '').replace(/[^a-zA-Z0-9]/g, '_');
     const studentClean = student.name.replace(/[^a-zA-Z0-9]/g, '_');
-    const downloadFilename = `${coachingClean}_${stdClean}_${studentClean}_ResultCard_${dateStr}_${timeStr}.pdf`;
+    const downloadFilename = `${coachingClean}_${stdClean}_${studentClean}_ResultCard_${dateStr}_${timeStr}.pdf`.replace(/[^a-zA-Z0-9._-]/g, '_');
 
-    res.download(outputPath, downloadFilename, (err) => {
-      if (err) console.error('Download error:', err);
-      try { fs.unlinkSync(outputPath); } catch(e) {}
-    });
+    const pdfBuf = fs.readFileSync(outputPath);
+    try { fs.unlinkSync(outputPath); } catch(e) {}
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Length', pdfBuf.length);
+    res.setHeader('Content-Disposition', `attachment; filename="${downloadFilename}"`);
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Length');
+    return res.end(pdfBuf);
   } catch (err) {
     console.error('PDF error:', err);
     res.status(500).json({ error: err.message });
@@ -148,12 +152,16 @@ router.get('/pdf/bulk/:standardId/download', async (req, res) => {
     
     const coachingClean = (coaching.name || 'Coaching').replace(/[^a-zA-Z0-9]/g, '_');
     const stdClean = (standard?.display_name || '').replace(/[^a-zA-Z0-9]/g, '_');
-    const downloadFilename = `${coachingClean}_${stdClean}_Bulk_ResultCards_${dateStr}_${timeStr}.pdf`;
+    const downloadFilename = `${coachingClean}_${stdClean}_Bulk_ResultCards_${dateStr}_${timeStr}.pdf`.replace(/[^a-zA-Z0-9._-]/g, '_');
 
-    res.download(outputPath, downloadFilename, (err) => {
-      if (err) console.error('Download error:', err);
-      try { fs.unlinkSync(outputPath); } catch(e) {}
-    });
+    const pdfBuf = fs.readFileSync(outputPath);
+    try { fs.unlinkSync(outputPath); } catch(e) {}
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Length', pdfBuf.length);
+    res.setHeader('Content-Disposition', `attachment; filename="${downloadFilename}"`);
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Length');
+    return res.end(pdfBuf);
   } catch (err) {
     console.error('Bulk PDF error:', err);
     res.status(500).json({ error: err.message });
@@ -174,15 +182,20 @@ router.get('/excel/:standardId/download', (req, res) => {
     
     const coachingClean = (coaching?.name || 'Coaching').replace(/[^a-zA-Z0-9]/g, '_');
     const stdClean = standard.display_name.replace(/[^a-zA-Z0-9]/g, '_');
-    const downloadFilename = `${coachingClean}_${stdClean}_ClassResults_${dateStr}_${timeStr}.xlsx`;
+    const downloadFilename = `${coachingClean}_${stdClean}_ClassResults_${dateStr}_${timeStr}.xlsx`.replace(/[^a-zA-Z0-9._-]/g, '_');
     const outputPath = path.join(__dirname, '../../exports', downloadFilename);
 
     const batchId = req.query.batch_id || null;
     exportClassToExcel(parseInt(req.params.standardId), outputPath, batchId);
-    res.download(outputPath, downloadFilename, (err) => {
-      if (err) console.error('Download error:', err);
-      try { fs.unlinkSync(outputPath); } catch(e) {}
-    });
+
+    const excelBuf = fs.readFileSync(outputPath);
+    try { fs.unlinkSync(outputPath); } catch(e) {}
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Length', excelBuf.length);
+    res.setHeader('Content-Disposition', `attachment; filename="${downloadFilename}"`);
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Length');
+    return res.end(excelBuf);
   } catch (err) {
     console.error('Excel export error:', err);
     res.status(500).json({ error: err.message });
@@ -207,12 +220,16 @@ router.post('/reminder-pdf', async (req, res) => {
     
     const coachingClean = (coaching.name || 'Coaching').replace(/[^a-zA-Z0-9]/g, '_');
     const typeClean = (req.body.type || 'Notice').replace(/[^a-zA-Z0-9]/g, '_');
-    const downloadFilename = `${coachingClean}_Notice_${typeClean}_${dateStr}_${timeStr}.pdf`;
+    const downloadFilename = `${coachingClean}_Notice_${typeClean}_${dateStr}_${timeStr}.pdf`.replace(/[^a-zA-Z0-9._-]/g, '_');
     
-    res.download(outputPath, downloadFilename, (err) => {
-      if (err) console.error('Download error:', err);
-      try { fs.unlinkSync(outputPath); } catch(e) {}
-    });
+    const pdfBuf = fs.readFileSync(outputPath);
+    try { fs.unlinkSync(outputPath); } catch(e) {}
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Length', pdfBuf.length);
+    res.setHeader('Content-Disposition', `attachment; filename="${downloadFilename}"`);
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Length');
+    return res.end(pdfBuf);
   } catch (err) {
     console.error('Reminder PDF error:', err);
     res.status(500).json({ error: err.message });
@@ -229,16 +246,63 @@ router.post('/noticeboard-pdf', async (req, res) => {
     const now = new Date();
     const dateStr = now.toISOString().split('T')[0];
     const timeStr = String(now.getHours()).padStart(2, '0') + '-' + String(now.getMinutes()).padStart(2, '0');
-    
-    const coachingClean = (coaching.name || 'Coaching').replace(/[^a-zA-Z0-9]/g, '_');
-    const downloadFilename = `${coachingClean}_Noticeboard_Results_${dateStr}_${timeStr}.pdf`;
 
-    res.download(outputPath, downloadFilename, (err) => {
-      if (err) console.error('Noticeboard download error:', err);
-      try { fs.unlinkSync(outputPath); } catch(e) {}
-    });
+    const coachingClean = (coaching.name || 'Coaching').replace(/[^a-zA-Z0-9]/g, '_');
+    const downloadFilename = `${coachingClean}_Noticeboard_${dateStr}_${timeStr}.pdf`.replace(/[^a-zA-Z0-9._-]/g, '_');
+
+    const pdfBuf = fs.readFileSync(outputPath);
+    try { fs.unlinkSync(outputPath); } catch(e) {}
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Length', pdfBuf.length);
+    res.setHeader('Content-Disposition', `attachment; filename="${downloadFilename}"`);
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Length');
+    return res.end(pdfBuf);
   } catch (err) {
     console.error('Noticeboard PDF error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/export/credential-slip/:studentId — Generate and download single student credential slip PDF
+router.get('/credential-slip/:studentId', async (req, res) => {
+  try {
+    const { generateCredentialSlipPDF } = require('../services/pdfService');
+    const { filename, outputPath } = await generateCredentialSlipPDF(parseInt(req.params.studentId));
+
+    const pdfBuf = fs.readFileSync(outputPath);
+    try { fs.unlinkSync(outputPath); } catch(e) {}
+
+    const cleanFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Length', pdfBuf.length);
+    res.setHeader('Content-Disposition', `attachment; filename="${cleanFilename}"`);
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Length');
+    return res.end(pdfBuf);
+  } catch (err) {
+    console.error('Credential slip PDF error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/export/credential-slip-bulk — Generate and download bulk credential slips PDF
+router.get('/credential-slip-bulk', async (req, res) => {
+  try {
+    const { standard_id } = req.query;
+    const { generateBulkCredentialSlipsPDF } = require('../services/pdfService');
+    const { filename, outputPath } = await generateBulkCredentialSlipsPDF(standard_id || null);
+
+    const pdfBuf = fs.readFileSync(outputPath);
+    try { fs.unlinkSync(outputPath); } catch(e) {}
+
+    const cleanFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Length', pdfBuf.length);
+    res.setHeader('Content-Disposition', `attachment; filename="${cleanFilename}"`);
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Length');
+    return res.end(pdfBuf);
+  } catch (err) {
+    console.error('Bulk credential slip PDF error:', err);
     res.status(500).json({ error: err.message });
   }
 });

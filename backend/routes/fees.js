@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const fs = require('fs');
+const path = require('path');
 const { db, logActivity } = require('../db/database');
 
 // GET /api/fees/student/:studentId — Get fee details and payment logs
@@ -91,20 +93,24 @@ router.get('/student/:studentId/ledger-pdf', async (req, res) => {
     const timeStr = String(now.getHours()).padStart(2,'0') + '-' + String(now.getMinutes()).padStart(2,'0');
     const coachingClean = (coaching.name || 'Coaching').replace(/[^a-zA-Z0-9]/g,'_');
     const studentClean  = (student?.name || 'Student').replace(/[^a-zA-Z0-9]/g,'_');
-    const dlName = `${coachingClean}_${studentClean}_FeeLedger_${dateStr}_${timeStr}.pdf`;
+    const dlName = `${coachingClean}_${studentClean}_FeeLedger_${dateStr}_${timeStr}.pdf`.replace(/[^a-zA-Z0-9._-]/g, '_');
 
-    res.download(outputPath, dlName, err => {
-      if (err) console.error('Ledger PDF download error:', err);
-      try { require('fs').unlinkSync(outputPath); } catch(e) {}
-    });
+    const pdfBuf = fs.readFileSync(outputPath);
+    try { fs.unlinkSync(outputPath); } catch(e) {}
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Length', pdfBuf.length);
+    res.setHeader('Content-Disposition', `attachment; filename="${dlName}"`);
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Length');
+    return res.end(pdfBuf);
   } catch (err) {
     console.error('Ledger PDF error:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// GET /api/fees/payments/:paymentId/receipt-pdf
-router.get('/payments/:paymentId/receipt-pdf', async (req, res) => {
+// GET /api/fees/payments/:paymentId/receipt-pdf & /api/fees/receipt/:paymentId/pdf
+const handleReceiptPdf = async (req, res) => {
   try {
     const { generatePaymentReceiptPDF } = require('../services/feesPdfService');
     const { filename, outputPath } = await generatePaymentReceiptPDF(parseInt(req.params.paymentId));
@@ -116,17 +122,24 @@ router.get('/payments/:paymentId/receipt-pdf', async (req, res) => {
     const dateStr = now.toISOString().split('T')[0];
     const coachingClean = (coaching.name || 'Coaching').replace(/[^a-zA-Z0-9]/g,'_');
     const studentClean  = (student?.name || 'Student').replace(/[^a-zA-Z0-9]/g,'_');
-    const dlName = `${coachingClean}_Receipt_${studentClean}_${String(req.params.paymentId).padStart(4,'0')}_${dateStr}.pdf`;
+    const dlName = `${coachingClean}_Receipt_${studentClean}_${String(req.params.paymentId).padStart(4,'0')}_${dateStr}.pdf`.replace(/[^a-zA-Z0-9._-]/g, '_');
 
-    res.download(outputPath, dlName, err => {
-      if (err) console.error('Receipt PDF download error:', err);
-      try { require('fs').unlinkSync(outputPath); } catch(e) {}
-    });
+    const pdfBuf = fs.readFileSync(outputPath);
+    try { fs.unlinkSync(outputPath); } catch(e) {}
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Length', pdfBuf.length);
+    res.setHeader('Content-Disposition', `attachment; filename="${dlName}"`);
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Length');
+    return res.end(pdfBuf);
   } catch (err) {
     console.error('Receipt PDF error:', err);
     res.status(500).json({ error: err.message });
   }
-});
+};
+
+router.get('/payments/:paymentId/receipt-pdf', handleReceiptPdf);
+router.get('/receipt/:paymentId/pdf', handleReceiptPdf);
 
 // GET /api/fees/standard/:standardId/bulk-ledger-pdf
 router.get('/standard/:standardId/bulk-ledger-pdf', async (req, res) => {
@@ -141,12 +154,16 @@ router.get('/standard/:standardId/bulk-ledger-pdf', async (req, res) => {
     const timeStr = String(now.getHours()).padStart(2,'0') + '-' + String(now.getMinutes()).padStart(2,'0');
     const coachingClean = (coaching.name || 'Coaching').replace(/[^a-zA-Z0-9]/g,'_');
     const stdClean      = (standard?.display_name || 'Class').replace(/[^a-zA-Z0-9]/g,'_');
-    const dlName = `${coachingClean}_${stdClean}_BulkFeeLedger_${dateStr}_${timeStr}.pdf`;
+    const dlName = `${coachingClean}_${stdClean}_BulkFeeLedger_${dateStr}_${timeStr}.pdf`.replace(/[^a-zA-Z0-9._-]/g, '_');
 
-    res.download(outputPath, dlName, err => {
-      if (err) console.error('Bulk ledger PDF download error:', err);
-      try { require('fs').unlinkSync(outputPath); } catch(e) {}
-    });
+    const pdfBuf = fs.readFileSync(outputPath);
+    try { fs.unlinkSync(outputPath); } catch(e) {}
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Length', pdfBuf.length);
+    res.setHeader('Content-Disposition', `attachment; filename="${dlName}"`);
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Length');
+    return res.end(pdfBuf);
   } catch (err) {
     console.error('Bulk ledger PDF error:', err);
     res.status(500).json({ error: err.message });

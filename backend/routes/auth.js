@@ -24,15 +24,39 @@ router.post('/login', async (req, res) => {
   }
 
   // 2. Check Teacher Table
-  const teacher = db.prepare('SELECT * FROM teachers WHERE LOWER(email) = LOWER(?)').get(queryUser);
+  const cleanPhone = queryUser.replace(/[\s\-\+]/g, '').replace(/^91/, '');
+  const teacher = db.prepare(`
+    SELECT * FROM teachers 
+    WHERE LOWER(email) = LOWER(?)
+       OR LOWER(username) = LOWER(?)
+       OR LOWER(name) = LOWER(?)
+       OR (phone != '' AND REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '+91', ''), '+', '') = ?)
+  `).get(queryUser, queryUser, queryUser, cleanPhone);
+
   if (teacher) {
-    const valid = await bcrypt.compare(password, teacher.password_hash);
+    let valid = false;
+    if (teacher.plain_password && teacher.plain_password.trim() === password.trim()) {
+      valid = true;
+    }
+    if (!valid && teacher.password_hash) {
+      try {
+        valid = await bcrypt.compare(password, teacher.password_hash);
+      } catch (e) {}
+    }
+    // Fallback default passwords
+    if (!valid && (password === 'teacher123' || password === 'teacher@123')) {
+      valid = true;
+    }
+
     if (valid) {
+      let perms = [];
+      try { perms = JSON.parse(teacher.permissions || '[]'); } catch { perms = []; }
       req.session.teacherId = teacher.id;
       req.session.role = 'teacher';
       req.session.name = teacher.name;
       req.session.email = teacher.email;
-      return req.session.save(() => res.json({ success: true, role: 'teacher', teacher, onboarding_complete: true }));
+      req.session.permissions = perms;
+      return req.session.save(() => res.json({ success: true, role: 'teacher', teacher, permissions: perms, onboarding_complete: true }));
     }
   }
 
@@ -44,7 +68,10 @@ router.post('/login', async (req, res) => {
 
   if (student) {
     let valid = false;
-    if (student.parent_password_hash) {
+    if (student.parent_password && student.parent_password.trim() === password.trim()) {
+      valid = true;
+    }
+    if (!valid && student.parent_password_hash) {
       valid = await bcrypt.compare(password, student.parent_password_hash);
     }
     // Fallback default password
@@ -108,7 +135,11 @@ router.get('/me', (req, res) => {
     const profile = db.prepare('SELECT * FROM coaching_profile').get();
     return res.json({ role: 'admin', email: req.session.email, onboarding_complete: profile?.onboarding_complete === 1 });
   } else if (req.session.teacherId) {
-    return res.json({ role: 'teacher', name: req.session.name, email: req.session.email, onboarding_complete: true });
+    // Re-fetch fresh permissions from DB in case admin updated them
+    const teacher = db.prepare('SELECT name, email, permissions FROM teachers WHERE id = ?').get(req.session.teacherId);
+    let perms = [];
+    try { perms = JSON.parse(teacher?.permissions || '[]'); } catch { perms = []; }
+    return res.json({ role: 'teacher', name: req.session.name, email: req.session.email, teacher_id: req.session.teacherId, permissions: perms, onboarding_complete: true });
   } else if (req.session.studentId) {
     return res.json({ role: 'parent', name: req.session.name, student_id: req.session.studentId, onboarding_complete: true });
   }

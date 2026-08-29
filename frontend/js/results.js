@@ -261,6 +261,20 @@ function renderExamBoxes() {
       </div>`;
   }).join('');
 
+  if (boxes.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state" style="padding:60px 40px;">
+        <div style="font-size:3rem;margin-bottom:16px;">📊</div>
+        <h3 style="margin-bottom:8px;">No Tests or Cycles Found</h3>
+        <p class="text-muted text-sm" style="margin-bottom:20px;max-width:400px;margin-left:auto;margin-right:auto;">
+          This class has no test cycles or standalone tests yet. Go to the <strong>Tests</strong> module to create tests, then come back here to view results.
+        </p>
+        <button class="btn btn-primary" onclick="Router.navigate('tests')">📝 Go to Tests</button>
+      </div>`;
+    document.getElementById('results-table-container')?.remove();
+    return;
+  }
+
   container.innerHTML = `
     <p style="font-size:0.75rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px;">
       Select Exam / Test Series

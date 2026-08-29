@@ -14,6 +14,9 @@
     { "id": 12, "name": "Tripura Board of Secondary Education", "short_name": "TBSE", "is_custom": false },
     { "id": 13, "name": "Nagaland Board of School Education", "short_name": "NBSE", "is_custom": false },
     { "id": 14, "name": "CBSE Affiliated Private School", "short_name": "CBSE (Pvt)", "is_custom": false },
-    { "id": 15, "name": "National Institute of Open Schooling", "short_name": "NIOS", "is_custom": false }
+    { "id": 15, "name": "National Institute of Open Schooling", "short_name": "NIOS", "is_custom": false },
+    { "id": 16, "name": "Gujarat Technological University", "short_name": "GTU (University)", "is_custom": false },
+    { "id": 17, "name": "Gujarat University & Affiliated Colleges", "short_name": "GU (University)", "is_custom": false },
+    { "id": 18, "name": "University & Autonomous Degree College System", "short_name": "University ERP", "is_custom": false }
   ]
 }

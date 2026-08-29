@@ -55,9 +55,40 @@ function buildHtmlShell(title, bodyHtml, printStyles = '') {
   <title>${title}</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;700;900&display=swap');
+    @page { size: A4 portrait; margin: 0; }
     *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
-    body{font-family:'Inter',sans-serif;font-size:13px;color:#1B2A4A;background:#FDFAF4;line-height:1.5;}
-    .page{width:210mm;min-height:297mm;padding:18mm 18mm 20mm;background:white;position:relative;}
+    html, body {
+      width: 210mm;
+      height: 297mm;
+      max-width: 210mm;
+      max-height: 297mm;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      font-size: 12.5px;
+      color: #1B2A4A;
+      background: #ffffff;
+      line-height: 1.45;
+      overflow: hidden;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .page {
+      width: 210mm;
+      height: 297mm;
+      max-width: 210mm;
+      max-height: 297mm;
+      padding: 12mm 15mm;
+      background: white;
+      position: relative;
+      overflow: hidden;
+      box-sizing: border-box;
+      page-break-after: always;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .page:last-child { page-break-after: auto; }
     .page-break{page-break-after:always;}
     .serif{font-family:'Playfair Display',serif;}
     ${printStyles}
@@ -398,8 +429,15 @@ async function withBrowser(htmlContent, pdfOptions = {}) {
   let browser;
   try {
     browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+      headless: 'new',
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--no-first-run',
+        '--disable-extensions'
+      ],
     });
     const page = await browser.newPage();
     await page.setContent(htmlContent, { waitUntil: 'networkidle0', timeout: 30000 });
@@ -431,8 +469,8 @@ async function generatePaymentReceiptPDF(paymentId) {
   const bodyHtml = buildReceiptHtml(paymentId);
   const html = buildHtmlShell('Fee Receipt', bodyHtml, `
     @page { size: A5 landscape; margin: 0; }
-    body { background: white; }
-    .page { width: 210mm; min-height: 148mm; padding: 8mm; }
+    html, body { width: 210mm !important; height: 148mm !important; max-height: 148mm !important; overflow: hidden !important; }
+    .page { width: 210mm !important; height: 148mm !important; max-height: 148mm !important; padding: 8mm 12mm !important; overflow: hidden !important; }
   `);
   const filename = `receipt_${paymentId}_${Date.now()}.pdf`;
   const outputPath = path.join(EXPORT_DIR, filename);

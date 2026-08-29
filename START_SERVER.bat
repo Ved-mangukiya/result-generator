@@ -1,6 +1,6 @@
 @echo off
 echo ========================================
-echo   Apex Tuition ERP - Server Startup
+echo   EduTrack ERP - Server Startup
 echo ========================================
 echo.
 
@@ -65,7 +65,7 @@ if %ERRORLEVEL% EQU 0 (
 )
 
 REM Start the server
-echo [INFO] Starting Apex Tuition ERP Server...
+echo [INFO] Starting EduTrack ERP Server...
 echo.
 echo ========================================
 echo   Server will start at:

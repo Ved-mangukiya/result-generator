@@ -595,7 +595,7 @@ router.get('/:id/export/pdf', async (req, res) => {
 
     const browser = await puppeteer.launch({
       headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
     });
 
     const now = new Date();
@@ -605,27 +605,108 @@ router.get('/:id/export/pdf', async (req, res) => {
     const coachingClean = (coaching.name || 'Coaching').replace(/[^a-zA-Z0-9]/g, '_');
     const stdClean = (test.standard_name || '').replace(/[^a-zA-Z0-9]/g, '_');
     const testClean = test.name.replace(/[^a-zA-Z0-9]/g, '_');
-    const downloadFilename = `${coachingClean}_${stdClean}_${testClean}_MarksReport_${dateStr}_${timeStr}.pdf`;
-    const outputPath = path.join(__dirname, '../../exports', downloadFilename);
+    const rawDownloadFilename = `${coachingClean}_${stdClean}_${testClean}_MarksReport_${dateStr}_${timeStr}.pdf`;
+    const cleanFilename = rawDownloadFilename.replace(/[^a-zA-Z0-9._-]/g, '_');
 
+    let pdfBuffer;
     try {
       const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: 'networkidle0' });
-      await page.pdf({
-        path: outputPath,
+      try {
+        await page.setContent(html, { waitUntil: ['load', 'networkidle0'], timeout: 15000 });
+      } catch (e) {
+        await page.setContent(html, { waitUntil: 'load' });
+      }
+      pdfBuffer = await page.pdf({
         format: 'A4',
         printBackground: true,
         margin: { top: '0', right: '0', bottom: '0', left: '0' }
       });
-
-      res.download(outputPath, downloadFilename, (err) => {
-        if (err) console.error('PDF export error:', err);
-        try { fs.unlinkSync(outputPath); } catch(e) {}
-      });
     } finally {
-      await browser.close();
+      await browser.close().catch(() => {});
     }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.setHeader('Content-Disposition', `attachment; filename="${cleanFilename}"`);
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Length');
+    return res.end(pdfBuffer);
   } catch (err) {
+    console.error('Test PDF export error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/tests/:id/export/excel — Export test results class sheet to Excel (.xlsx)
+router.get('/:id/export/excel', (req, res) => {
+  try {
+    const test = db.prepare(`
+      SELECT t.*, s.is_compulsory, s.name as subject_name, std.display_name as standard_name, std.board_id
+      FROM tests t 
+      JOIN subjects s ON t.subject_id = s.id 
+      JOIN standards std ON t.standard_id = std.id
+      WHERE t.id = ?
+    `).get(req.params.id);
+
+    if (!test) return res.status(404).json({ error: 'Test not found' });
+
+    const coaching = db.prepare('SELECT name FROM coaching_profile').get() || {};
+    const rawMarks = db.prepare(`
+      SELECT s.name as student_name, s.roll_number, s.elective_subjects, tm.obtained_marks, tm.is_absent, tm.remarks
+      FROM students s
+      LEFT JOIN test_marks tm ON s.id = tm.student_id AND tm.test_id = ?
+      WHERE s.standard_id = ? AND (? IS NULL OR s.batch_id = ?)
+      ORDER BY CAST(s.roll_number AS INTEGER) ASC, s.roll_number ASC
+    `).all(req.params.id, test.standard_id, test.batch_id, test.batch_id);
+
+    const marks = rawMarks.filter(m => isStudentEnrolled(m, test.subject_id, test.is_compulsory));
+    const passMarkPct = 35;
+
+    const dataRows = [
+      ['Roll No', 'Student Name', `Marks Obtained (Max: ${test.max_marks})`, 'Percentage (%)', 'Result Status', 'Remarks']
+    ];
+
+    marks.forEach(m => {
+      const isAbsent = m.is_absent === 1;
+      const obtained = isAbsent ? 'AB' : (m.obtained_marks !== null && m.obtained_marks !== undefined ? m.obtained_marks : '—');
+      const pct = isAbsent ? '0%' : (m.obtained_marks !== null && m.obtained_marks !== undefined ? `${((m.obtained_marks / test.max_marks) * 100).toFixed(1)}%` : '—');
+      let status = 'Unrecorded';
+      if (isAbsent) status = 'Absent';
+      else if (m.obtained_marks !== null && m.obtained_marks !== undefined) {
+        status = (m.obtained_marks / test.max_marks * 100) >= passMarkPct ? 'Pass' : 'Fail';
+      }
+
+      dataRows.push([
+        m.roll_number || '',
+        m.student_name || '',
+        obtained,
+        pct,
+        status,
+        m.remarks || ''
+      ]);
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(dataRows);
+    ws['!cols'] = [{ wch: 10 }, { wch: 25 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 25 }];
+    XLSX.utils.book_append_sheet(wb, ws, 'Test Marks');
+
+    const excelBuf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = String(now.getHours()).padStart(2, '0') + '-' + String(now.getMinutes()).padStart(2, '0');
+
+    const coachingClean = (coaching.name || 'Coaching').replace(/[^a-zA-Z0-9]/g, '_');
+    const stdClean = (test.standard_name || '').replace(/[^a-zA-Z0-9]/g, '_');
+    const testClean = test.name.replace(/[^a-zA-Z0-9]/g, '_');
+    const downloadFilename = `${coachingClean}_${stdClean}_${testClean}_Marks_${dateStr}_${timeStr}.xlsx`.replace(/[^a-zA-Z0-9._-]/g, '_');
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Length', excelBuf.length);
+    res.setHeader('Content-Disposition', `attachment; filename="${downloadFilename}"`);
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Length');
+    return res.end(excelBuf);
+  } catch (err) {
+    console.error('Test Excel export error:', err);
     res.status(500).json({ error: err.message });
   }
 });

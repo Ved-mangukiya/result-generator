@@ -10,7 +10,14 @@ if (!fs.existsSync(EXPORTS_DIR)) fs.mkdirSync(EXPORTS_DIR, { recursive: true });
 async function getBrowser() {
   return await puppeteer.launch({
     headless: 'new',
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--no-first-run',
+      '--disable-extensions'
+    ]
   });
 }
 
@@ -181,7 +188,15 @@ async function buildResultCardHTML(studentId, templatePath, cycleId = null) {
   const coaching = db.prepare('SELECT * FROM coaching_profile').get() || {};
   const settings = db.prepare('SELECT * FROM result_card_settings WHERE standard_id = ?').get(standard.id) || {};
 
-  let templateHTML = fs.readFileSync(templatePath, 'utf8');
+  let resolvedTemplatePath = templatePath;
+  if (!resolvedTemplatePath || typeof resolvedTemplatePath === 'number' || (!String(resolvedTemplatePath).includes('/') && !String(resolvedTemplatePath).includes('\\'))) {
+    const tid = resolvedTemplatePath || 1;
+    resolvedTemplatePath = path.join(__dirname, `../../templates/template${tid}.html`);
+  }
+  if (!fs.existsSync(resolvedTemplatePath)) {
+    resolvedTemplatePath = path.join(__dirname, `../../templates/template1.html`);
+  }
+  let templateHTML = fs.readFileSync(resolvedTemplatePath, 'utf8');
   const hasPctCol = templateHTML.includes('<th>%</th>');
 
   // Build photo src
@@ -304,6 +319,30 @@ async function buildResultCardHTML(studentId, templatePath, cycleId = null) {
   // Inject dynamic CSS variables and display classes for valid HTML
   const dynamicStyles = `
   <style>
+    @page { size: A4 portrait; margin: 0; }
+    *, *::before, *::after { box-sizing: border-box !important; }
+    html, body {
+      width: 210mm !important;
+      height: 297mm !important;
+      max-width: 210mm !important;
+      max-height: 297mm !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    .page {
+      width: 210mm !important;
+      height: 297mm !important;
+      max-width: 210mm !important;
+      max-height: 297mm !important;
+      box-sizing: border-box !important;
+      margin: 0 auto !important;
+      overflow: hidden !important;
+      page-break-inside: avoid !important;
+      page-break-after: always !important;
+    }
     :root {
       --primary-color: ${data.PRIMARY_COLOR || '#1a365d'};
       --overall-grade-color: ${data.OVERALL_GRADE_COLOR || '#1a1a1a'};
@@ -536,24 +575,13 @@ async function generateBulkPDF(standardId, templateId = 1, batchId = null, cycle
 }
 
 /**
- * Generate PDF for a notice/reminder
+ * Generate PDF for a notice/reminder — supports all 42 types, digital & print modes
  */
 async function generateReminderPDF(payload) {
-  const { type, title, message, columns, rows } = payload;
+  const { type, title, message, columns, rows, print_mode, timeline } = payload;
   const coaching = db.prepare('SELECT * FROM coaching_profile').get() || {};
 
-  // Choose template based on notice type
-  const templateMap = {
-    vacation: 'reminder_vacation.html',
-    exam_schedule: 'reminder_exam.html',
-    starting_date: 'reminder_batch.html',
-    general: 'reminder_general.html',
-  };
-  const templateFile = templateMap[type] || 'reminder_template.html';
-  const templatePath = path.join(__dirname, '../../templates/', templateFile);
-  let templateHTML = fs.readFileSync(templatePath, 'utf8');
-
-  // Build logo src
+  // Build logo src (base64)
   let logoSrc = '';
   if (coaching.logo_path && fs.existsSync(path.join(__dirname, '../../', coaching.logo_path))) {
     const logoData = fs.readFileSync(path.join(__dirname, '../../', coaching.logo_path));
@@ -561,7 +589,7 @@ async function generateReminderPDF(payload) {
     logoSrc = `data:image/${ext === 'jpg' ? 'jpeg' : ext};base64,${logoData.toString('base64')}`;
   }
 
-  // Build signature src
+  // Build signature src (base64)
   let signatureSrc = '';
   if (coaching.signature_path && fs.existsSync(path.join(__dirname, '../../', coaching.signature_path))) {
     const sigData = fs.readFileSync(path.join(__dirname, '../../', coaching.signature_path));
@@ -569,53 +597,291 @@ async function generateReminderPDF(payload) {
     signatureSrc = `data:image/${ext === 'jpg' ? 'jpeg' : ext};base64,${sigData.toString('base64')}`;
   }
 
-  // Determine Type Emoji
-  let emoji = '📢';
-  if (type === 'vacation') emoji = '🌴';
-  else if (type === 'exam_schedule') emoji = '📅';
-  else if (type === 'starting_date') emoji = '🚀';
+  const isPrint = print_mode === 'print';
+  const primaryColor = isPrint ? '#1a1a2e' : (coaching.primary_color || '#7a6130');
+  const accentColor  = isPrint ? '#333333' : '#d4af37';
+  const bgGradient   = isPrint ? '#ffffff' : `linear-gradient(135deg, ${primaryColor}08, ${accentColor}08)`;
+  const headerBg     = isPrint ? '#ffffff' : primaryColor;
+  const headerText   = isPrint ? primaryColor : '#ffffff';
+  const borderStyle  = isPrint ? `border: 2px solid ${primaryColor}` : `border: 2px solid ${accentColor}`;
 
-  // Build Details Table HTML
-  let detailsTableHTML = '';
-  if (columns && Array.isArray(columns) && columns.length > 0 && rows && Array.isArray(rows) && rows.length > 0) {
-    detailsTableHTML = `<table class="details-table"><thead><tr>`;
-    columns.forEach(col => {
-      detailsTableHTML += `<th>${col}</th>`;
-    });
-    detailsTableHTML += `</tr></thead><tbody>`;
-    rows.forEach(row => {
-      detailsTableHTML += `<tr>`;
-      row.forEach(val => {
-        detailsTableHTML += `<td>${val}</td>`;
-      });
-      detailsTableHTML += `</tr>`;
-    });
-    detailsTableHTML += `</tbody></table>`;
-  }
-
-  const data = {
-    COACHING_NAME: coaching.name || 'Coaching Institute',
-    COACHING_TAGLINE: coaching.tagline || '',
-    COACHING_ADDRESS: coaching.address || '',
-    COACHING_PHONE: coaching.phone || '',
-    COACHING_WEBSITE: coaching.website || '',
-    COACHING_LOGO: logoSrc ? `<img src="${logoSrc}" alt="Logo" class="coaching-logo" />` : '<div class="logo-placeholder"></div>',
-    TITLE: title || 'Notice',
-    TYPE_EMOJI: emoji,
-    MESSAGE: message || '',
-    DETAILS_TABLE: detailsTableHTML,
-    SIGNATURE_IMG: signatureSrc
-      ? `<img src="${signatureSrc}" alt="Signature" class="signature-img" />`
-      : '<div class="sig-line-blank"></div>',
-    SIGNATORY_NAME: coaching.signatory_name || coaching.name || 'Authorized Signatory',
-    PRIMARY_COLOR: coaching.primary_color || '#7a6130',
-    ACADEMIC_YEAR: new Date().getFullYear() + '-' + (new Date().getFullYear() + 1),
+  // Notice type emoji/label lookup
+  const TYPE_META = {
+    exam_schedule: { emoji: '📅', label: 'Examination Schedule' },
+    test_reminder: { emoji: '📝', label: 'Test Reminder' },
+    result_announcement: { emoji: '🎉', label: 'Result Announcement' },
+    achievement: { emoji: '🏆', label: 'Achievement & Toppers' },
+    syllabus_update: { emoji: '📖', label: 'Syllabus Update' },
+    ptm: { emoji: '🎓', label: 'Parent-Teacher Meeting' },
+    homework: { emoji: '✍️', label: 'Homework Deadline' },
+    practical_lab: { emoji: '🧪', label: 'Lab & Practical' },
+    extra_class: { emoji: '⚡', label: 'Extra Class' },
+    book_distribution: { emoji: '🎒', label: 'Book & Material' },
+    sem_exam: { emoji: '🎓', label: 'Semester Exam' },
+    atkt_backlog: { emoji: '📋', label: 'ATKT / Backlog Exam' },
+    campus_placement: { emoji: '💼', label: 'Campus Placement' },
+    project_submission: { emoji: '🔬', label: 'Project Submission' },
+    convocation: { emoji: '🎓', label: 'Convocation Ceremony' },
+    dean_advisory: { emoji: '🏛️', label: 'Dean / HOD Advisory' },
+    library_fine: { emoji: '📚', label: 'Library Fine Alert' },
+    hostel_notice: { emoji: '🏢', label: 'Hostel Notice' },
+    mid_sem: { emoji: '📝', label: 'Mid-Semester Exam' },
+    youth_fest: { emoji: '🎯', label: 'Youth Fest' },
+    fee_due: { emoji: '💰', label: 'Fee Due Reminder' },
+    fee_overdue: { emoji: '⚠️', label: 'Fee Overdue Notice' },
+    fee_receipt: { emoji: '🧾', label: 'Payment Confirmation' },
+    hall_ticket: { emoji: '🎫', label: 'Hall Ticket' },
+    document_submission: { emoji: '📋', label: 'Document Submission' },
+    id_card: { emoji: '🆔', label: 'ID Card Notice' },
+    attendance_warning: { emoji: '⚠️', label: 'Attendance Warning' },
+    discipline_warning: { emoji: '🚨', label: 'Discipline Notice' },
+    mobile_ban: { emoji: '📱', label: 'Mobile Phone Ban' },
+    uniform_code: { emoji: '👗', label: 'Dress Code Notice' },
+    vacation: { emoji: '🌴', label: 'Vacation Notice' },
+    holiday: { emoji: '🛑', label: 'Holiday Notice' },
+    weather_emergency: { emoji: '🌧️', label: 'Weather Emergency' },
+    picnic_tour: { emoji: '🚌', label: 'Educational Tour' },
+    annual_event: { emoji: '🎭', label: 'Annual Event' },
+    batch_start: { emoji: '🚀', label: 'New Batch Commencement' },
+    time_change: { emoji: '🕐', label: 'Timing Change' },
+    faculty_absence: { emoji: '👩‍🏫', label: 'Faculty Substitution' },
+    parent_complaint: { emoji: '📩', label: 'Parent Inquiry' },
+    doubt_desk: { emoji: '💡', label: 'Doubt Clearing Session' },
+    transport_notice: { emoji: '🚐', label: 'Transport Alert' },
+    general: { emoji: '📢', label: 'Official Announcement' },
   };
+  const meta = TYPE_META[type] || { emoji: '📢', label: 'Notice' };
 
-  // Replace placeholders
-  for (const [key, value] of Object.entries(data)) {
-    templateHTML = templateHTML.split(`{{${key}}}`).join(value ?? '');
+  // Build table HTML if columns/rows provided
+  let tableHTML = '';
+  if (columns && Array.isArray(columns) && columns.length > 0 && rows && Array.isArray(rows) && rows.length > 0) {
+    const thStyle = `padding:10px 14px;text-align:left;font-size:0.82rem;font-weight:700;border-bottom:2px solid ${isPrint ? '#333' : accentColor};color:${isPrint ? '#1a1a2e' : primaryColor};background:${isPrint ? '#f5f5f5' : accentColor + '18'};`;
+    const tdStyle = `padding:9px 14px;font-size:0.82rem;border-bottom:1px solid ${isPrint ? '#e0e0e0' : primaryColor + '18'};color:#1a1a2e;`;
+    tableHTML = `
+      <table style="width:100%;border-collapse:collapse;margin:16px 0;border:1px solid ${isPrint ? '#ddd' : primaryColor + '30'};border-radius:8px;overflow:hidden;">
+        <thead><tr>${columns.map(c => `<th style="${thStyle}">${c}</th>`).join('')}</tr></thead>
+        <tbody>
+          ${rows.map((row, ri) => `<tr style="background:${ri % 2 === 0 ? '#fff' : (isPrint ? '#fafafa' : primaryColor + '06')}">${row.map(val => `<td style="${tdStyle}">${val || '—'}</td>`).join('')}</tr>`).join('')}
+        </tbody>
+      </table>`;
   }
+
+  // Build timeline HTML for vacation/holiday
+  let timelineHTML = '';
+  if (timeline && timeline.start && timeline.end) {
+    const tlBg = isPrint ? '#f5f5f5' : 'linear-gradient(135deg,#e8f5e9,#f3e5f5)';
+    timelineHTML = `
+      <div style="background:${tlBg};border:1.5px solid ${isPrint ? '#ccc' : '#c8e6c9'};border-radius:12px;padding:20px;margin:20px 0;">
+        <div style="font-weight:700;font-size:0.9rem;color:${isPrint ? '#1a1a2e' : '#2e7d32'};margin-bottom:16px;">📅 Vacation Timeline</div>
+        <div style="display:flex;align-items:center;gap:0;flex-wrap:nowrap;">
+          <div style="text-align:center;min-width:100px;">
+            <div style="width:42px;height:42px;border-radius:50%;background:${isPrint ? '#333' : '#4caf50'};display:flex;align-items:center;justify-content:center;margin:0 auto 6px;color:white;font-size:1.3rem;">📚</div>
+            <div style="font-size:0.7rem;font-weight:700;color:${isPrint ? '#333' : '#2e7d32'};">Last Class Day</div>
+          </div>
+          <div style="flex:1;height:4px;background:${isPrint ? '#999' : 'linear-gradient(90deg,#4caf50,#e91e63)'};min-width:30px;"></div>
+          <div style="text-align:center;min-width:120px;">
+            <div style="width:46px;height:46px;border-radius:50%;background:${isPrint ? '#555' : '#e91e63'};display:flex;align-items:center;justify-content:center;margin:0 auto 6px;color:white;font-size:1.5rem;">🌴</div>
+            <div style="font-size:0.7rem;font-weight:700;color:${isPrint ? '#333' : '#c2185b'};">Vacation Starts</div>
+            <div style="font-size:0.68rem;color:#666;margin-top:2px;">${timeline.start}</div>
+          </div>
+          <div style="flex:1;height:4px;background:${isPrint ? '#999' : 'linear-gradient(90deg,#e91e63,#ff9800)'};min-width:30px;position:relative;">
+            <div style="position:absolute;top:-20px;left:50%;transform:translateX(-50%);font-size:0.65rem;color:${isPrint ? '#555' : '#e65100'};white-space:nowrap;font-weight:700;">🎉 Holiday Period</div>
+          </div>
+          <div style="text-align:center;min-width:120px;">
+            <div style="width:46px;height:46px;border-radius:50%;background:${isPrint ? '#777' : '#ff9800'};display:flex;align-items:center;justify-content:center;margin:0 auto 6px;color:white;font-size:1.5rem;">🚀</div>
+            <div style="font-size:0.7rem;font-weight:700;color:${isPrint ? '#333' : '#e65100'};">Classes Reopen</div>
+            <div style="font-size:0.68rem;color:#666;margin-top:2px;">${timeline.end}</div>
+          </div>
+          <div style="flex:1;height:4px;background:${isPrint ? '#999' : 'linear-gradient(90deg,#ff9800,#2196f3)'};min-width:30px;"></div>
+          <div style="text-align:center;min-width:100px;">
+            <div style="width:42px;height:42px;border-radius:50%;background:${isPrint ? '#1a1a2e' : '#2196f3'};display:flex;align-items:center;justify-content:center;margin:0 auto 6px;color:white;font-size:1.3rem;">📖</div>
+            <div style="font-size:0.7rem;font-weight:700;color:${isPrint ? '#1a1a2e' : '#1565c0'};">Resume!</div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // Format message text (preserve line breaks)
+  const formattedMessage = (message || '').split('\n').map(line => `<p style="margin:6px 0;color:#333;font-size:0.92rem;line-height:1.7;">${line || '&nbsp;'}</p>`).join('');
+
+  // Build full self-contained HTML notice PDF
+  const templateHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${title || 'Notice'}</title>
+<style>
+  @page { size: A4 portrait; margin: 0; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 210mm;
+    height: 297mm;
+    max-width: 210mm;
+    max-height: 297mm;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #ffffff;
+    padding: 0;
+    margin: 0;
+    color: #1a1a2e;
+    overflow: hidden;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .notice-page {
+    width: 210mm;
+    height: 297mm;
+    max-width: 210mm;
+    max-height: 297mm;
+    margin: 0 auto;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+  /* Header */
+  .notice-header {
+    background: ${headerBg};
+    ${isPrint ? `border-bottom: 3px solid ${primaryColor};` : ''}
+    padding: 24px 32px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: relative;
+  }
+  ${!isPrint ? `.notice-header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 50%);
+    pointer-events: none;
+  }` : ''}
+  .coaching-logo {
+    width: 64px; height: 64px; object-fit: contain;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.15);
+    padding: 4px;
+  }
+  .header-text { flex: 1; }
+  .coaching-name {
+    font-size: 1.3rem; font-weight: 800; letter-spacing: 0.3px;
+    color: ${headerText};
+    text-shadow: ${isPrint ? 'none' : '0 1px 3px rgba(0,0,0,0.3)'};
+  }
+  .coaching-tagline {
+    font-size: 0.78rem; color: ${isPrint ? '#555' : 'rgba(255,255,255,0.82)'};
+    margin-top: 2px;
+  }
+  .coaching-contact {
+    font-size: 0.72rem; color: ${isPrint ? '#555' : 'rgba(255,255,255,0.72)'};
+    margin-top: 4px;
+  }
+  .notice-type-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: ${isPrint ? '#f0f0f0' : 'rgba(255,255,255,0.2)'};
+    color: ${isPrint ? primaryColor : 'white'};
+    border: 1px solid ${isPrint ? '#ddd' : 'rgba(255,255,255,0.3)'};
+    border-radius: 50px; padding: 4px 14px;
+    font-size: 0.75rem; font-weight: 700;
+    margin-top: 8px;
+    display: inline-block;
+  }
+  /* Decorative strip */
+  .accent-strip {
+    height: 5px;
+    background: ${isPrint ? '#1a1a2e' : `linear-gradient(90deg, ${accentColor}, ${primaryColor}, ${accentColor})`};
+  }
+  /* Body */
+  .notice-body { padding: 28px 36px; flex: 1; }
+  .notice-title-row {
+    display: flex; align-items: flex-start; gap: 12px;
+    margin-bottom: 20px; padding-bottom: 16px;
+    border-bottom: 2px solid ${isPrint ? '#e0e0e0' : accentColor + '40'};
+  }
+  .notice-emoji {
+    font-size: 2.2rem; line-height: 1;
+    filter: ${isPrint ? 'grayscale(1)' : 'none'};
+  }
+  .notice-title-text h1 {
+    font-size: 1.25rem; font-weight: 800;
+    color: ${isPrint ? '#1a1a2e' : primaryColor};
+    line-height: 1.3;
+  }
+  .notice-meta {
+    font-size: 0.75rem;
+    color: #666;
+    margin-top: 4px;
+  }
+  .notice-content { margin: 16px 0; }
+  /* Footer */
+  .notice-footer {
+    padding: 20px 36px;
+    border-top: 2px solid ${isPrint ? '#e0e0e0' : accentColor + '40'};
+    display: flex; justify-content: space-between; align-items: flex-end;
+    margin-top: auto;
+  }
+  .signature-block { text-align: center; }
+  .sig-label { font-size: 0.7rem; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .sig-line { width: 120px; height: 1px; background: #333; margin: 0 auto 4px; }
+  .sig-name { font-size: 0.8rem; font-weight: 700; color: #333; }
+  .sig-title-text { font-size: 0.72rem; color: #666; }
+  .footer-right { text-align: right; font-size: 0.72rem; color: #888; }
+</style>
+</head>
+<body>
+<div class="notice-page">
+  <!-- Header -->
+  <div class="notice-header">
+    ${logoSrc ? `<img src="${logoSrc}" class="coaching-logo" alt="Logo">` : `<div style="width:64px;height:64px;border-radius:8px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:2rem;">🏫</div>`}
+    <div class="header-text">
+      <div class="coaching-name">${coaching.name || 'Coaching Institute'}</div>
+      ${coaching.tagline ? `<div class="coaching-tagline">${coaching.tagline}</div>` : ''}
+      ${coaching.address || coaching.phone ? `<div class="coaching-contact">${[coaching.address, coaching.phone, coaching.website].filter(Boolean).join(' · ')}</div>` : ''}
+      <div class="notice-type-badge">${meta.emoji} ${meta.label}</div>
+    </div>
+  </div>
+  <div class="accent-strip"></div>
+
+  <!-- Body -->
+  <div class="notice-body">
+    <div class="notice-title-row">
+      <span class="notice-emoji">${meta.emoji}</span>
+      <div class="notice-title-text">
+        <h1>${title || 'Official Notice'}</h1>
+        <div class="notice-meta">
+          Academic Year: ${coaching.academic_year || (new Date().getFullYear() + '-' + (new Date().getFullYear() + 1))} &nbsp;·&nbsp;
+          Date: ${new Date().toLocaleDateString('en-IN', {day:'2-digit',month:'long',year:'numeric'})}
+        </div>
+      </div>
+    </div>
+
+    <div class="notice-content">
+      ${timelineHTML}
+      ${formattedMessage}
+      ${tableHTML}
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="notice-footer">
+    <div class="footer-right" style="text-align:left;">
+      <div style="font-size:0.75rem;color:#888;">This is an official communication from ${coaching.name || 'the institute'}.</div>
+      <div style="font-size:0.72rem;color:#aaa;margin-top:2px;">Please retain for your records.</div>
+    </div>
+    <div class="signature-block">
+      ${signatureSrc
+        ? `<img src="${signatureSrc}" alt="Signature" style="max-height:48px;max-width:140px;object-fit:contain;margin-bottom:6px;">`
+        : '<div class="sig-line"></div>'}
+      <div class="sig-name">${coaching.signatory_name || coaching.name || 'Principal'}</div>
+      <div class="sig-title-text">${coaching.signatory_title || 'Director'}</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>`;
 
   const filename = `Notice_${Date.now()}.pdf`;
   const outputPath = path.join(EXPORTS_DIR, filename);
@@ -628,6 +894,785 @@ async function generateReminderPDF(payload) {
       path: outputPath,
       format: 'A4',
       printBackground: true,
+      preferCSSPageSize: true,
+      margin: { top: '0', right: '0', bottom: '0', left: '0' }
+    });
+  } finally {
+    await browser.close();
+  }
+
+  return { filename, outputPath };
+}
+
+async function generateCredentialSlipPDF(studentId) {
+  const student = db.prepare('SELECT s.*, std.display_name as standard_name, b.name as batch_name FROM students s LEFT JOIN standards std ON s.standard_id = std.id LEFT JOIN batches b ON s.batch_id = b.id WHERE s.id = ?').get(studentId);
+  if (!student) throw new Error('Student not found');
+
+  const coaching = db.prepare('SELECT * FROM coaching_profile LIMIT 1').get() || {};
+
+  let logoDataUri = '';
+  if (coaching.logo_path) {
+    const fullLogoPath = path.join(__dirname, '../../', coaching.logo_path);
+    if (fs.existsSync(fullLogoPath)) {
+      const ext = path.extname(fullLogoPath).slice(1) || 'png';
+      logoDataUri = `data:image/${ext};base64,${fs.readFileSync(fullLogoPath).toString('base64')}`;
+    }
+  }
+
+  let sigDataUri = '';
+  if (coaching.signature_path) {
+    const fullSigPath = path.join(__dirname, '../../', coaching.signature_path);
+    if (fs.existsSync(fullSigPath)) {
+      const ext = path.extname(fullSigPath).slice(1) || 'png';
+      sigDataUri = `data:image/${ext};base64,${fs.readFileSync(fullSigPath).toString('base64')}`;
+    }
+  }
+
+  const primaryColor = coaching.primary_color || '#1b2a4a';
+  const issueDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Student Login Credential Slip — ${student.name}</title>
+  <style>
+    @page { size: A4 portrait; margin: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 210mm;
+      height: 297mm;
+      max-width: 210mm;
+      max-height: 297mm;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      background: #ffffff;
+      color: #1e293b;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .slip-container {
+      width: 210mm;
+      height: 297mm;
+      max-width: 210mm;
+      max-height: 297mm;
+      background: #ffffff;
+      padding: 12mm 15mm;
+      box-sizing: border-box;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .header-table {
+      width: 100%;
+      border-bottom: 2.5px solid ${primaryColor};
+      padding-bottom: 18px;
+      margin-bottom: 22px;
+    }
+    .inst-title {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: ${primaryColor};
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+    .inst-tagline {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #d97706;
+      margin-bottom: 5px;
+    }
+    .inst-contact {
+      font-size: 0.78rem;
+      color: #64748b;
+      line-height: 1.4;
+    }
+    .doc-badge {
+      display: inline-block;
+      background: ${primaryColor};
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 0.82rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 6px 16px;
+      border-radius: 4px;
+      margin-bottom: 18px;
+    }
+    .info-grid {
+      display: table;
+      width: 100%;
+      background: #f8fafc;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 22px;
+    }
+    .info-row {
+      display: table-row;
+    }
+    .info-cell {
+      display: table-cell;
+      padding: 6px 10px;
+      font-size: 0.88rem;
+      vertical-align: middle;
+    }
+    .info-label {
+      font-weight: 700;
+      color: #475569;
+      width: 130px;
+    }
+    .info-val {
+      font-weight: 600;
+      color: #0f172a;
+    }
+    .cred-box {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #ffffff;
+      border-radius: 10px;
+      padding: 22px;
+      margin-bottom: 22px;
+      box-shadow: 0 8px 24px rgba(15,23,42,0.15);
+      border: 1.5px solid #d97706;
+    }
+    .cred-title {
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: #fbbf24;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .cred-url-row {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      word-break: break-all;
+      overflow-wrap: anywhere;
+    }
+    .cred-url-val {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #38bdf8;
+      font-family: 'Consolas', 'Courier New', monospace;
+      word-break: break-all;
+      overflow-wrap: anywhere;
+      margin-top: 2px;
+    }
+    .cred-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .cred-item {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 6px;
+      padding: 12px 14px;
+      word-break: break-all;
+    }
+    .cred-item-label {
+      font-size: 0.72rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+    .cred-item-val {
+      font-size: 1.25rem;
+      font-weight: 800;
+      font-family: 'Consolas', 'Courier New', monospace;
+      color: #38bdf8;
+      word-break: break-all;
+    }
+    .features-list {
+      background: #fdfdfd;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+    .features-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 8px;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: #475569;
+    }
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .guidelines {
+      font-size: 0.78rem;
+      color: #64748b;
+      line-height: 1.5;
+      margin-bottom: 30px;
+      padding: 12px 16px;
+      background: #fffbeb;
+      border-left: 3.5px solid #f59e0b;
+      border-radius: 4px;
+    }
+    .footer-sign {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-top: 30px;
+      border-top: 1px solid #cbd5e1;
+      padding-top: 18px;
+    }
+    .sig-box {
+      text-align: center;
+      min-width: 170px;
+    }
+    .sig-img {
+      max-height: 48px;
+      max-width: 140px;
+      object-fit: contain;
+      margin-bottom: 4px;
+    }
+    .sig-line {
+      height: 1px;
+      background: #94a3b8;
+      margin-bottom: 4px;
+    }
+    .sig-text {
+      font-size: 0.75rem;
+      color: #64748b;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="slip-container">
+    <!-- Header -->
+    <table class="header-table">
+      <tr>
+        ${logoDataUri ? `<td style="width:75px; vertical-align:middle; padding-right:16px;"><img src="${logoDataUri}" style="width:65px; height:65px; object-fit:contain;"></td>` : ''}
+        <td style="vertical-align:middle;">
+          <div class="inst-title">${coaching.name || 'Apex Tuition Classes'}</div>
+          ${coaching.tagline ? `<div class="inst-tagline">${coaching.tagline}</div>` : ''}
+          <div class="inst-contact">
+            ${coaching.address ? `${coaching.address} · ` : ''}
+            ${coaching.phone ? `Phone: ${coaching.phone} · ` : ''}
+            ${coaching.website ? `Website: ${coaching.website}` : ''}
+          </div>
+        </td>
+        <td style="vertical-align:top; text-align:right;">
+          <div style="font-size:0.75rem; color:#64748b; font-weight:600;">Date: ${issueDate}</div>
+          <div style="font-size:0.72rem; color:#94a3b8; margin-top:2px;">Academic Year: ${coaching.academic_year || '2026-2027'}</div>
+        </td>
+      </tr>
+    </table>
+
+    <div style="text-align:center;">
+      <div class="doc-badge">Official Student &amp; Parent Portal Credential Slip</div>
+    </div>
+
+    <!-- Student Info -->
+    <div class="info-grid">
+      <div class="info-row">
+        <div class="info-cell info-label">Student Name:</div>
+        <div class="info-cell info-val" style="font-size:1rem; color:${primaryColor};">${student.name}</div>
+        <div class="info-cell info-label">Roll Number:</div>
+        <div class="info-cell info-val" style="font-family:monospace; font-size:1.05rem;">#${student.roll_number || '—'}</div>
+      </div>
+      <div class="info-row">
+        <div class="info-cell info-label">Class / Standard:</div>
+        <div class="info-cell info-val">${student.standard_name || 'Standard'}</div>
+        <div class="info-cell info-label">Batch:</div>
+        <div class="info-cell info-val">${student.batch_name || 'All Batches'}</div>
+      </div>
+      <div class="info-row">
+        <div class="info-cell info-label">Father's Name:</div>
+        <div class="info-cell info-val">${student.father_name || '—'}</div>
+        <div class="info-cell info-label">Admission Date:</div>
+        <div class="info-cell info-val">${student.admission_date || issueDate}</div>
+      </div>
+    </div>
+
+    <!-- Credential Box -->
+    <div class="cred-box">
+      <div class="cred-title">🔐 Web Portal Login Credentials</div>
+      
+      <div class="cred-url-row">
+        <div class="cred-item-label">🌐 Web Portal Address (Access from any Phone, Tablet or PC)</div>
+        <div class="cred-url-val">${coaching.website || 'http://localhost:3000'}</div>
+      </div>
+
+      <div class="cred-grid">
+        <div class="cred-item">
+          <div class="cred-item-label">👤 Username / Login ID</div>
+          <div class="cred-item-val">${student.parent_username || student.roll_number}</div>
+          <div style="font-size:0.65rem; color:#94a3b8; margin-top:2px;">(Student Roll Number)</div>
+        </div>
+        <div class="cred-item">
+          <div class="cred-item-label">🔑 Default Access Password</div>
+          <div class="cred-item-val" style="color:#4ade80;">parent123</div>
+          <div style="font-size:0.65rem; color:#94a3b8; margin-top:2px;">(Change after first sign in)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Portal Features -->
+    <div class="features-list">
+      <div class="features-title">📱 Portal Access Features:</div>
+      <div class="features-grid">
+        <div class="feature-item">📊 <strong>Live Attendance:</strong> Real-time presence & roll logs</div>
+        <div class="feature-item">📝 <strong>Weekly Tests:</strong> Marks & performance analytics</div>
+        <div class="feature-item">🏆 <strong>Progress Reports:</strong> Official A4 download cards</div>
+        <div class="feature-item">📢 <strong>Notices &amp; Holidays:</strong> Schedule notifications</div>
+        <div class="feature-item">💳 <strong>Fee Receipts:</strong> Ledger & transaction history</div>
+        <div class="feature-item">🗓️ <strong>Timetables:</strong> Lecture & exam schedules</div>
+      </div>
+    </div>
+
+    <!-- Guidelines -->
+    <div class="guidelines">
+      <strong>⚠️ Important Instructions for Parents:</strong>
+      <ol style="margin-left: 18px; margin-top: 4px;">
+        <li>Keep your credentials safe and confidential. Do not share with unauthorized persons.</li>
+        <li>You can sign in from any smartphone, tablet, or PC browser.</li>
+        <li>Upon your initial sign-in, you may update your access password under profile settings.</li>
+      </ol>
+    </div>
+
+    <!-- Footer Signatures -->
+    <div class="footer-sign">
+      <div style="font-size:0.75rem; color:#94a3b8;">
+        <div>Issue Ref: ERP-CR-${student.id}-${Date.now().toString().slice(-4)}</div>
+        <div>System Verified · Computer Generated Document</div>
+      </div>
+      <div class="sig-box">
+        ${sigDataUri ? `<img src="${sigDataUri}" class="sig-img">` : '<div style="height:35px"></div>'}
+        <div class="sig-line"></div>
+        <div class="sig-text">${coaching.signatory_name || 'Authorized Signatory'}</div>
+        <div style="font-size:0.7rem; color:#94a3b8;">${coaching.signatory_title || 'Director'}</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  const filename = `Credential_Slip_${student.roll_number}_${student.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+  const outputPath = path.join(EXPORTS_DIR, filename);
+
+  const browser = await getBrowser();
+  try {
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    await page.pdf({
+      path: outputPath,
+      format: 'A4',
+      printBackground: true,
+      preferCSSPageSize: true,
+      margin: { top: '0', right: '0', bottom: '0', left: '0' }
+    });
+  } finally {
+    await browser.close();
+  }
+
+  return { filename, outputPath };
+}
+
+async function generateBulkCredentialSlipsPDF(standardId = null) {
+  let query = 'SELECT s.*, std.display_name as standard_name, b.name as batch_name FROM students s LEFT JOIN standards std ON s.standard_id = std.id LEFT JOIN batches b ON s.batch_id = b.id';
+  const params = [];
+  if (standardId && standardId !== 'all') {
+    query += ' WHERE s.standard_id = ?';
+    params.push(standardId);
+  }
+  query += ' ORDER BY CAST(s.roll_number AS INTEGER) ASC, s.name ASC';
+  const students = db.prepare(query).all(...params);
+
+  if (students.length === 0) throw new Error('No students found to generate credential slips');
+
+  const coaching = db.prepare('SELECT * FROM coaching_profile LIMIT 1').get() || {};
+
+  let logoDataUri = '';
+  if (coaching.logo_path) {
+    const fullLogoPath = path.join(__dirname, '../../', coaching.logo_path);
+    if (fs.existsSync(fullLogoPath)) {
+      const ext = path.extname(fullLogoPath).slice(1) || 'png';
+      logoDataUri = `data:image/${ext};base64,${fs.readFileSync(fullLogoPath).toString('base64')}`;
+    }
+  }
+
+  let sigDataUri = '';
+  if (coaching.signature_path) {
+    const fullSigPath = path.join(__dirname, '../../', coaching.signature_path);
+    if (fs.existsSync(fullSigPath)) {
+      const ext = path.extname(fullSigPath).slice(1) || 'png';
+      sigDataUri = `data:image/${ext};base64,${fs.readFileSync(fullSigPath).toString('base64')}`;
+    }
+  }
+
+  const primaryColor = coaching.primary_color || '#1b2a4a';
+  const issueDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+  const slipsHTML = students.map((student, idx) => `
+    <div class="slip-container" ${idx < students.length - 1 ? 'style="page-break-after: always;"' : ''}>
+      <table class="header-table">
+        <tr>
+          ${logoDataUri ? `<td style="width:75px; vertical-align:middle; padding-right:16px;"><img src="${logoDataUri}" style="width:65px; height:65px; object-fit:contain;"></td>` : ''}
+          <td style="vertical-align:middle;">
+            <div class="inst-title">${coaching.name || 'Apex Tuition Classes'}</div>
+            ${coaching.tagline ? `<div class="inst-tagline">${coaching.tagline}</div>` : ''}
+            <div class="inst-contact">
+              ${coaching.address ? `${coaching.address} · ` : ''}
+              ${coaching.phone ? `Phone: ${coaching.phone} · ` : ''}
+              ${coaching.website ? `Website: ${coaching.website}` : ''}
+            </div>
+          </td>
+          <td style="vertical-align:top; text-align:right;">
+            <div style="font-size:0.75rem; color:#64748b; font-weight:600;">Date: ${issueDate}</div>
+            <div style="font-size:0.72rem; color:#94a3b8; margin-top:2px;">Academic Year: ${coaching.academic_year || '2026-2027'}</div>
+          </td>
+        </tr>
+      </table>
+
+      <div style="text-align:center;">
+        <div class="doc-badge">Official Student &amp; Parent Portal Credential Slip</div>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-row">
+          <div class="info-cell info-label">Student Name:</div>
+          <div class="info-cell info-val" style="font-size:1rem; color:${primaryColor};">${student.name}</div>
+          <div class="info-cell info-label">Roll Number:</div>
+          <div class="info-cell info-val" style="font-family:monospace; font-size:1.05rem;">#${student.roll_number || '—'}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-cell info-label">Class / Standard:</div>
+          <div class="info-cell info-val">${student.standard_name || 'Standard'}</div>
+          <div class="info-cell info-label">Batch:</div>
+          <div class="info-cell info-val">${student.batch_name || 'All Batches'}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-cell info-label">Father's Name:</div>
+          <div class="info-cell info-val">${student.father_name || '—'}</div>
+          <div class="info-cell info-label">Admission Date:</div>
+          <div class="info-cell info-val">${student.admission_date || issueDate}</div>
+        </div>
+      </div>
+
+      <div class="cred-box">
+        <div class="cred-title">🔐 Web Portal Login Credentials</div>
+        
+        <div class="cred-url-row">
+          <div class="cred-item-label">🌐 Web Portal Address (Access from any Phone, Tablet or PC)</div>
+          <div class="cred-url-val">${coaching.website || 'http://localhost:3000'}</div>
+        </div>
+
+        <div class="cred-grid">
+          <div class="cred-item">
+            <div class="cred-item-label">👤 Username / Login ID</div>
+            <div class="cred-item-val">${student.parent_username || student.roll_number}</div>
+            <div style="font-size:0.65rem; color:#94a3b8; margin-top:2px;">(Student Roll Number)</div>
+          </div>
+          <div class="cred-item">
+            <div class="cred-item-label">🔑 Default Access Password</div>
+            <div class="cred-item-val" style="color:#4ade80;">parent123</div>
+            <div style="font-size:0.65rem; color:#94a3b8; margin-top:2px;">(Change after first sign in)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="features-list">
+        <div class="features-title">📱 Portal Access Features:</div>
+        <div class="features-grid">
+          <div class="feature-item">📊 <strong>Live Attendance:</strong> Real-time presence & roll logs</div>
+          <div class="feature-item">📝 <strong>Weekly Tests:</strong> Marks & performance analytics</div>
+          <div class="feature-item">🏆 <strong>Progress Reports:</strong> Official A4 download cards</div>
+          <div class="feature-item">📢 <strong>Notices &amp; Holidays:</strong> Schedule notifications</div>
+          <div class="feature-item">💳 <strong>Fee Receipts:</strong> Ledger & transaction history</div>
+          <div class="feature-item">🗓️ <strong>Timetables:</strong> Lecture & exam schedules</div>
+        </div>
+      </div>
+
+      <div class="guidelines">
+        <strong>⚠️ Important Instructions for Parents:</strong>
+        <ol style="margin-left: 18px; margin-top: 4px;">
+          <li>Keep your credentials safe and confidential. Do not share with unauthorized persons.</li>
+          <li>You can sign in from any smartphone, tablet, or PC browser.</li>
+          <li>Upon your initial sign-in, you may update your access password under profile settings.</li>
+        </ol>
+      </div>
+
+      <div class="footer-sign">
+        <div style="font-size:0.75rem; color:#94a3b8;">
+          <div>Issue Ref: ERP-CR-${student.id}-${Date.now().toString().slice(-4)}</div>
+          <div>System Verified · Computer Generated Document</div>
+        </div>
+        <div class="sig-box">
+          ${sigDataUri ? `<img src="${sigDataUri}" class="sig-img">` : '<div style="height:35px"></div>'}
+          <div class="sig-line"></div>
+          <div class="sig-text">${coaching.signatory_name || 'Authorized Signatory'}</div>
+          <div style="font-size:0.7rem; color:#94a3b8;">${coaching.signatory_title || 'Director'}</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  const fullHTML = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Bulk Student Login Credential Slips</title>
+  <style>
+    @page { size: A4 portrait; margin: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      background: #ffffff;
+      color: #1e293b;
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .slip-container {
+      width: 210mm;
+      height: 297mm;
+      max-width: 210mm;
+      max-height: 297mm;
+      background: #ffffff;
+      padding: 12mm 15mm;
+      position: relative;
+      margin: 0 auto;
+      box-sizing: border-box;
+      overflow: hidden;
+      page-break-inside: avoid;
+      page-break-after: always;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .slip-container:last-child {
+      page-break-after: auto;
+    }
+    .header-table {
+      width: 100%;
+      border-bottom: 2.5px solid ${primaryColor};
+      padding-bottom: 18px;
+      margin-bottom: 22px;
+    }
+    .inst-title {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: ${primaryColor};
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+    .inst-tagline {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #d97706;
+      margin-bottom: 5px;
+    }
+    .inst-contact {
+      font-size: 0.78rem;
+      color: #64748b;
+      line-height: 1.4;
+    }
+    .doc-badge {
+      display: inline-block;
+      background: ${primaryColor};
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 0.82rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 6px 16px;
+      border-radius: 4px;
+      margin-bottom: 18px;
+    }
+    .info-grid {
+      display: table;
+      width: 100%;
+      background: #f8fafc;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 22px;
+    }
+    .info-row {
+      display: table-row;
+    }
+    .info-cell {
+      display: table-cell;
+      padding: 6px 10px;
+      font-size: 0.88rem;
+      vertical-align: middle;
+    }
+    .info-label {
+      font-weight: 700;
+      color: #475569;
+      width: 130px;
+    }
+    .info-val {
+      font-weight: 600;
+      color: #0f172a;
+    }
+    .cred-box {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #ffffff;
+      border-radius: 10px;
+      padding: 22px;
+      margin-bottom: 22px;
+      box-shadow: 0 8px 24px rgba(15,23,42,0.15);
+      border: 1.5px solid #d97706;
+    }
+    .cred-title {
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: #fbbf24;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 14px;
+    }
+    .cred-url-row {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      word-break: break-all;
+      overflow-wrap: anywhere;
+    }
+    .cred-url-val {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #38bdf8;
+      font-family: 'Consolas', 'Courier New', monospace;
+      word-break: break-all;
+      overflow-wrap: anywhere;
+      margin-top: 2px;
+    }
+    .cred-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .cred-item {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 6px;
+      padding: 12px 14px;
+      word-break: break-all;
+    }
+    .cred-item-label {
+      font-size: 0.72rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+    .cred-item-val {
+      font-size: 1.25rem;
+      font-weight: 800;
+      font-family: 'Consolas', 'Courier New', monospace;
+      color: #38bdf8;
+      word-break: break-all;
+    }
+    .features-list {
+      background: #fdfdfd;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+    .features-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 8px;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: #475569;
+    }
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .guidelines {
+      font-size: 0.78rem;
+      color: #64748b;
+      line-height: 1.5;
+      margin-bottom: 30px;
+      padding: 12px 16px;
+      background: #fffbeb;
+      border-left: 3.5px solid #f59e0b;
+      border-radius: 4px;
+    }
+    .footer-sign {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-top: 30px;
+      border-top: 1px solid #cbd5e1;
+      padding-top: 18px;
+    }
+    .sig-box {
+      text-align: center;
+      min-width: 170px;
+    }
+    .sig-img {
+      max-height: 48px;
+      max-width: 140px;
+      object-fit: contain;
+      margin-bottom: 4px;
+    }
+    .sig-line {
+      height: 1px;
+      background: #94a3b8;
+      margin-bottom: 4px;
+    }
+    .sig-text {
+      font-size: 0.75rem;
+      color: #64748b;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  ${slipsHTML}
+</body>
+</html>`;
+
+  const filename = `Bulk_Credential_Slips_${Date.now()}.pdf`;
+  const outputPath = path.join(EXPORTS_DIR, filename);
+
+  const browser = await getBrowser();
+  try {
+    const page = await browser.newPage();
+    await page.setContent(fullHTML, { waitUntil: 'networkidle0' });
+    await page.pdf({
+      path: outputPath,
+      format: 'A4',
+      printBackground: true,
+      preferCSSPageSize: true,
       margin: { top: '0', right: '0', bottom: '0', left: '0' }
     });
   } finally {
@@ -645,4 +1690,12 @@ async function generateNoticeboardPDF(payload) {
   });
 }
 
-module.exports = { generateSinglePDF, generateBulkPDF, buildResultCardHTML, generateReminderPDF, generateNoticeboardPDF };
+module.exports = { 
+  generateSinglePDF, 
+  generateBulkPDF, 
+  buildResultCardHTML, 
+  generateReminderPDF, 
+  generateNoticeboardPDF,
+  generateCredentialSlipPDF,
+  generateBulkCredentialSlipsPDF
+};

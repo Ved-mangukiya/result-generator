@@ -201,9 +201,11 @@ async function loadStandards(boardId) {
                 <div class="board-badge">${s.standard_number}${['th','st','nd','rd'][s.standard_number] || 'th'}</div>
                 <div>
                   <div style="font-weight:700">${s.display_name}</div>
-                  <div class="text-xs text-muted">
-                    ${s.stream !== 'General' ? s.stream + ' · ' : ''}
-                    ${s.student_count} student${s.student_count !== 1 ? 's' : ''}
+                  <div class="text-xs text-muted" style="display:flex; gap:8px; align-items:center; margin-top:2px;">
+                    <span>${s.stream !== 'General' ? s.stream + ' · ' : ''}${s.student_count} student${s.student_count !== 1 ? 's' : ''}</span>
+                    <span class="badge badge-gold font-mono" style="font-size:0.7rem; font-weight:700; cursor:pointer;" onclick="showEditStandardFeeModal(${s.id}, '${s.display_name.replace(/'/g, "\\'")}', ${s.default_fees || 0})" title="Click to edit standard tuition fee">
+                      💰 Default Fee: ₹${(parseFloat(s.default_fees) || 0).toLocaleString('en-IN')} ✏️
+                    </span>
                   </div>
                 </div>
               </div>
@@ -320,9 +322,16 @@ function showAddStandardModal(boardId) {
         <select class="form-control" id="std-stream">${streamOptions}</select>
       </div>
     </div>
-    <div class="form-group mb-4">
-      <label class="form-label">Display Name (auto-generated)</label>
-      <input type="text" class="form-control" id="std-display" placeholder="e.g. 10th Standard">
+    <div class="form-grid mb-4">
+      <div class="form-group">
+        <label class="form-label">Display Name (auto-generated)</label>
+        <input type="text" class="form-control" id="std-display" placeholder="e.g. 10th Standard">
+      </div>
+      <div class="form-group">
+        <label class="form-label font-bold">Standard / Course Tuition Fees (₹)</label>
+        <input type="number" class="form-control font-mono font-bold" id="std-fees" placeholder="e.g. 25000" min="0" value="0">
+        <div class="form-hint" style="font-size:0.7rem;">Default fees for student admissions (can be customized per student).</div>
+      </div>
     </div>
 
     <div id="std-subjects-section" style="margin-top:var(--space-4)">
@@ -418,6 +427,7 @@ async function addStandard(boardId) {
   const standard_number = parseInt(document.getElementById('std-number').value);
   const stream = document.getElementById('std-stream').value;
   const display_name = document.getElementById('std-display').value.trim();
+  const default_fees = parseFloat(document.getElementById('std-fees')?.value) || 0;
   
   const checkboxes = document.querySelectorAll('#std-subjects-checklist input[type="checkbox"]');
   const selectedSubjects = [];
@@ -437,15 +447,43 @@ async function addStandard(boardId) {
       standard_number, 
       stream, 
       display_name,
+      default_fees,
       subjects: selectedSubjects
     });
     closeModal('add-std-modal');
-    Toast.success('Class Added', `${display_name} created with ${selectedSubjects.length} subject(s).`);
+    Toast.success('Class Added', `${display_name} created with standard fee of ₹${default_fees.toLocaleString('en-IN')}.`);
     await loadStandards(boardId);
   } catch (err) {
     Toast.error('Add Failed', err.message);
   }
 }
+
+function showEditStandardFeeModal(standardId, name, currentFee) {
+  createModal('edit-std-fee-modal', `💰 Standard Tuition Fees — ${name}`,
+    `<div class="form-group mb-4">
+      <label class="form-label font-bold">Standard / Course Tuition Fees (₹) <span class="required">*</span></label>
+      <input type="number" class="form-control font-mono font-bold" id="edit-std-fees-input" value="${currentFee || 0}" min="0" required style="font-size:1.1rem; padding:10px 14px;">
+      <div class="form-hint mt-2">This standard fee will be auto-filled by default during new student admissions. Admin can adjust individual student fees for concessions/scholarships.</div>
+    </div>`,
+    `<button class="btn btn-outline" onclick="closeModal('edit-std-fee-modal')">Cancel</button>
+     <button class="btn btn-primary" onclick="submitUpdateStandardFee(${standardId})">💾 Save Standard Fee</button>`,
+    'modal-sm'
+  );
+}
+
+async function submitUpdateStandardFee(standardId) {
+  const fees = parseFloat(document.getElementById('edit-std-fees-input')?.value) || 0;
+  try {
+    await API.standards.update(standardId, { default_fees: fees });
+    closeModal('edit-std-fee-modal');
+    Toast.success('Fees Updated', `Default fee updated to ₹${fees.toLocaleString('en-IN')}`);
+    if (_selectedBoardId) await loadStandards(_selectedBoardId);
+  } catch (err) {
+    Toast.error('Update Failed', err.message);
+  }
+}
+window.showEditStandardFeeModal = showEditStandardFeeModal;
+window.submitUpdateStandardFee = submitUpdateStandardFee;
 
 async function confirmDeleteStandard(id, name) {
   const ok = await Confirm.show(`Delete ${name}?`, 'All students, marks, and subjects for this class will be permanently deleted.', 'Delete Class');

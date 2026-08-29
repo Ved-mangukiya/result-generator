@@ -2,15 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Source+Sans+3:wght@400;500;600;700&display=swap');
+  @page { size: A4 portrait; margin: 0; }
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'Source Sans 3',sans-serif; background:#f0f4f8; color:#1a2333; }
-  .page { width:210mm; min-height:297mm; background:#ffffff; padding:12mm; display:flex; flex-direction:column; }
+  html, body { width:210mm; height:297mm; max-width:210mm; max-height:297mm; overflow:hidden !important; font-family:'Source Sans 3',sans-serif; background:#ffffff; color:#1a2333; }
+  .page { width:210mm; height:297mm; max-height:297mm; background:#ffffff; padding:8mm 10mm; display:flex; flex-direction:column; justify-content:space-between; page-break-after:avoid !important; page-break-inside:avoid !important; }
 
   /* Professional navy exam schedule template */
-  .top-bar { background:#1a2e50; height:8px; width:100%; margin-bottom:0; }
-  .accent-bar { background:#c8a940; height:3px; width:100%; margin-bottom:8mm; }
+  .top-bar { background:#1a2e50; height:6px; width:100%; margin-bottom:0; }
+  .accent-bar { background:#c8a940; height:2px; width:100%; margin-bottom:4mm; }
 
   .card-header { display:flex; align-items:center; gap:6mm; padding-bottom:5mm; margin-bottom:6mm; border-bottom:2px solid #1a2e50; }
   .coaching-logo { width:75px; height:75px; object-fit:contain; flex-shrink:0; }
@@ -105,7 +104,7 @@
   <div class="card-footer">
     <div>Academic Year: {{ACADEMIC_YEAR}}</div>
     <div>Date of Issue: <span id="issue-date"></span></div>
-    <div>Apex Tuition ERP</div>
+    <div>EduTrack ERP</div>
   </div>
   <div class="bottom-bar"></div>
 </div>

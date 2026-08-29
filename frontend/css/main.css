@@ -472,19 +472,24 @@ h5 { font-size: 0.875rem; }
   gap: var(--space-1);
   padding: 3px 10px;
   border-radius: var(--radius-full);
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
+  transition: all 0.2s ease;
 }
 
-.badge-primary { background: rgba(27,42,74,0.10); color: var(--navy); border: 1px solid rgba(27,42,74,0.20); }
-.badge-success { background: rgba(45,122,85,0.10); color: #2d7a55; border: 1px solid rgba(45,122,85,0.22); }
-.badge-danger  { background: rgba(176,48,37,0.10); color: #b03025; border: 1px solid rgba(176,48,37,0.22); }
-.badge-warning { background: rgba(154,114,40,0.12); color: #9a7228; border: 1px solid rgba(154,114,40,0.25); }
-.badge-gold    { background: rgba(201,169,110,0.12); color: #9a7040; border: 1px solid rgba(201,169,110,0.28); }
-.badge-gray    { background: rgba(27,42,74,0.06); color: var(--text-secondary); border: 1px solid var(--border); }
-.badge-info    { background: rgba(59,130,196,0.10); color: #2563a8; border: 1px solid rgba(59,130,196,0.22); }
+.badge-primary   { background: rgba(99,102,241,0.12); color: #4f46e5; border: 1px solid rgba(99,102,241,0.25); }
+.badge-success   { background: rgba(22,163,74,0.12); color: #16a34a; border: 1px solid rgba(22,163,74,0.25); }
+.badge-danger    { background: rgba(220,38,38,0.12); color: #dc2626; border: 1px solid rgba(220,38,38,0.25); }
+.badge-warning   { background: rgba(217,119,6,0.14); color: #d97706; border: 1px solid rgba(217,119,6,0.28); }
+.badge-gold      { background: rgba(201,169,110,0.15); color: #b45309; border: 1px solid rgba(201,169,110,0.30); }
+.badge-gray      { background: rgba(100,116,139,0.10); color: var(--text-secondary); border: 1px solid var(--border); }
+.badge-secondary { background: rgba(100,116,139,0.12); color: #475569; border: 1px solid rgba(100,116,139,0.25); }
+.badge-info      { background: rgba(37,99,235,0.12); color: #2563eb; border: 1px solid rgba(37,99,235,0.25); }
+.badge-teal      { background: rgba(46,184,160,0.14); color: #0d9488; border: 1px solid rgba(46,184,160,0.28); }
+.badge-outline   { background: transparent; color: var(--navy); border: 1.5px solid var(--border-medium); }
+.badge-xs        { padding: 2px 6px; font-size: 0.62rem; }
 
 /* ═══════════════════════════════════════════════
    PAGE HEADER

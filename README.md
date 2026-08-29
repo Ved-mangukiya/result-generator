@@ -1,8 +1,8 @@
-# 🏆 Apex Tuition ERP — Enterprise Edition
+# 🏆 EduTrack ERP — Enterprise Edition
 
 An enterprise-grade, high-performance coaching institute management ERP designed for modern, scaling private tuition academies, schools, and test prep centers in India.
 
-Apex Tuition ERP provides a complete, local-first administration platform to manage student lifecycles, automate billing & fee ledgers, schedule test rounds, and compile professional, print-ready reports with zero latency.
+EduTrack ERP provides a complete, local-first administration platform to manage student lifecycles, automate billing & fee ledgers, schedule test rounds, and compile professional, print-ready reports with zero latency.
 
 ---
 
@@ -55,7 +55,7 @@ Apex Tuition ERP provides a complete, local-first administration platform to man
 ### Installation & Initialization
 1. Clone the project or extract the commercial bundle:
    ```bash
-   cd Apex-Tuition-ERP
+   cd EduTrack-Tuition-ERP
    ```
 2. Install production dependencies:
    ```bash
@@ -89,4 +89,4 @@ For branding and white-labeling requests, configure the Coaching Profile in the 
 
 ---
 
-*Developed and Maintained by **Apex Softwares**. All Rights Reserved.*
+*Developed and Maintained by **EduTrack Softwares**. All Rights Reserved.*

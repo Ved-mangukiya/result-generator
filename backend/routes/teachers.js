@@ -3,10 +3,18 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const { db, logActivity } = require('../db/database');
 
-// GET /api/teachers — List all teachers with their assignments
+// GET /api/teachers — List all teachers with their credentials and assignments
 router.get('/', (req, res) => {
   try {
-    const teachers = db.prepare('SELECT id, name, email, phone, assigned_standards, subjects_taught, created_at FROM teachers ORDER BY id DESC').all();
+    const teachers = db.prepare('SELECT id, name, username, email, phone, plain_password, assigned_standards, subjects_taught, permissions, created_at FROM teachers ORDER BY id DESC').all();
+    // Parse permissions JSON for each teacher and ensure username/plain_password exist
+    teachers.forEach(t => {
+      try { t.permissions = JSON.parse(t.permissions || '[]'); } catch { t.permissions = []; }
+      if (!t.username || t.username.trim() === '') {
+        t.username = (t.email || '').split('@')[0] || (t.name || 'teacher').toLowerCase().replace(/[^a-z0-9]/g, '');
+      }
+      if (!t.plain_password) t.plain_password = 'teacher123';
+    });
     res.json({ teachers });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -16,64 +24,150 @@ router.get('/', (req, res) => {
 // GET /api/teachers/:id — Get single teacher
 router.get('/:id', (req, res) => {
   try {
-    const teacher = db.prepare('SELECT id, name, email, phone, assigned_standards, subjects_taught, created_at FROM teachers WHERE id = ?').get(req.params.id);
+    const teacher = db.prepare('SELECT id, name, username, email, phone, plain_password, assigned_standards, subjects_taught, permissions, created_at FROM teachers WHERE id = ?').get(req.params.id);
     if (!teacher) return res.status(404).json({ error: 'Teacher not found' });
+    try { teacher.permissions = JSON.parse(teacher.permissions || '[]'); } catch { teacher.permissions = []; }
+    if (!teacher.username || teacher.username.trim() === '') {
+      teacher.username = (teacher.email || '').split('@')[0] || (teacher.name || 'teacher').toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+    if (!teacher.plain_password) teacher.plain_password = 'teacher123';
     res.json(teacher);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// POST /api/teachers — Add new faculty account (Auto-generates login credentials)
+// POST /api/teachers — Add new faculty account (Auto-generates or accepts login credentials)
 router.post('/', async (req, res) => {
   try {
-    let { name, email, phone, assigned_standards, subjects_taught, password } = req.body;
+    let { name, username, email, phone, assigned_standards, subjects_taught, password } = req.body;
     if (!name) return res.status(400).json({ error: 'Teacher name is required' });
 
-    // Auto-generate email/username if not provided
-    if (!email || email.trim() === '') {
-      const cleanName = name.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-      const randNum = Math.floor(1000 + Math.random() * 9000);
-      email = `${cleanName}${randNum}@edutrack.local`;
+    const cleanName = name.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    const randNum = Math.floor(100 + Math.random() * 900);
+
+    if (!username || username.trim() === '') {
+      username = `${cleanName}${randNum}`;
+    } else {
+      username = username.trim().toLowerCase().replace(/[^a-z0-9._-]/g, '');
     }
 
-    const defaultPass = password || 'teacher@123';
+    if (!email || email.trim() === '') {
+      email = `${username}@edutrack.local`;
+    } else {
+      email = email.trim();
+    }
+
+    const defaultPass = password && password.trim() !== '' ? password.trim() : 'teacher123';
     const hash = await bcrypt.hash(defaultPass, 10);
 
-    const existing = db.prepare('SELECT id FROM teachers WHERE LOWER(email) = LOWER(?)').get(email);
+    const existing = db.prepare('SELECT id FROM teachers WHERE LOWER(email) = LOWER(?) OR (username != \'\' AND LOWER(username) = LOWER(?))').get(email, username);
     if (existing) {
-      return res.status(400).json({ error: `Faculty email/username '${email}' is already registered` });
+      return res.status(400).json({ error: `Faculty with email or username '${email}' is already registered` });
     }
 
     const result = db.prepare(`
-      INSERT INTO teachers (name, email, phone, password_hash, assigned_standards, subjects_taught)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(name, email, phone || '', hash, assigned_standards || 'All Classes', subjects_taught || 'General');
+      INSERT INTO teachers (name, username, email, phone, plain_password, password_hash, assigned_standards, subjects_taught)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(name, username, email, phone || '', defaultPass, hash, assigned_standards || 'All Classes', subjects_taught || 'General');
 
-    logActivity('TEACHER_ADD', `Added Faculty: ${name} (${email})`);
+    logActivity('TEACHER_ADD', `Added Faculty: ${name} (User: ${username} | Email: ${email})`);
 
     res.json({
       success: true,
       id: result.lastInsertRowid,
       name,
+      username,
       email,
-      credentials: { username: email, password: defaultPass }
+      credentials: { username: username, email: email, password: defaultPass }
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// PUT /api/teachers/:id — Update teacher info
+// PUT /api/teachers/:id — Update teacher info & credentials
 router.put('/:id', async (req, res) => {
   try {
-    const { name, email, phone, assigned_standards, subjects_taught } = req.body;
+    const { name, username, email, phone, password, assigned_standards, subjects_taught } = req.body;
+    const current = db.prepare('SELECT * FROM teachers WHERE id = ?').get(req.params.id);
+    if (!current) return res.status(404).json({ error: 'Teacher not found' });
+
+    let finalPass = current.plain_password || 'teacher123';
+    let finalHash = current.password_hash;
+
+    if (password && password.trim() !== '') {
+      finalPass = password.trim();
+      finalHash = await bcrypt.hash(finalPass, 10);
+    }
+
+    const finalUser = (username && username.trim() !== '') ? username.trim().toLowerCase() : current.username;
+    const finalEmail = (email && email.trim() !== '') ? email.trim() : current.email;
+
     db.prepare(`
-      UPDATE teachers SET name = ?, email = ?, phone = ?, assigned_standards = ?, subjects_taught = ?
+      UPDATE teachers 
+      SET name = ?, username = ?, email = ?, phone = ?, plain_password = ?, password_hash = ?, assigned_standards = ?, subjects_taught = ?
       WHERE id = ?
-    `).run(name, email, phone || '', assigned_standards || '', subjects_taught || '', req.params.id);
-    logActivity('TEACHER_UPDATE', `Updated Faculty ID #${req.params.id}: ${name}`);
-    res.json({ success: true });
+    `).run(
+      name || current.name,
+      finalUser,
+      finalEmail,
+      phone !== undefined ? phone : current.phone,
+      finalPass,
+      finalHash,
+      assigned_standards !== undefined ? assigned_standards : current.assigned_standards,
+      subjects_taught !== undefined ? subjects_taught : current.subjects_taught,
+      req.params.id
+    );
+
+    logActivity('TEACHER_UPDATE', `Updated Faculty #${req.params.id}: ${name || current.name} (User: ${finalUser})`);
+    res.json({ success: true, teacher: { id: req.params.id, name: name || current.name, username: finalUser, email: finalEmail, plain_password: finalPass } });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/teachers/:id/credentials — Quick Real-time credential update (Admin only)
+router.put('/:id/credentials', async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+    const teacher = db.prepare('SELECT * FROM teachers WHERE id = ?').get(req.params.id);
+    if (!teacher) return res.status(404).json({ error: 'Teacher not found' });
+
+    let finalUser = username ? username.trim().toLowerCase() : teacher.username;
+    let finalEmail = email ? email.trim() : teacher.email;
+    let finalPass = password && password.trim() !== '' ? password.trim() : (teacher.plain_password || 'teacher123');
+    let hash = await bcrypt.hash(finalPass, 10);
+
+    db.prepare(`
+      UPDATE teachers 
+      SET username = ?, email = ?, plain_password = ?, password_hash = ?
+      WHERE id = ?
+    `).run(finalUser, finalEmail, finalPass, hash, req.params.id);
+
+    logActivity('TEACHER_CREDENTIALS_UPDATE', `Updated credentials for Faculty ID #${req.params.id} (${teacher.name}): User=${finalUser}, Pass=${finalPass}`);
+    res.json({ success: true, username: finalUser, email: finalEmail, password: finalPass });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/teachers/:id/permissions — Update faculty permissions (Admin only)
+router.put('/:id/permissions', (req, res) => {
+  try {
+    if (!req.session.adminId) return res.status(403).json({ error: 'Admin access required' });
+    const { permissions } = req.body;
+    if (!Array.isArray(permissions)) return res.status(400).json({ error: 'permissions must be an array' });
+    const validPermissions = [
+      'view_students', 'enter_marks', 'take_attendance', 'view_timetable',
+      'edit_timetable', 'view_tests', 'create_tests', 'view_results',
+      'view_reminders', 'manage_reminders', 'view_fees', 'manage_notices'
+    ];
+    const filtered = permissions.filter(p => validPermissions.includes(p));
+    db.prepare('UPDATE teachers SET permissions = ? WHERE id = ?').run(JSON.stringify(filtered), req.params.id);
+    const teacher = db.prepare('SELECT name FROM teachers WHERE id = ?').get(req.params.id);
+    logActivity('TEACHER_PERMISSIONS', `Updated permissions for ${teacher?.name || 'Faculty'} ID #${req.params.id}: [${filtered.join(', ')}]`);
+    res.json({ success: true, permissions: filtered });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

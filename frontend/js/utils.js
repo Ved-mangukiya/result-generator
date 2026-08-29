@@ -370,8 +370,60 @@ function staggerAnimateItems(container, selector = '.stagger-item') {
   });
 }
 
-// ─── Download helper ──────────────────────────────
+// ─── Download helper (IDM & In-Memory Blob Safe) ──
+async function downloadBlobFile(url, defaultFilename) {
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      credentials: 'include'
+    });
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      let msg = `Download failed (${res.status})`;
+      try {
+        const json = JSON.parse(errText);
+        if (json.error) msg = json.error;
+      } catch (e) {
+        if (errText && errText.length < 120) msg = errText;
+      }
+      throw new Error(msg);
+    }
+    
+    // Extract filename from header if present
+    let filename = defaultFilename || 'document.pdf';
+    const disposition = res.headers.get('Content-Disposition');
+    if (disposition && disposition.includes('filename=')) {
+      const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (match && match[1]) {
+        filename = match[1].replace(/['"]/g, '').trim();
+      }
+    }
+
+    const blob = await res.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      a.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    }, 10000);
+    return true;
+  } catch (err) {
+    console.error('Blob download failed:', err);
+    throw err;
+  }
+}
+
 function downloadFile(url, filename) {
+  if (url.startsWith('/api/') || url.startsWith('http://localhost') || url.startsWith('http://127.0.0.1')) {
+    return downloadBlobFile(url, filename).catch(err => {
+      if (window.Toast) window.Toast.error('Download Failed', err.message);
+    });
+  }
   const a = document.createElement('a');
   a.href = url;
   a.download = filename || '';
@@ -441,6 +493,7 @@ window.initColorSwatches = initColorSwatches;
 window.setPageTitle = setPageTitle;
 window.staggerAnimateItems = staggerAnimateItems;
 window.downloadFile = downloadFile;
+window.downloadBlobFile = downloadBlobFile;
 window.getStatusClass = getStatusClass;
 window.getActivityDotClass = getActivityDotClass;
 window.successRipple = successRipple;

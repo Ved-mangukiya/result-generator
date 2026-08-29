@@ -122,6 +122,7 @@ function initializeDatabase() {
       standard_number INTEGER NOT NULL,
       stream TEXT DEFAULT 'General',
       display_name TEXT NOT NULL,
+      default_fees REAL DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (board_id) REFERENCES boards(id) ON DELETE CASCADE
     );
@@ -289,11 +290,14 @@ function initializeDatabase() {
     CREATE TABLE IF NOT EXISTS teachers (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
+      username TEXT DEFAULT '',
       email TEXT UNIQUE NOT NULL,
       phone TEXT DEFAULT '',
+      plain_password TEXT DEFAULT 'teacher123',
       password_hash TEXT NOT NULL,
       assigned_standards TEXT DEFAULT '',
       subjects_taught TEXT DEFAULT '',
+      permissions TEXT DEFAULT '[]',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -394,6 +398,9 @@ function initializeDatabase() {
   runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN grading_format TEXT DEFAULT 'State Scale'");
   runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN notice_lead_days INTEGER DEFAULT 3");
   runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN attendance_mode TEXT DEFAULT 'Daily'");
+  runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN notice_language TEXT DEFAULT 'en'");
+  runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN default_notice_mode TEXT DEFAULT 'digital'");
+  runMigrationSafe("ALTER TABLE coaching_profile ADD COLUMN theme TEXT DEFAULT 'dark'");
 
   // Attendance table
   db.exec(`
@@ -427,26 +434,55 @@ function initializeDatabase() {
   runMigrationSafe("ALTER TABLE timetable ADD COLUMN teacher_id INTEGER DEFAULT NULL");
   runMigrationSafe("ALTER TABLE teacher_subject_assignments ADD COLUMN batch_id INTEGER DEFAULT NULL");
   
-  // Name format migrations
+  // Name format & credentials & fees migrations
+  runMigrationSafe("ALTER TABLE standards ADD COLUMN default_fees REAL DEFAULT 0");
   runMigrationSafe("ALTER TABLE students ADD COLUMN first_name TEXT DEFAULT ''");
   runMigrationSafe("ALTER TABLE students ADD COLUMN surname TEXT DEFAULT ''");
+  runMigrationSafe("ALTER TABLE students ADD COLUMN parent_username TEXT DEFAULT ''");
+  runMigrationSafe("ALTER TABLE students ADD COLUMN parent_password TEXT DEFAULT 'parent123'");
   
-  // Migrate existing data to new name format
+  // Migrate existing student data
   try {
-    const students = db.prepare('SELECT id, name, father_name FROM students WHERE (first_name IS NULL OR first_name = "") AND name != ""').all();
-    const updateStmt = db.prepare('UPDATE students SET first_name = ?, surname = ? WHERE id = ?');
+    const students = db.prepare('SELECT id, name, roll_number, first_name, parent_username FROM students').all();
+    const updateNameStmt = db.prepare('UPDATE students SET first_name = ?, surname = ? WHERE id = ?');
+    const updateCredStmt = db.prepare('UPDATE students SET parent_username = ? WHERE id = ?');
     for (const student of students) {
-      const parts = student.name.split(/\s+/);
-      if (parts.length >= 2) {
-        const firstName = parts[0];
-        const surname = parts[parts.length - 1];
-        updateStmt.run(firstName, surname, student.id);
-      } else if (parts.length === 1) {
-        updateStmt.run(parts[0], '', student.id);
+      if ((!student.first_name || student.first_name === '') && student.name) {
+        const parts = student.name.split(/\s+/);
+        if (parts.length >= 2) {
+          updateNameStmt.run(parts[0], parts[parts.length - 1], student.id);
+        } else if (parts.length === 1) {
+          updateNameStmt.run(parts[0], '', student.id);
+        }
+      }
+      if (!student.parent_username || student.parent_username === '') {
+        updateCredStmt.run(student.roll_number || String(student.id), student.id);
       }
     }
+  } catch (e) {}
+
+  // Teacher credentials migration
+  runMigrationSafe("ALTER TABLE teachers ADD COLUMN username TEXT DEFAULT ''");
+  runMigrationSafe("ALTER TABLE teachers ADD COLUMN plain_password TEXT DEFAULT 'teacher123'");
+  runMigrationSafe("ALTER TABLE teachers ADD COLUMN permissions TEXT DEFAULT '[]'");
+
+  try {
+    const teachers = db.prepare('SELECT id, name, email, username, plain_password FROM teachers').all();
+    const updateTeacherStmt = db.prepare('UPDATE teachers SET username = ?, plain_password = ? WHERE id = ?');
+    for (const t of teachers) {
+      let uname = t.username;
+      if (!uname || uname.trim() === '') {
+        if (t.email && t.email.includes('@')) {
+          uname = t.email.split('@')[0].toLowerCase();
+        } else {
+          uname = (t.name || 'teacher').toLowerCase().replace(/[^a-z0-9]/g, '');
+        }
+      }
+      const plain = t.plain_password || 'teacher123';
+      updateTeacherStmt.run(uname, plain, t.id);
+    }
   } catch (e) {
-    // Migration already done or no data
+    // Teachers table migration already complete
   }
 
   // Calendar notes table
@@ -483,6 +519,38 @@ function initializeDatabase() {
   } catch (e) {
     // ignore
   }
+
+  // ─── New Feature Migrations ────────────────────────────────────────────────
+
+  // Faculty permissions (JSON array of permission keys)
+  runMigrationSafe("ALTER TABLE teachers ADD COLUMN permissions TEXT DEFAULT '[]'");
+
+  // Timetable config breaks support (JSON array of break objects)
+  runMigrationSafe("ALTER TABLE timetable_configs ADD COLUMN breaks_json TEXT DEFAULT '[]'");
+
+  // Reminders table expansion — add type, target, content_json, published_at
+  runMigrationSafe("ALTER TABLE reminders ADD COLUMN type TEXT DEFAULT 'general'");
+  runMigrationSafe("ALTER TABLE reminders ADD COLUMN target TEXT DEFAULT 'All'");
+  runMigrationSafe("ALTER TABLE reminders ADD COLUMN target_id INTEGER DEFAULT NULL");
+  runMigrationSafe("ALTER TABLE reminders ADD COLUMN content_json TEXT DEFAULT '{}'");
+  runMigrationSafe("ALTER TABLE reminders ADD COLUMN published_at TEXT DEFAULT NULL");
+
+  // Expanded reminders table with full feature set (if needs recreation)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS reminder_notices (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      type TEXT NOT NULL DEFAULT 'general',
+      title TEXT NOT NULL,
+      content_json TEXT DEFAULT '{}',
+      target TEXT DEFAULT 'All',
+      target_id INTEGER DEFAULT NULL,
+      target_name TEXT DEFAULT '',
+      status TEXT DEFAULT 'Draft',
+      published_at TEXT DEFAULT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
 
   // Auto-seed default admin if table is empty
   try {
@@ -550,22 +618,10 @@ function initializeDatabase() {
     runMigrationSafe("ALTER TABLE students ADD COLUMN parent_username TEXT DEFAULT ''");
     runMigrationSafe("ALTER TABLE students ADD COLUMN parent_password_hash TEXT DEFAULT ''");
 
-  // Clear demo data tables for clean testing
-  try {
-    db.exec(`
-      DELETE FROM test_marks;
-      DELETE FROM tests;
-      DELETE FROM test_cycles;
-      DELETE FROM attendance;
-      DELETE FROM fee_payments;
-      DELETE FROM timetable;
-      DELETE FROM students;
-      DELETE FROM teachers;
-    `);
-    console.log('🧹 [Clean Reset] All student, teacher, attendance, timetable & test records cleared!');
-  } catch (e) {
-    // ignore
-  }
+  // Preserve user data across server restarts (data persistence)
+
+  // Auto-deduplicate standards if any duplicates exist
+  deduplicateStandards();
 
   // Rich demo data seeder function
   try {
@@ -575,6 +631,81 @@ function initializeDatabase() {
   }
 
   console.log('✅ Database initialized successfully');
+}
+
+function deduplicateStandards() {
+  try {
+    const allStds = db.prepare('SELECT * FROM standards').all();
+    const normalizeStream = (stream) => {
+      if (!stream) return 'general';
+      let s = stream.toLowerCase().trim();
+      s = s.replace(/\s*\(gseb\)|\s*\(cbse\)|\s*\(icse\)/gi, '').trim();
+      return s;
+    };
+
+    const groups = {};
+    for (const std of allStds) {
+      const normStream = normalizeStream(std.stream);
+      const key = `${std.board_id}_${std.standard_number}_${normStream}`;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(std);
+    }
+
+    for (const key in groups) {
+      const group = groups[key];
+      if (group.length > 1) {
+        // Score each standard based on how much data it has (subjects, batches, students)
+        let primary = group[0];
+        let maxScore = -1;
+
+        for (const std of group) {
+          const subjectsCount = db.prepare('SELECT COUNT(*) as c FROM subjects WHERE standard_id = ?').get(std.id).c;
+          const batchesCount = db.prepare('SELECT COUNT(*) as c FROM batches WHERE standard_id = ?').get(std.id).c;
+          const studentsCount = db.prepare('SELECT COUNT(*) as c FROM students WHERE standard_id = ?').get(std.id).c;
+          const score = subjectsCount * 10 + batchesCount * 5 + studentsCount * 20;
+          if (score > maxScore) {
+            maxScore = score;
+            primary = std;
+          }
+        }
+
+        // Merge duplicates into primary standard
+        for (const dup of group) {
+          if (dup.id === primary.id) continue;
+
+          console.log(`🧹 [Deduplicate] Merging standard ID ${dup.id} (${dup.display_name}) into ID ${primary.id} (${primary.display_name})`);
+
+          db.prepare('UPDATE students SET standard_id = ? WHERE standard_id = ?').run(primary.id, dup.id);
+          db.prepare('UPDATE batches SET standard_id = ? WHERE standard_id = ?').run(primary.id, dup.id);
+          db.prepare('UPDATE timetable SET standard_id = ? WHERE standard_id = ?').run(primary.id, dup.id);
+          db.prepare('UPDATE tests SET standard_id = ? WHERE standard_id = ?').run(primary.id, dup.id);
+          db.prepare('UPDATE test_cycles SET standard_id = ? WHERE standard_id = ?').run(primary.id, dup.id);
+          db.prepare('UPDATE attendance SET standard_id = ? WHERE standard_id = ?').run(primary.id, dup.id);
+          db.prepare('UPDATE teacher_subject_assignments SET standard_id = ? WHERE standard_id = ?').run(primary.id, dup.id);
+          db.prepare('UPDATE school_exams SET standard_id = ? WHERE standard_id = ?').run(primary.id, dup.id);
+
+          const dupSubjects = db.prepare('SELECT * FROM subjects WHERE standard_id = ?').all(dup.id);
+          for (const sub of dupSubjects) {
+            const exists = db.prepare('SELECT id FROM subjects WHERE standard_id = ? AND LOWER(name) = LOWER(?)').get(primary.id, sub.name);
+            if (!exists) {
+              db.prepare('UPDATE subjects SET standard_id = ? WHERE id = ?').run(primary.id, sub.id);
+            } else {
+              db.prepare('UPDATE marks SET subject_id = ? WHERE subject_id = ?').run(exists.id, sub.id);
+              db.prepare('UPDATE tests SET subject_id = ? WHERE subject_id = ?').run(exists.id, sub.id);
+              db.prepare('UPDATE school_exams SET subject_id = ? WHERE subject_id = ?').run(exists.id, sub.id);
+              db.prepare('DELETE FROM subjects WHERE id = ?').run(sub.id);
+            }
+          }
+
+          db.prepare('DELETE FROM result_card_settings WHERE standard_id = ?').run(dup.id);
+          db.prepare('DELETE FROM timetable_configs WHERE standard_id = ?').run(dup.id);
+          db.prepare('DELETE FROM standards WHERE id = ?').run(dup.id);
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Deduplication migration error:', e);
+  }
 }
 
 function seedRichDemoData() {
@@ -595,12 +726,12 @@ function seedRichDemoData() {
   if (profile && (!profile.name || profile.name === '')) {
     db.prepare(`
       UPDATE coaching_profile SET 
-        name = 'Apex Executive Coaching Institute',
+        name = 'EduTrack Executive Coaching Institute',
         tagline = 'Premier Academic & Entrance Prep Institute',
-        address = '101 Apex Heights, University Road, Surat, Gujarat — 395007',
+        address = '101 EduTrack Heights, University Road, Surat, Gujarat — 395007',
         phone = '+91 98250 12345',
-        email = 'contact@apexcoaching.edu.in',
-        website = 'https://apexcoaching.edu.in',
+        email = 'contact@edutrack.local',
+        website = 'https://edutrackcoaching.edu.in',
         primary_color = '#1B2A4A',
         onboarding_complete = 1,
         attendance_mode = 'Daily'
@@ -621,11 +752,16 @@ function seedRichDemoData() {
     { num: 11, stream: 'Science', name: 'Class 11th Science (GSEB)', subs: ['Physics', 'Chemistry', 'Mathematics', 'Biology'] },
     { num: 11, stream: 'Commerce', name: 'Class 11th Commerce (GSEB)', subs: ['Accountancy', 'Economics', 'Business Studies (OCM)', 'Statistics'] },
     { num: 12, stream: 'Science', name: 'Class 12th Science (GSEB)', subs: ['Physics', 'Chemistry', 'Mathematics', 'Biology'] },
-    { num: 12, stream: 'Commerce', name: 'Class 12th Commerce (GSEB)', subs: ['Accountancy', 'Economics', 'Business Studies (OCM)', 'Statistics'] }
+    { num: 12, stream: 'Commerce', name: '12th Standard — Commerce (GSEB)', subs: ['Accountancy', 'Economics', 'Business Studies (OCM)', 'Statistics'] }
   ];
 
   defaultClasses.forEach(st => {
-    let existing = db.prepare('SELECT id FROM standards WHERE board_id = ? AND display_name = ?').get(gseb.id, st.name);
+    let existing = db.prepare(`
+      SELECT id FROM standards 
+      WHERE board_id = ? AND standard_number = ? 
+      AND (display_name = ? OR LOWER(stream) = LOWER(?))
+    `).get(gseb.id, st.num, st.name, st.stream);
+
     if (!existing) {
       const res = db.prepare('INSERT INTO standards (board_id, standard_number, stream, display_name) VALUES (?, ?, ?, ?)').run(gseb.id, st.num, st.stream, st.name);
       existing = { id: res.lastInsertRowid };

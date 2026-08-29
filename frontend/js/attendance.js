@@ -1,5 +1,5 @@
 /**
- * Apex Tuition ERP — Attendance Management Module
+ * EduTrack ERP — Attendance Management Module
  * Supports Daily (Start of Day) and Lecture-wise Attendance tracking
  */
 
@@ -14,6 +14,10 @@ let attendanceState = {
 };
 
 async function renderAttendancePage(container) {
+  if (typeof setPageTitle === 'function') {
+    setPageTitle('Attendance Tracker', 'Attendance Tracker');
+  }
+
   // Fetch coaching profile to get attendance mode
   try {
     const profileRes = await API.coaching.get();
@@ -43,6 +47,9 @@ async function renderAttendancePage(container) {
         <p>Record, manage, and monitor daily &amp; lecture-wise attendance across classes.</p>
       </div>
       <div class="page-header-actions">
+        <span id="att-status-badge" class="badge badge-secondary" style="padding:6px 14px; font-size:0.8rem; font-weight:700;">
+          Status: ⚪ Unrecorded
+        </span>
         <span class="badge ${attendanceState.attendanceMode === 'Lecture' ? 'badge-info' : 'badge-primary'}" style="padding:6px 14px; font-size:0.8rem;">
           Mode: ${attendanceState.attendanceMode === 'Lecture' ? '📚 Lecture-wise (Per Subject)' : '🌅 Daily (Start of Day)'}
         </span>
@@ -50,6 +57,11 @@ async function renderAttendancePage(container) {
           <span>💾 Save Attendance</span>
         </button>
       </div>
+    </div>
+
+    <!-- Unrecorded Alert Banner -->
+    <div id="att-unrecorded-banner" class="card mb-4" style="display:none; background:#fffbeb; border-left:4px solid #f59e0b; padding:12px 16px; border-radius:8px; color:#92400e; font-size:0.875rem;">
+      <strong>⚪ Attendance Unrecorded:</strong> No attendance roll call has been submitted yet for the selected date. Mark student attendance below and click <strong>💾 Save Attendance</strong>.
     </div>
 
     <!-- Filters & Selectors Bar -->
@@ -86,7 +98,7 @@ async function renderAttendancePage(container) {
     </div>
 
     <!-- Stats Summary Row -->
-    <div class="stat-grid mb-6" id="att-stats-row">
+    <div class="stat-grid mb-6" id="att-stats-row" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
       <div class="stat-card">
         <div class="stat-card-icon blue">👥</div>
         <div class="stat-card-value" id="att-total-cnt">0</div>
@@ -95,17 +107,12 @@ async function renderAttendancePage(container) {
       <div class="stat-card">
         <div class="stat-card-icon green">✅</div>
         <div class="stat-card-value" id="att-present-cnt" style="color:var(--success)">0</div>
-        <div class="stat-card-label">Present Today</div>
+        <div class="stat-card-label" id="att-present-label">Present (Incl. Late)</div>
       </div>
       <div class="stat-card">
         <div class="stat-card-icon red">❌</div>
         <div class="stat-card-value" id="att-absent-cnt" style="color:var(--danger)">0</div>
         <div class="stat-card-label">Absent</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-card-icon amber">⏰</div>
-        <div class="stat-card-value" id="att-late-cnt" style="color:var(--warning)">0</div>
-        <div class="stat-card-label">Late / Excused</div>
       </div>
     </div>
 
@@ -223,7 +230,7 @@ async function loadAttendanceData() {
   try {
     // 1. Fetch students for standard & batch
     const stRes = await API.students.list(stdId, attendanceState.selectedBatchId);
-    attendanceState.students = stRes.students || [];
+    attendanceState.students = Array.isArray(stRes) ? stRes : (stRes.students || []);
 
     // 2. Fetch existing attendance records for date
     let attRecords = [];
@@ -252,6 +259,15 @@ async function loadAttendanceData() {
       }
     });
 
+    attendanceState.hasRecorded = attRecords.length > 0;
+    const banner = document.getElementById('att-unrecorded-banner');
+    if (banner) banner.style.display = attendanceState.hasRecorded ? 'none' : 'block';
+    const badge = document.getElementById('att-status-badge');
+    if (badge) {
+      badge.className = attendanceState.hasRecorded ? 'badge badge-success' : 'badge badge-secondary';
+      badge.innerHTML = attendanceState.hasRecorded ? '🟢 Recorded' : '⚪ Unrecorded';
+    }
+
     renderStudentsTable();
   } catch (err) {
     console.error('Error loading attendance data:', err);
@@ -265,7 +281,22 @@ function renderStudentsTable() {
 
   const students = attendanceState.students;
   if (students.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:var(--space-8)">No active students found in this class/batch.</td></tr>`;
+    const isBatch = !!attendanceState.selectedBatchId;
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" class="text-center" style="padding:var(--space-8)">
+          <div style="font-size:2.2rem;margin-bottom:8px;">👥</div>
+          <div style="font-weight:700;font-size:0.95rem;color:var(--text-primary);margin-bottom:4px;">
+            ${isBatch ? 'No Students in Selected Batch' : 'No Students Enrolled in this Class'}
+          </div>
+          <p class="text-muted text-xs" style="margin-bottom:12px;">
+            ${isBatch ? 'No students are assigned to this specific batch.' : 'There are no active students in this class yet.'}
+          </p>
+          ${isBatch
+            ? `<button class="btn btn-outline btn-xs" onclick="document.getElementById('att-batch-select').value='';attendanceState.selectedBatchId=null;loadAttendanceData();">View All Class Students</button>`
+            : `<button class="btn btn-primary btn-xs" onclick="Router.navigate('students', { standardId: attendanceState.selectedStandardId })">➕ Add Students to Class</button>`}
+        </td>
+      </tr>`;
     updateStatsDisplay(0, 0, 0, 0);
     return;
   }
@@ -343,16 +374,20 @@ function renderStudentsTable() {
   });
 }
 
-function updateStatsDisplay(total, present, absent, late) {
+function updateStatsDisplay(total, purePresent, absent, late) {
   const tot = document.getElementById('att-total-cnt');
   const prs = document.getElementById('att-present-cnt');
+  const prsLbl = document.getElementById('att-present-label');
   const abs = document.getElementById('att-absent-cnt');
-  const lte = document.getElementById('att-late-cnt');
+
+  const totalPresent = (purePresent || 0) + (late || 0);
 
   if (tot) tot.innerText = total;
-  if (prs) prs.innerText = present;
+  if (prs) prs.innerText = totalPresent;
+  if (prsLbl) {
+    prsLbl.innerHTML = `Present ${late > 0 ? `<span style="font-size:0.7rem; color:var(--text-muted); font-weight:normal;">(${late} late)</span>` : ''}`;
+  }
   if (abs) abs.innerText = absent;
-  if (lte) lte.innerText = late;
 }
 
 function recalculateStatsFromMap() {
@@ -395,10 +430,18 @@ async function saveAttendance() {
     };
 
     const res = await API.request('/attendance', 'POST', payload);
-    Utils.showToast('✅ ' + (res.message || 'Attendance saved successfully!'), 'success');
+    attendanceState.hasRecorded = true;
+    const banner = document.getElementById('att-unrecorded-banner');
+    if (banner) banner.style.display = 'none';
+    const badge = document.getElementById('att-status-badge');
+    if (badge) {
+      badge.className = 'badge badge-success';
+      badge.innerHTML = '🟢 Recorded';
+    }
+    Toast.success('Saved', res.message || 'Attendance saved successfully!');
   } catch (err) {
     console.error('Error saving attendance:', err);
-    Utils.showToast('❌ Failed to save attendance: ' + err.message, 'danger');
+    Toast.error('Save Failed', err.message);
   } finally {
     if (saveBtn) saveBtn.classList.remove('btn-loading');
   }

@@ -228,12 +228,16 @@ async function loadTestsForClass(standardId) {
     _testsList = await API.get(url);
     
     if (_testsList.length === 0) {
+      const isBatch = !!batchId;
       container.innerHTML = `
         <div class="empty-state" style="height:300px">
           <div class="empty-state-icon">${Icons?.render?.('marks',{size:36}) || ''}</div>
-          <h3>No Tests Recorded</h3>
-          <p>Create your first test (e.g. 25 marks, 30 marks) to record student marks for this class.</p>
-          <button class="btn btn-primary mt-2" onclick="showCreateTestModal()">${Icons?.render?.('add',{size:14}) || ''} Create Test</button>
+          <h3>${isBatch ? 'No Tests in This Batch' : 'No Tests Recorded Yet'}</h3>
+          <p>${isBatch ? 'No tests match the selected batch. Switch to "All Batches" or schedule a new test.' : 'Create your first test (e.g. 25 marks, 50 marks) to record student scores for this class.'}</p>
+          <div class="flex gap-2 justify-center mt-2">
+            ${isBatch ? `<button class="btn btn-outline btn-sm" onclick="document.getElementById('tests-batch-select').value='';filterTestsByBatch('')">Show All Batches</button>` : ''}
+            <button class="btn btn-primary btn-sm" onclick="showCreateTestModal()">${Icons?.render?.('add',{size:14}) || ''} Create Test</button>
+          </div>
         </div>`;
       return;
     }
@@ -2103,30 +2107,30 @@ window.saveAISchedule = saveAISchedule;
 async function downloadTestPDF(testId) {
   Spinner.show('Generating test PDF report...');
   try {
-    const tokenRes = await API.export.downloadToken();
-    const token = tokenRes.token;
+    const tokenRes = await API.export.downloadToken().catch(() => ({ token: '' }));
+    const token = tokenRes?.token || '';
     const url = `/api/tests/${testId}/export/pdf?token=${token}`;
-    const a = document.createElement('a');
-    a.href = url; a.download = ''; a.click();
-    setTimeout(() => Spinner.hide(), 2000);
+    await downloadBlobFile(url, `Test_${testId}_MarksReport.pdf`);
+    Toast.success('PDF Ready', 'Test marks report downloaded successfully.');
   } catch (err) {
-    Spinner.hide();
     Toast.error('Download Failed', err.message);
+  } finally {
+    Spinner.hide();
   }
 }
 
 async function downloadTestExcel(testId) {
   Spinner.show('Generating test Excel report...');
   try {
-    const tokenRes = await API.export.downloadToken();
-    const token = tokenRes.token;
+    const tokenRes = await API.export.downloadToken().catch(() => ({ token: '' }));
+    const token = tokenRes?.token || '';
     const url = `/api/tests/${testId}/export/excel?token=${token}`;
-    const a = document.createElement('a');
-    a.href = url; a.download = ''; a.click();
-    setTimeout(() => Spinner.hide(), 2000);
+    await downloadBlobFile(url, `Test_${testId}_Marks.xlsx`);
+    Toast.success('Excel Ready', 'Test marks Excel downloaded.');
   } catch (err) {
-    Spinner.hide();
     Toast.error('Download Failed', err.message);
+  } finally {
+    Spinner.hide();
   }
 }
 window.downloadTestPDF = downloadTestPDF;

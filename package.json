@@ -1,7 +1,7 @@
 {
-  "name": "apex-tuition-erp",
+  "name": "edutrack-tuition-erp",
   "version": "1.0.0",
-  "description": "Apex Tuition ERP — Enterprise Grade Management & Academic System for Coaching Institutes",
+  "description": "EduTrack ERP — Enterprise Grade Management & Academic System for Coaching Institutes",
   "main": "backend/server.js",
   "scripts": {
     "start": "node backend/server.js",
@@ -9,7 +9,7 @@
     "seed": "node backend/db/seed.js"
   },
   "keywords": ["coaching", "erp", "india", "education", "pdf", "fees", "ledger"],
-  "author": "Apex Softwares",
+  "author": "EduTrack Softwares",
   "license": "Proprietary",
   "dependencies": {
     "bcryptjs": "^2.4.3",

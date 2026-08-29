@@ -25,8 +25,8 @@ function showLoginPageWithActualForm() {
 
 async function initAuth() {
   // Show loader briefly on initial page load for returning sessions
-  if (window.ApexLoader) {
-    window.ApexLoader.show();
+  if (window.EduTrackLoader) {
+    window.EduTrackLoader.show();
   }
   
   // Set initial state - user is NOT logged in yet
@@ -42,18 +42,18 @@ async function initAuth() {
       window._isLoggedIn = true;
       // Hide loader after 2s and show app
       setTimeout(() => {
-        if (window.ApexLoader) window.ApexLoader.hide();
+        if (window.EduTrackLoader) window.EduTrackLoader.hide();
         showApp(me);
       }, 2200);
     } else if (me) {
       // User logged in but onboarding not complete
       window._isLoggedIn = true;
-      if (window.ApexLoader) window.ApexLoader.hide();
+      if (window.EduTrackLoader) window.EduTrackLoader.hide();
       showOnboarding();
     }
   } catch (err) {
     // Not logged in — hide loader, show login page WITHOUT error
-    if (window.ApexLoader) window.ApexLoader.hide();
+    if (window.EduTrackLoader) window.EduTrackLoader.hide();
     showLoginPageWithActualForm();
     // Don't show any error message here - this is normal for new visitors
   }
@@ -102,7 +102,7 @@ function showLoginPage() {
   hide('onboarding-overlay');
   hide('spinner-overlay');
   // Hide loader if visible
-  const loader = document.getElementById('apex-loader');
+  const loader = document.getElementById('edutrack-loader');
   if (loader) loader.style.display = 'none';
   show('login-page');
   showLoginPageWithActualForm();
@@ -146,36 +146,72 @@ function showApp(me) {
   window._isLoggedIn = true;
   const role = me?.role || 'admin';
   window._currentUserRole = role;
+  window._currentUserPermissions = me?.permissions || [];
+  window._currentTeacherId = me?.teacher_id || null;
 
   const adminChipEmail = document.getElementById('topbar-admin-email');
   const avatarInitials = document.getElementById('admin-avatar-initials');
 
+  // ─── Permission → page mapping for teachers ───────────────────────────────
+  // These are the pages teachers can access based on their permissions
+  const permissionPageMap = {
+    'view_students':        'students',
+    'take_attendance':      'attendance',
+    'view_timetable':       'timetable',
+    'edit_timetable':       'timetable',
+    'view_tests':           'tests',
+    'create_tests':         'tests',
+    'view_results':         'results',
+    'view_reminders':       'reminders',
+    'manage_reminders':     'reminders',
+  };
+  // Teachers always can see their own portal page
+  const TEACHER_ALWAYS_VISIBLE = ['teachers'];
+  const quickAddBtn = document.getElementById('topbar-quick-add');
+
   if (role === 'teacher') {
+    if (quickAddBtn) quickAddBtn.style.display = 'none';
     if (adminChipEmail) adminChipEmail.textContent = me?.name || 'Faculty';
-    if (avatarInitials) avatarInitials.textContent = 'F';
-    // Faculty can see: their portal desk, attendance, timetable view
+    if (avatarInitials) { avatarInitials.textContent = 'F'; avatarInitials.style.background = 'linear-gradient(135deg,#2EB8A0,#1BD9BC)'; }
+    // Apply teacher color theme
+    document.documentElement.style.setProperty('--primary', '#2EB8A0');
+    document.documentElement.style.setProperty('--primary-light', '#1BD9BC');
+    document.documentElement.style.setProperty('--primary-dark', '#25977F');
+    document.documentElement.style.setProperty('--primary-rgb', '46, 184, 160');
+
+    // Build allowed pages from permissions (default to standard full access if unconfigured)
+    const effectivePerms = (me?.permissions && me.permissions.length > 0)
+      ? me.permissions
+      : ['view_students', 'take_attendance', 'enter_marks', 'view_timetable', 'view_tests', 'view_results', 'view_reminders'];
+
+    const allowedPages = new Set(TEACHER_ALWAYS_VISIBLE);
+    effectivePerms.forEach(perm => {
+      if (permissionPageMap[perm]) allowedPages.add(permissionPageMap[perm]);
+    });
+
     $$('#sidebar .nav-item[data-page]').forEach(item => {
       const page = item.dataset.page;
-      if (['teachers', 'attendance', 'tests'].includes(page)) {
-        item.style.display = 'flex';
-      } else {
-        item.style.display = 'none';
-      }
+      item.style.display = allowedPages.has(page) ? 'flex' : 'none';
     });
+
   } else if (role === 'parent') {
+    if (quickAddBtn) quickAddBtn.style.display = 'none';
     if (adminChipEmail) adminChipEmail.textContent = me?.name || 'Parent';
-    if (avatarInitials) avatarInitials.textContent = 'P';
-    // Parent/Student can see: their portal
+    if (avatarInitials) { avatarInitials.textContent = 'P'; avatarInitials.style.background = 'linear-gradient(135deg,#8b5cf6,#a78bfa)'; }
+    // Apply parent color theme
+    document.documentElement.style.setProperty('--primary', '#8b5cf6');
+    document.documentElement.style.setProperty('--primary-light', '#a78bfa');
+    document.documentElement.style.setProperty('--primary-rgb', '139, 92, 246');
+
+    // Parent/Student can only see: their portal
     $$('#sidebar .nav-item[data-page]').forEach(item => {
       const page = item.dataset.page;
-      if (['parents'].includes(page)) {
-        item.style.display = 'flex';
-      } else {
-        item.style.display = 'none';
-      }
+      item.style.display = page === 'parents' ? 'flex' : 'none';
     });
+
   } else {
     // Admin role — show all except teacher/parent portals
+    if (quickAddBtn) quickAddBtn.style.display = 'inline-flex';
     if (adminChipEmail) adminChipEmail.textContent = (me?.email || 'admin').split('@')[0];
     if (avatarInitials) avatarInitials.textContent = 'A';
     $$('#sidebar .nav-item[data-page]').forEach(item => {
@@ -218,6 +254,7 @@ function showApp(me) {
     Router.navigate(targetPage);
   }
 }
+
 
 function showOnboarding() {
   hide('login-page');
@@ -404,7 +441,7 @@ async function finishOnboarding() {
       await API.upload.signature(form).catch(() => {});
     }
     
-    Toast.success('Setup Complete!', 'Welcome to Apex Tuition ERP');
+    Toast.success('Setup Complete!', 'Welcome to EduTrack ERP');
     
     const me = await API.auth.me();
     showApp(me);
@@ -476,7 +513,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
           showOnboarding();
         }
-        Toast.success('Login Successful', 'Welcome to Apex Tuition ERP!');
+        Toast.success('Login Successful', 'Welcome to EduTrack ERP!');
       } else {
         throw new Error(result?.error || 'Login failed');
       }
