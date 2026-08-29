@@ -467,8 +467,8 @@ function initializeDatabase() {
   runMigrationSafe("ALTER TABLE teachers ADD COLUMN permissions TEXT DEFAULT '[]'");
 
   try {
-    const teachers = db.prepare('SELECT id, name, email, username, plain_password FROM teachers').all();
-    const updateTeacherStmt = db.prepare('UPDATE teachers SET username = ?, plain_password = ? WHERE id = ?');
+    const teachers = db.prepare('SELECT id, name, email, username, plain_password, password_hash FROM teachers').all();
+    const updateTeacherStmt = db.prepare('UPDATE teachers SET username = ?, plain_password = ?, password_hash = ? WHERE id = ?');
     for (const t of teachers) {
       let uname = t.username;
       if (!uname || uname.trim() === '') {
@@ -478,8 +478,16 @@ function initializeDatabase() {
           uname = (t.name || 'teacher').toLowerCase().replace(/[^a-z0-9]/g, '');
         }
       }
-      const plain = t.plain_password || 'teacher123';
-      updateTeacherStmt.run(uname, plain, t.id);
+      const plain = t.plain_password && t.plain_password.trim() !== '' ? t.plain_password.trim() : 'teacher123';
+      let hash = t.password_hash;
+      try {
+        if (!hash || !bcrypt.compareSync(plain, hash)) {
+          hash = bcrypt.hashSync(plain, 10);
+        }
+      } catch (e) {
+        hash = bcrypt.hashSync(plain, 10);
+      }
+      updateTeacherStmt.run(uname, plain, hash, t.id);
     }
   } catch (e) {
     // Teachers table migration already complete

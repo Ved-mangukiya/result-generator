@@ -101,8 +101,19 @@ router.put('/:id', async (req, res) => {
       finalHash = await bcrypt.hash(finalPass, 10);
     }
 
-    const finalUser = (username && username.trim() !== '') ? username.trim().toLowerCase() : current.username;
-    const finalEmail = (email && email.trim() !== '') ? email.trim() : current.email;
+    const finalUser = (username && username.trim() !== '') ? username.trim().toLowerCase().replace(/[^a-z0-9._-]/g, '') : current.username;
+    const finalEmail = (email && email.trim() !== '') ? email.trim() : (current.email || `${finalUser}@edutrack.local`);
+
+    // Check if email or username already taken by another teacher
+    const duplicate = db.prepare(`
+      SELECT id, name FROM teachers 
+      WHERE (LOWER(email) = LOWER(?) OR (username != '' AND LOWER(username) = LOWER(?))) 
+        AND id != ?
+    `).get(finalEmail, finalUser, req.params.id);
+
+    if (duplicate) {
+      return res.status(400).json({ error: `Username or Email is already taken by '${duplicate.name}'.` });
+    }
 
     db.prepare(`
       UPDATE teachers 
@@ -134,10 +145,21 @@ router.put('/:id/credentials', async (req, res) => {
     const teacher = db.prepare('SELECT * FROM teachers WHERE id = ?').get(req.params.id);
     if (!teacher) return res.status(404).json({ error: 'Teacher not found' });
 
-    let finalUser = username ? username.trim().toLowerCase() : teacher.username;
+    let finalUser = username ? username.trim().toLowerCase().replace(/[^a-z0-9._-]/g, '') : teacher.username;
     let finalEmail = email ? email.trim() : teacher.email;
     let finalPass = password && password.trim() !== '' ? password.trim() : (teacher.plain_password || 'teacher123');
     let hash = await bcrypt.hash(finalPass, 10);
+
+    // Check duplicate
+    const duplicate = db.prepare(`
+      SELECT id, name FROM teachers 
+      WHERE (LOWER(email) = LOWER(?) OR (username != '' AND LOWER(username) = LOWER(?))) 
+        AND id != ?
+    `).get(finalEmail, finalUser, req.params.id);
+
+    if (duplicate) {
+      return res.status(400).json({ error: `Username or Email is already taken by '${duplicate.name}'.` });
+    }
 
     db.prepare(`
       UPDATE teachers 

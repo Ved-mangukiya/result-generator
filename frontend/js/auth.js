@@ -568,24 +568,49 @@ document.addEventListener('DOMContentLoaded', () => {
       const passInput = document.getElementById('login-password');
       const userLabel = document.getElementById('login-user-label');
       const tagline = document.getElementById('login-tagline');
+      const defaultHint = document.getElementById('login-default-hint');
 
       if (emailInput) emailInput.value = '';
       if (passInput) passInput.value = '';
 
-      if (tagline) {
-        if (role === 'admin') {
-          tagline.textContent = 'Sign in to Admin ERP Control Panel';
-          if (userLabel) userLabel.textContent = 'Admin Email / Username';
-        } else if (role === 'teacher') {
-          tagline.textContent = 'Sign in to Faculty Teaching Desk';
-          if (userLabel) userLabel.textContent = 'Faculty Login ID / Email';
-        } else if (role === 'parent') {
-          tagline.textContent = 'Sign in to Student & Parent Portal';
-          if (userLabel) userLabel.textContent = 'Student Roll Number / Username';
+      if (role === 'admin') {
+        if (tagline) tagline.textContent = 'Sign in to Admin ERP Control Panel';
+        if (userLabel) userLabel.textContent = 'Admin Email / Username';
+        if (defaultHint) {
+          defaultHint.innerHTML = `🔑 <strong>Admin Demo:</strong> <code style="background:rgba(201,169,110,0.18);padding:3px 8px;border-radius:6px;color:var(--gold-dark);font-size:0.75rem;cursor:pointer;font-weight:700;" onclick="quickFillLogin('admin@result.local', 'admin123')" title="Click to auto-fill">admin@result.local / admin123</code> <span style="font-size:0.72rem;color:var(--text-muted);">(Click to fill)</span>`;
+        }
+      } else if (role === 'teacher') {
+        if (tagline) tagline.textContent = 'Sign in to Faculty Teaching Desk';
+        if (userLabel) userLabel.textContent = 'Faculty Username / Email / Phone';
+        if (defaultHint) {
+          defaultHint.innerHTML = `🔑 <strong>Faculty Demo:</strong> <code style="background:rgba(46,184,160,0.18);padding:3px 8px;border-radius:6px;color:var(--teal);font-size:0.75rem;cursor:pointer;font-weight:700;" onclick="quickFillLogin('rajesh.patel', 'teacher123')" title="Click to auto-fill">rajesh.patel / teacher123</code> <span style="font-size:0.72rem;color:var(--text-muted);">(Click to fill)</span>`;
+        }
+      } else if (role === 'parent') {
+        if (tagline) tagline.textContent = 'Sign in to Student & Parent Portal';
+        if (userLabel) userLabel.textContent = 'Roll Number / Parent Username';
+        if (defaultHint) {
+          defaultHint.innerHTML = `🔑 <strong>Student Demo:</strong> <code style="background:rgba(139,92,246,0.18);padding:3px 8px;border-radius:6px;color:#8b5cf6;font-size:0.75rem;cursor:pointer;font-weight:700;" onclick="quickFillLogin('101', 'parent123')" title="Click to auto-fill">Roll: 101 / parent123</code> <span style="font-size:0.72rem;color:var(--text-muted);">(Click to fill)</span>`;
         }
       }
     });
   });
+
+  // Quick fill helper
+  window.quickFillLogin = function(user, pass) {
+    const emailInput = document.getElementById('login-email');
+    const passInput = document.getElementById('login-password');
+    if (emailInput) {
+      emailInput.value = user;
+      emailInput.classList.remove('error');
+    }
+    if (passInput) {
+      passInput.value = pass;
+      passInput.classList.remove('error');
+    }
+    const errEl = document.getElementById('login-error');
+    if (errEl) errEl.classList.add('hidden');
+    document.getElementById('login-form')?.requestSubmit();
+  };
 
   // Demo login helper chips
   document.querySelectorAll('.demo-login-chip').forEach(chip => {
@@ -593,14 +618,7 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       const user = chip.dataset.user;
       const pass = chip.dataset.pass;
-
-      const emailInput = document.getElementById('login-email');
-      const passInput = document.getElementById('login-password');
-      if (emailInput) emailInput.value = user;
-      if (passInput) passInput.value = pass;
-
-      // Trigger submit
-      document.getElementById('login-form')?.requestSubmit();
+      quickFillLogin(user, pass);
     });
   });
 
